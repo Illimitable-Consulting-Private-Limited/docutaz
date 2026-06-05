@@ -1,7 +1,5 @@
 #include "robomongo/core/domain/MongoQueryInfo.h"
 
-#include <mongo/client/dbclient_base.h>
-
 namespace Robomongo
 {
     namespace detail
@@ -28,7 +26,8 @@ namespace Robomongo
         return !_serverAddress.empty() && _ns.isValid();
     }
 
-    MongoQueryInfo::MongoQueryInfo() {}
+    MongoQueryInfo::MongoQueryInfo()
+        : _limit(0), _skip(0), _batchSize(0), _options(0), _special(false) {}
 
     MongoQueryInfo::MongoQueryInfo(const CollectionInfo &info,
               mongo::BSONObj query, mongo::BSONObj fields, int limit, int skip, int batchSize,

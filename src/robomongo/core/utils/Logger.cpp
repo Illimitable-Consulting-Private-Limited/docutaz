@@ -1,5 +1,6 @@
 #include "robomongo/core/utils/Logger.h"
 
+#include <iostream>
 #include <QDir>
 #include <QMetaType>
 

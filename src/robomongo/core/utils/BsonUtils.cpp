@@ -639,7 +639,7 @@ namespace Robomongo
                 break;
             case jstOID:
                 {
-                    std::string idValue = elem.OID().toString();
+                    std::string idValue = elem.__oid().toString();
                     char buff[256] = {0};
                     sprintf(buff, "ObjectId(\"%s\")", idValue.c_str());
                     con.append(buff);
@@ -650,7 +650,7 @@ namespace Robomongo
                 break;
             case Date:
                 {
-                    long long ms = (long long) elem.Date().toMillisSinceEpoch();
+                    long long ms = (long long) elem.date().toMillisSinceEpoch();
                     bool isSupportedDate = miutil::minDate < ms && ms < miutil::maxDate;
 
                     boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));

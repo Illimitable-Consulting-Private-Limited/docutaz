@@ -39,7 +39,7 @@ set(SOURCES
     shell/bson/json.cpp
 
     # Isolated Scope #2
-    core/engine/ScriptEngine.cpp
+    core/engine/MongoshEngine.cpp
     core/events/MongoEvents.cpp
     core/domain/MongoDocument.cpp
     gui/AppStyle.cpp
@@ -158,7 +158,10 @@ target_link_libraries(robomongo
         ${WebEngineWidgets}
         qjson
         qscintilla
-        mongodb
+        mongo::mongocxx_shared
+        mongo::bsoncxx_shared
+        OpenSSL::SSL
+        OpenSSL::Crypto
         ssh
         Threads::Threads)   # Target from FindThreads CMake module
 
@@ -175,7 +178,8 @@ endif(APPLE)
 
 target_include_directories(robomongo
     PRIVATE
-        ${CMAKE_HOME_DIRECTORY}/src)
+        ${CMAKE_HOME_DIRECTORY}/src
+        ${CMAKE_HOME_DIRECTORY}/src/mongo_compat)
 
 # Get build number
 find_package(Git)
@@ -213,7 +217,7 @@ target_compile_definitions(robomongo
         BUILD_NUMBER="${BUILD_NUMBER}"
         PROJECT_NAME_LOWERCASE="${PROJECT_NAME_LOWERCASE}"
         PROJECT_QT_VERSION="${Qt5Core_VERSION}"        
-        MongoDB_VERSION="${MongoDB_VERSION}"
+        MongoDB_VERSION="8.0"
         OPENSSL_VERSION="${OPENSSL_VERSION}"
         LIBSSH2_VERSION="${LIBSSH2_VERSION}"
         QJSON_VERSION="${QJSON_VERSION}"
@@ -269,17 +273,5 @@ endif()
 # Install
 include(RobomongoInstall)
 
-#
-# Tests targets (code below should be moved to separate file)
-add_executable(tests WIN32 EXCLUDE_FROM_ALL app/main_test.cpp gui/editors/JSLexer.cpp)
-target_link_libraries(tests Qt5::Widgets qjson qscintilla mongodb Threads::Threads)
-target_include_directories(tests
-    PRIVATE
-        ${CMAKE_HOME_DIRECTORY}/src)
-
-# Target that creates original MongoDB shell
-# Used to test compilation and linking
-add_executable(shell EXCLUDE_FROM_ALL shell/shell/dbshell.cpp)
-target_link_libraries(shell
-    mongodb
-    Threads::Threads)       # Target from FindThreads CMake module
+# Tests and shell targets are excluded from the default build (EXCLUDE_FROM_ALL)
+# and reference old MongoDB driver — kept here as stubs for reference only.

@@ -1,7 +1,7 @@
 #include "robomongo/core/HexUtils.h"
 
 #include <mongo/util/hex.h>
-#include <pcrecpp.h>
+#include <algorithm>
 #include <iostream>
 
 namespace Robomongo
@@ -104,8 +104,8 @@ namespace Robomongo
         {
             // remove extra characters
             std::string hex = uuid;
-            pcrecpp::RE re("[{}-]");
-            re.GlobalReplace("", &hex);
+            hex.erase(std::remove_if(hex.begin(), hex.end(),
+                [](char c){ return c=='{' || c=='}' || c=='-'; }), hex.end());
 
             if (hex.size() != 32)
                 return "";
@@ -117,8 +117,8 @@ namespace Robomongo
         {
             // remove extra characters
             std::string hex = uuid;
-            pcrecpp::RE re("[{}-]");
-            re.GlobalReplace("", &hex);
+            hex.erase(std::remove_if(hex.begin(), hex.end(),
+                [](char c){ return c=='{' || c=='}' || c=='-'; }), hex.end());
 
             if (hex.size() != 32)
                 return "";
@@ -135,8 +135,8 @@ namespace Robomongo
         {
             // remove extra characters
             std::string hex = uuid;
-            pcrecpp::RE re("[{}-]");
-            re.GlobalReplace("", &hex);
+            hex.erase(std::remove_if(hex.begin(), hex.end(),
+                [](char c){ return c=='{' || c=='}' || c=='-'; }), hex.end());
 
             if (hex.size() != 32)
                 return "";

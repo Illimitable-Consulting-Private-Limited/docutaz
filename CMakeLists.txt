@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.8.0)
 project(Robomongo)
 
+# Find mongocxx/bsoncxx BEFORE adding our custom cmake/ module path.
+# Our cmake/FindOpenSSL.cmake conflicts with the system finder that
+# mongocxx uses internally via find_dependency(OpenSSL).
+list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib64/cmake")
+find_package(mongocxx REQUIRED)
+find_package(bsoncxx REQUIRED)
+
 # Where to look first for CMake modules, before "${CMAKE_ROOT}/Modules" is checked
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
@@ -36,7 +43,6 @@ find_package(Qt5Xml REQUIRED)
 if(NOT SYSTEM_LINUX)
     find_package(Qt5WebEngineWidgets REQUIRED)
 endif()
-find_package(MongoDB REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 if (SYSTEM_MACOSX)
@@ -59,7 +65,16 @@ set(ESPRIMA_DIR src/third-party/esprima-${ESPRIMA_VERSION})
 # todo: Use equivalent vars from googletest cmake files. Currently they are somehow not working.
 set(GOOGLE_TEST_VERSION 1.8.1)
 set(GOOGLE_TEST_DIR src/third-party/googletest-${GOOGLE_TEST_VERSION})
-add_subdirectory(${LIBSSH2_DIR})
+if(SYSTEM_LINUX)
+    # Use system libssh2 on Linux (bundled 1.7.0 is incompatible with OpenSSL 3.x)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(LIBSSH2 REQUIRED libssh2)
+    add_library(libssh2 INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(libssh2 INTERFACE ${LIBSSH2_LIBRARIES})
+    target_include_directories(libssh2 INTERFACE ${LIBSSH2_INCLUDE_DIRS})
+else()
+    add_subdirectory(${LIBSSH2_DIR})
+endif()
 add_subdirectory(src/robomongo/ssh)
 add_subdirectory(${QJSON_DIR})
 add_subdirectory(${QSCINTILLA_DIR})
