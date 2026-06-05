@@ -244,7 +244,7 @@ namespace Robomongo
         {
             setMinimumSize(560, 440);
             _validateJsonButton->setHidden(_advancedOptions->currentIndex() == OPTIONS_TAB);
-            QSettings settings("3T", "Robomongo");
+            QSettings settings("Docutaz", "Docutaz");
             if (settings.contains("CreateCollectionDialog/size"))
             {
                 restoreWindowSettings();
@@ -405,13 +405,13 @@ namespace Robomongo
 
     void CreateCollectionDialog::saveWindowSettings() const
     {
-        QSettings settings("3T", "Robomongo");
+        QSettings settings("Docutaz", "Docutaz");
         settings.setValue("CreateCollectionDialog/size", size());
     }
 
     void CreateCollectionDialog::restoreWindowSettings()
     {
-        QSettings settings("3T", "Robomongo");
+        QSettings settings("Docutaz", "Docutaz");
         resize(settings.value("CreateCollectionDialog/size").toSize());
     }
 

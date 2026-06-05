@@ -36,7 +36,7 @@ namespace Robomongo
         QSize size(screenGeometry.width() - horizontalMargin,
                    screenGeometry.height() - verticalMargin);
 
-        QSettings settings("3T", "Robomongo");
+        QSettings settings("Docutaz", "Docutaz");
         if (settings.contains("DocumentTextEditor/size"))
         {
             restoreWindowSettings();
@@ -123,7 +123,7 @@ namespace Robomongo
     void DocumentTextEditor::reject()
     {
         if (_queryText->sciScintilla()->isModified()) {
-            int ret = QMessageBox::warning(this, tr("Robo 3T"),
+            int ret = QMessageBox::warning(this, tr(PROJECT_NAME_TITLE),
                                tr("The document has been modified.\n"
                                   "Do you want to save your changes?"),
                                QMessageBox::Save | QMessageBox::Discard
@@ -227,13 +227,13 @@ namespace Robomongo
 
     void DocumentTextEditor::saveWindowSettings() const
     {
-        QSettings settings("3T", "Robomongo");
+        QSettings settings("Docutaz", "Docutaz");
         settings.setValue("DocumentTextEditor/size", size());
     }
 
     void DocumentTextEditor::restoreWindowSettings()
     {
-        QSettings settings("3T", "Robomongo");
+        QSettings settings("Docutaz", "Docutaz");
         resize(settings.value("DocumentTextEditor/size").toSize());
     }
 

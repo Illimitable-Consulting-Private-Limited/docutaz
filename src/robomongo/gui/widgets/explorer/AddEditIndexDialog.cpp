@@ -288,7 +288,7 @@ namespace Robomongo
                         "\nTo edit an existing index, the index must be dropped and recreated. "
                         "This means if the recreate step fails, the index being edited might "
                         "have already been dropped. "
-                        "In this case, Robo 3T will try to recover (recreate) the index being edited. "
+                        "In this case, " PROJECT_NAME_TITLE " will try to recover (recreate) the index being edited. "
                         "Please consider backing up your index first. "
                         "\n\nAre you sure you want to proceed?"
                     ),

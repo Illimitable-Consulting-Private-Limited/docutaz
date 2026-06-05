@@ -37,11 +37,11 @@ namespace Robomongo
     }
 
     QVariant getSetting(QString const& key) {
-        return QSettings("3T", "Robomongo").value(key).toSize();
+        return QSettings("Docutaz", "Docutaz").value(key).toSize();
     }
 
     void saveSetting(QString const& key, QVariant const& value) {
-        QSettings("3T", "Robomongo").setValue(key, value);
+        QSettings("Docutaz", "Docutaz").setValue(key, value);
     }
 
 }   // end of name space Robomongo

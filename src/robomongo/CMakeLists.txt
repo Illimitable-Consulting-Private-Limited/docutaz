@@ -237,7 +237,7 @@ if(SYSTEM_WINDOWS)
     target_sources(robomongo PRIVATE "${CMAKE_BINARY_DIR}/winres.rc")
 
     # Rename output name for Windows
-    set_target_properties(robomongo PROPERTIES OUTPUT_NAME "robo3t")
+    set_target_properties(robomongo PROPERTIES OUTPUT_NAME "docutaz")
 
     # Suppress "warning C4477: 'sprintf'..." from robomongo\shell\db\ptimeutil.cpp
     # Suppress "warning C4291: ...no matching operator delete found" from third_party\mozjs-60
@@ -253,22 +253,22 @@ elseif(SYSTEM_MACOSX)
     string(TIMESTAMP CURRENT_YEAR "%Y")
     set_target_properties(robomongo PROPERTIES
         INSTALL_RPATH "@executable_path/../Frameworks"
-        OUTPUT_NAME "Robo 3T"
+        OUTPUT_NAME "Docutaz"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/install/macosx/Info.plist.in"
-        MACOSX_BUNDLE_BUNDLE_NAME "Robo 3T"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.3tsoftwarelabs.robo3t"
-        MACOSX_BUNDLE_INFO_STRING "Robo 3T ${PROJECT_VERSION}. Copyright 3T Software Labs Ltd, 2014 - ${CURRENT_YEAR}"
+        MACOSX_BUNDLE_BUNDLE_NAME "Docutaz"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.docutaz.docutaz"
+        MACOSX_BUNDLE_INFO_STRING "Docutaz ${PROJECT_VERSION}. Copyright Docutaz, 2026 - ${CURRENT_YEAR}"
         MACOSX_BUNDLE_SHORT_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_LONG_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
-        MACOSX_BUNDLE_COPYRIGHT "Copyright 3T Software Labs Ltd, 2014 - ${CURRENT_YEAR}"
+        MACOSX_BUNDLE_COPYRIGHT "Copyright Docutaz, 2026 - ${CURRENT_YEAR}"
         MACOSX_BUNDLE_ICON_FILE "robomongo")
 
 elseif(SYSTEM_LINUX)
     set_target_properties(robomongo PROPERTIES
         BUILD_RPATH "/usr/local/lib64"
         INSTALL_RPATH "$ORIGIN/../lib"
-        OUTPUT_NAME "robo3t")
+        OUTPUT_NAME "docutaz")
     # DT_RPATH (not DT_RUNPATH) propagates to transitive deps so libmongoc2/libbson2
     # are found without LD_LIBRARY_PATH or system ldconfig changes.
     target_link_options(robomongo PRIVATE "LINKER:--disable-new-dtags")

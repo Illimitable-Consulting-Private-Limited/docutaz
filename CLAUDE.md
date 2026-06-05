@@ -1,4 +1,4 @@
-# Project: Mongoscope — MongoDB 8+ fork of Robomongo
+# Project: Docutaz — MongoDB 8+ fork of Robomongo
 
 ## Goal
 Replace the embedded MongoDB shell with:

@@ -534,7 +534,7 @@ namespace Robomongo
 
     /*** About menu ***/
 
-        QAction *aboutRobomongoAction = new QAction("&About Robo 3T...", this);
+        QAction *aboutRobomongoAction = new QAction(QString("&About ") + PROJECT_NAME_TITLE + "...", this);
         VERIFY(connect(aboutRobomongoAction, SIGNAL(triggered()), this, SLOT(aboutRobomongo())));
 
         // Options menu
@@ -611,7 +611,7 @@ namespace Robomongo
 
         createTabs();
         createStatusBar();
-        setWindowTitle("Robo 3T - " + QString(PROJECT_VERSION_SHORT));
+        setWindowTitle(QString(PROJECT_NAME_TITLE) + " - " + QString(PROJECT_VERSION_SHORT));
         setWindowIcon(GuiRegistry::instance().mainWindowIcon());
 
         QTimer::singleShot(0, this, SLOT(manageConnections()));       
@@ -713,7 +713,7 @@ namespace Robomongo
 
     void MainWindow::restoreWindowSettings()
     {
-        QSettings settings("3T", "Robomongo");
+        QSettings settings("Docutaz", "Docutaz");
         // Restore settings if registery key exists, otherwise resize as app started for the first time.
         if (settings.contains("MainWindow/geometry"))
         {
@@ -738,7 +738,7 @@ namespace Robomongo
 
     void MainWindow::saveWindowSettings() const
     {
-        QSettings settings("3T", "Robomongo");
+        QSettings settings("Docutaz", "Docutaz");
         settings.setValue("MainWindow/geometry", saveGeometry());
     }
 
@@ -1200,7 +1200,7 @@ namespace Robomongo
     {
 #if defined(Q_OS_WIN)
         if (_trayIcon->contextMenu()->actions().size() > 0 && isHidden()) {
-            _trayIcon->contextMenu()->actions().at(0)->setText("Show Robo 3T");
+            _trayIcon->contextMenu()->actions().at(0)->setText(QString("Show ") + PROJECT_NAME_TITLE);
         }
 #endif
     }
