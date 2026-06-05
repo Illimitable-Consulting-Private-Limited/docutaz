@@ -266,8 +266,12 @@ elseif(SYSTEM_MACOSX)
 
 elseif(SYSTEM_LINUX)
     set_target_properties(robomongo PROPERTIES
+        BUILD_RPATH "/usr/local/lib64"
         INSTALL_RPATH "$ORIGIN/../lib"
         OUTPUT_NAME "robo3t")
+    # DT_RPATH (not DT_RUNPATH) propagates to transitive deps so libmongoc2/libbson2
+    # are found without LD_LIBRARY_PATH or system ldconfig changes.
+    target_link_options(robomongo PRIVATE "LINKER:--disable-new-dtags")
 endif()
 
 # Install
