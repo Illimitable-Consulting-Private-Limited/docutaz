@@ -81,6 +81,7 @@ add_subdirectory(${QSCINTILLA_DIR})
 add_subdirectory(${GOOGLE_TEST_DIR})
 add_subdirectory(src/robomongo)
 add_subdirectory(src/robomongo-unit-tests)
+add_subdirectory(src/tests EXCLUDE_FROM_ALL)
 
 # Show configuration summary
 include(RobomongoConfigurationSummary)
