@@ -357,9 +357,13 @@ std::string MongoshEngine::buildConnectionUri(const std::string& dbName) const {
         if (!cred->databaseName().empty())
             opts.push_back("authSource=" + cred->databaseName());
     }
-    if (_settings->isReplicaSet())
-        opts.push_back("replicaSet=" +
-                       _settings->replicaSetSettings()->cachedSetName());
+    if (_settings->isReplicaSet()) {
+        const std::string& entered = _settings->replicaSetSettings()->setNameUserEntered();
+        const std::string& cached  = _settings->replicaSetSettings()->cachedSetName();
+        const std::string& name = !entered.empty() ? entered : cached;
+        if (!name.empty())
+            opts.push_back("replicaSet=" + name);
+    }
     if (_settings->sslSettings() && _settings->sslSettings()->sslEnabled()) {
         opts.push_back("tls=true");
         if (!_settings->sslSettings()->caFile().empty())

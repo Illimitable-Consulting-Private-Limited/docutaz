@@ -155,9 +155,15 @@ namespace Robomongo
             if (!cred->databaseName().empty())
                 opts.push_back("authSource=" + cred->databaseName());
         }
-        if (_connSettings->isReplicaSet())
-            opts.push_back("replicaSet=" +
-                           _connSettings->replicaSetSettings()->cachedSetName());
+        if (_connSettings->isReplicaSet()) {
+            // Prefer user-entered name; fall back to cached discovered name.
+            // Omit entirely when both are empty so the driver auto-discovers.
+            const std::string& entered = _connSettings->replicaSetSettings()->setNameUserEntered();
+            const std::string& cached  = _connSettings->replicaSetSettings()->cachedSetName();
+            const std::string& name = !entered.empty() ? entered : cached;
+            if (!name.empty())
+                opts.push_back("replicaSet=" + name);
+        }
         if (_connSettings->sslSettings() && _connSettings->sslSettings()->sslEnabled()) {
             opts.push_back("tls=true");
             if (!_connSettings->sslSettings()->caFile().empty())
