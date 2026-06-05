@@ -34,6 +34,7 @@ namespace Robomongo
         void setSort(mongo::BSONObj s)       { _sort = std::move(s); }
         void setBatchSize(int b)             { _batchSize = b; }
         void setSkip(int s)                  { _skip = s; }
+        void setServerAddress(const std::string& addr) { _info._serverAddress = addr; }
         void setDatabaseName(const std::string& db) {
             _info._ns = MongoNamespace(db, _info._ns.collectionName());
         }

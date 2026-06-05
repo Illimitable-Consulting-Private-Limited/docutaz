@@ -208,14 +208,19 @@
         return stmts;
     }
 
-    // ── DBCollection.find() intercept ─────────────────────────────────────────
+    // ── Collection.find() intercept ───────────────────────────────────────────
+    // mongosh 2.x uses the class name "Collection" (not "DBCollection"), and
+    // it's not a global — reach its prototype through a live collection object.
 
     try {
-        const _origFind = DBCollection.prototype.find;
-        DBCollection.prototype.find = function (query, projection) {
+        const _collProto = Object.getPrototypeOf(db.getCollection('__robodummy__'));
+        const _origFind = _collProto.find;
+        _collProto.find = function (query, projection) {
             const cursor = _origFind.apply(this, arguments);
-            cursor.__robo_meta = { ns: this.getFullName(), query: query || {},
-                projection: projection || {}, sort: {}, skip: 0, limit: -1 };
+            try {
+                cursor.__robo_meta = { ns: this.getFullName(), query: query || {},
+                    projection: projection || {}, sort: {}, skip: 0, limit: -1 };
+            } catch (_) {}
             return cursor;
         };
     } catch (_) {}

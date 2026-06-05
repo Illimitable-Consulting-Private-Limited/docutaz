@@ -391,6 +391,9 @@ std::vector<MongoDocumentPtr> MongoClient::query(const MongoQueryInfo &info)
     if (info._limit == -1)
         return docs;
 
+    if (ns.collectionName().empty() || ns.databaseName().empty())
+        return docs;
+
     mongocxx::options::find findOpts;
     if (info._batchSize > 0) findOpts.batch_size(info._batchSize);
     if (info._limit > 0)     findOpts.limit(info._limit);

@@ -250,9 +250,18 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
 {
     std::vector<MongoShellResult> results;
 
-    const int jsonStart = rawOutput.indexOf('\n') + 1;
-    const int jsonEnd   = rawOutput.lastIndexOf('\n');
-    if (jsonStart <= 0 || jsonEnd <= jsonStart) {
+    // Buffer layout: [prompt]<<<ROBO_START_ID>>>\n<JSON>\n<<<ROBO_END_ID>>>\n
+    // Anchor on the sentinel strings so a trailing newline after END (or a
+    // multi-line prompt) can never push jsonEnd past the END sentinel.
+    const int startSentinel = rawOutput.indexOf("<<<ROBO_START_");
+    const int jsonStart     = (startSentinel >= 0)
+                              ? rawOutput.indexOf('\n', startSentinel) + 1 : -1;
+    const int endSentinel   = rawOutput.lastIndexOf("<<<ROBO_END_");
+    // Strip the \n immediately before END sentinel
+    int jsonEnd = endSentinel;
+    if (jsonEnd > 0 && rawOutput[jsonEnd - 1] == '\n') --jsonEnd;
+
+    if (startSentinel < 0 || jsonStart <= 0 || endSentinel <= 0 || jsonEnd <= jsonStart) {
         const std::string text = QString::fromUtf8(rawOutput)
             .remove(QRegularExpression("<<<ROBO_[^>]+>>>"))
             .trimmed().toStdString();
@@ -288,7 +297,12 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
             const std::string ns = obj["ns"].toString().toStdString();
             const size_t dot = ns.find('.');
             qi.setDatabaseName(dot != std::string::npos ? ns.substr(0, dot) : _currentDb);
-            qi.setCollectionName(dot != std::string::npos ? ns.substr(dot + 1) : ns);
+            const std::string coll = dot != std::string::npos ? ns.substr(dot + 1) : ns;
+            qi.setCollectionName(coll);
+            // Only activate paging when we have a usable namespace (prevents
+            // a mongoc assertion crash when the find() intercept fails to capture ns).
+            if (!coll.empty())
+                qi.setServerAddress(_settings->serverHost());
             try {
                 qi.setFilter(BsonBridge::ejsonToBson(obj["query"].toString("{}").toStdString()));
                 qi.setProjection(BsonBridge::ejsonToBson(obj["projection"].toString("{}").toStdString()));
