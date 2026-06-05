@@ -23,6 +23,8 @@
 #include "robomongo/core/domain/MongoDocument.h"
 #include "robomongo/core/utils/BsonBridge.h"
 #include "robomongo/core/utils/Logger.h"
+#include "robomongo/core/AppRegistry.h"
+#include "robomongo/core/settings/SettingsManager.h"
 
 #ifdef Q_OS_UNIX
 #include <signal.h>
@@ -392,6 +394,10 @@ QString MongoshEngine::makeExecId() {
 }
 
 QString MongoshEngine::findMongosh() {
+    // User-configured path takes highest priority
+    const QString fromSettings = AppRegistry::instance().settingsManager()->mongoshPath();
+    if (!fromSettings.isEmpty() && QFile::exists(fromSettings)) return fromSettings;
+
     const QString fromEnv = qgetenv("ROBOMONGO_MONGOSH_PATH");
     if (!fromEnv.isEmpty() && QFile::exists(fromEnv)) return fromEnv;
     const QStringList candidates = {

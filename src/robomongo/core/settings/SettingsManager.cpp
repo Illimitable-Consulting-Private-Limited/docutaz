@@ -104,6 +104,7 @@ namespace Robomongo
         _viewMode(Robomongo::Tree),
         _autocompletionMode(AutocompleteAll),
         _loadMongoRcJs(false),
+        _mongoshPath(""),
         _minimizeToTray(false),
         _lineNumbers(false),
         _disableConnectionShortcuts(false),
@@ -236,6 +237,7 @@ namespace Robomongo
 
         _timeZone = (SupportedTimes)timeZone;
         _loadMongoRcJs = map.value("loadMongoRcJs").toBool();
+        _mongoshPath = map.value("mongoshPath").toString();
         _disableConnectionShortcuts = map.value("disableConnectionShortcuts").toBool();
         
         if (map.contains("acceptedEulaVersions")) 
@@ -346,6 +348,7 @@ namespace Robomongo
 
         // 6. Save loadInitJs
         map.insert("loadMongoRcJs", _loadMongoRcJs);
+        map.insert("mongoshPath", _mongoshPath);
 
         // 7. Save disableConnectionShortcuts
         map.insert("disableConnectionShortcuts", _disableConnectionShortcuts);

@@ -7,6 +7,8 @@
 #include <QComboBox>
 #include <QPushButton>
 #include <QCheckBox>
+#include <QLineEdit>
+#include <QFileDialog>
 
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/gui/AppStyle.h"
@@ -79,7 +81,18 @@ namespace Robomongo
         _stylesComboBox = new QComboBox();
         _stylesComboBox->addItems(AppStyleUtils::getSupportedStyles());
         stylesLayout->addWidget(_stylesComboBox);
-        layout->addLayout(stylesLayout);   
+        layout->addLayout(stylesLayout);
+
+        QHBoxLayout *mongoshLayout = new QHBoxLayout(this);
+        QLabel *mongoshLabel = new QLabel("mongosh path:");
+        mongoshLayout->addWidget(mongoshLabel);
+        _mongoshPathEdit = new QLineEdit();
+        _mongoshPathEdit->setPlaceholderText("Auto-detect (leave empty)");
+        mongoshLayout->addWidget(_mongoshPathEdit);
+        QPushButton *mongoshBrowseButton = new QPushButton("Browse...");
+        VERIFY(connect(mongoshBrowseButton, SIGNAL(clicked()), this, SLOT(browseMongoshPath())));
+        mongoshLayout->addWidget(mongoshBrowseButton);
+        layout->addLayout(mongoshLayout);
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
@@ -101,6 +114,7 @@ namespace Robomongo
         _loadMongoRcJsCheckBox->setChecked(AppRegistry::instance().settingsManager()->loadMongoRcJs());
         _disabelConnectionShortcutsCheckBox->setChecked(AppRegistry::instance().settingsManager()->disableConnectionShortcuts());
         utils::setCurrentText(_stylesComboBox, Robomongo::AppRegistry::instance().settingsManager()->currentStyle());
+        _mongoshPathEdit->setText(AppRegistry::instance().settingsManager()->mongoshPath());
     }
 
     void PreferencesDialog::accept()
@@ -118,8 +132,17 @@ namespace Robomongo
         AppRegistry::instance().settingsManager()->setDisableConnectionShortcuts(_disabelConnectionShortcutsCheckBox->isChecked());
         Robomongo::AppRegistry::instance().settingsManager()->setCurrentStyle(_stylesComboBox->currentText());
         AppStyleUtils::applyStyle(_stylesComboBox->currentText());
+        AppRegistry::instance().settingsManager()->setMongoshPath(_mongoshPathEdit->text().trimmed());
         Robomongo::AppRegistry::instance().settingsManager()->save();
 
         return BaseClass::accept();
+    }
+
+    void PreferencesDialog::browseMongoshPath()
+    {
+        QString path = QFileDialog::getOpenFileName(this, "Select mongosh executable",
+            _mongoshPathEdit->text().isEmpty() ? "/usr/bin" : _mongoshPathEdit->text());
+        if (!path.isEmpty())
+            _mongoshPathEdit->setText(path);
     }
 }

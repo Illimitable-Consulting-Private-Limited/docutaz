@@ -4,6 +4,7 @@
 QT_BEGIN_NAMESPACE
 class QComboBox;
 class QCheckBox;
+class QLineEdit;
 QT_END_NAMESPACE
 
 namespace Robomongo
@@ -18,6 +19,7 @@ namespace Robomongo
         enum { height = 640, width = 480};
     public Q_SLOTS:
         virtual void accept();
+        void browseMongoshPath();
     private:
         void syncWithSettings();
     private:
@@ -27,5 +29,6 @@ namespace Robomongo
         QCheckBox *_loadMongoRcJsCheckBox;
         QCheckBox *_disabelConnectionShortcutsCheckBox;
         QComboBox *_stylesComboBox;
+        QLineEdit *_mongoshPathEdit;
     };
 }

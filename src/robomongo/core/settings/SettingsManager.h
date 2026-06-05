@@ -125,6 +125,9 @@ namespace Robomongo
         void setLoadMongoRcJs(bool isLoadJs) { _loadMongoRcJs = isLoadJs; }
         bool loadMongoRcJs() const { return _loadMongoRcJs; }
 
+        void setMongoshPath(const QString& path) { _mongoshPath = path; }
+        QString mongoshPath() const { return _mongoshPath; }
+
         void setDisableConnectionShortcuts(bool isDisable) { _disableConnectionShortcuts = isDisable; }
         bool disableConnectionShortcuts() const { return _disableConnectionShortcuts; }
 
@@ -213,6 +216,7 @@ namespace Robomongo
         ViewMode _viewMode;
         AutocompletionMode _autocompletionMode;
         bool _loadMongoRcJs;
+        QString _mongoshPath;
         bool _autoExpand;
         bool _autoExec;
         bool _minimizeToTray;
