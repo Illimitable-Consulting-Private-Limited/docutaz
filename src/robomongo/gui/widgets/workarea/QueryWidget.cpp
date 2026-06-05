@@ -35,6 +35,7 @@
 #include "robomongo/gui/editors/PlainJavaScriptEditor.h"
 #include "robomongo/gui/editors/JSLexer.h"
 #include "robomongo/gui/dialogs/ChangeShellTimeoutDialog.h"
+#include "robomongo/gui/dialogs/PreferencesDialog.h"
 
 using namespace mongo;
 
@@ -238,9 +239,15 @@ namespace Robomongo
         _dock->setFloating(!_dock->isFloating());
     };
     
-    void QueryWidget::changeShellTimeout() 
+    void QueryWidget::changeShellTimeout()
     {
         changeShellTimeoutDialog();
+    }
+
+    void QueryWidget::openMongoshPreferences()
+    {
+        PreferencesDialog dlg(this);
+        dlg.exec();
     }
 
     void QueryWidget::hideProgress()
@@ -285,15 +292,26 @@ namespace Robomongo
         activateTabContent();
 
         if (event->isError()) {
-            // For some cases, event error message already contains string "Error:"
-            QString const& subStr =
-                QString::fromStdString(event->error().errorMessage()).startsWith("Error", Qt::CaseInsensitive) ?
-                "" : "Error:\n";
+            const QString errorMsg = QString::fromStdString(event->error().errorMessage());
 
-            QString const& message = "Failed to execute script.\n\n" + subStr +
-                QString::fromStdString((event->error().errorMessage()));
-
-            QMessageBox::critical(this, "Error", message);
+            if (errorMsg == "mongosh_not_found") {
+                auto *dia = new QMessageBox(QMessageBox::Critical,
+                    "mongosh Not Found",
+                    "The mongosh shell binary could not be found.\n\n"
+                    "Install mongosh from https://www.mongodb.com/try/download/shell\n"
+                    "or set the path manually in Preferences (Options → Preferences).",
+                    QMessageBox::Close, this);
+                auto *prefBtn = new QPushButton("Open Preferences");
+                VERIFY(connect(prefBtn, SIGNAL(clicked()), this, SLOT(openMongoshPreferences())));
+                dia->addButton(prefBtn, QMessageBox::ActionRole);
+                dia->exec();
+            } else {
+                // For some cases, event error message already contains string "Error:"
+                QString const& subStr =
+                    errorMsg.startsWith("Error", Qt::CaseInsensitive) ? "" : "Error:\n";
+                QMessageBox::critical(this, "Error",
+                    "Failed to execute script.\n\n" + subStr + errorMsg);
+            }
         }
 
         if (event->timeoutReached()) {

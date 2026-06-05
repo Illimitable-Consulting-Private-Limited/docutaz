@@ -80,8 +80,9 @@ namespace Robomongo
         void on_dock_undock();
 
         // Toggle output window between dock/undock status
-        void dockUndock();         
+        void dockUndock();
         void changeShellTimeout();
+        void openMongoshPreferences();
 
     private:        
         void updateCurrentTab();

@@ -62,6 +62,9 @@ MongoShellExecResult MongoshEngine::exec(const std::string& script,
 {
     QMutexLocker lock(&_mutex);
 
+    if (_mongoshPath.isEmpty())
+        return MongoShellExecResult(true, "mongosh_not_found");
+
     if (_failed || !_proc || _proc->state() != QProcess::Running) {
         _failed = !startProcess(dbName.empty() ? _currentDb : dbName);
         if (_failed)
