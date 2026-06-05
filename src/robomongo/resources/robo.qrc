@@ -2,5 +2,6 @@
     <qresource prefix="/robomongo">
         <file alias="gnu_gpl3_license.html">gnu_gpl3_license.html</file>
         <file alias="mongosh_preamble.js">mongosh_preamble.js</file>
+        <file alias="docutaz-branding-trans.png">docutaz-branding-trans.png</file>
     </qresource>
 </RCC>
