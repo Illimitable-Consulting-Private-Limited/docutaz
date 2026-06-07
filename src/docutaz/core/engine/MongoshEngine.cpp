@@ -533,7 +533,7 @@ QString MongoshEngine::findMongosh() {
     const QString localAppData = qgetenv("LOCALAPPDATA");
     const QString appData      = qgetenv("APPDATA");
     const QString programFiles = qgetenv("ProgramFiles");
-    candidates = {
+    candidates = QStringList{
         localAppData + R"(\Programs\mongosh\bin\mongosh.exe)",
         programFiles + R"(\mongosh\bin\mongosh.exe)",
         appData      + R"(\npm\mongosh.cmd)",   // npm global install
@@ -541,14 +541,14 @@ QString MongoshEngine::findMongosh() {
         QStandardPaths::findExecutable("mongosh"),
     };
 #elif defined(Q_OS_MACOS)
-    candidates = {
+    candidates = QStringList{
         "/opt/homebrew/bin/mongosh",   // Homebrew Apple Silicon
         "/usr/local/bin/mongosh",      // Homebrew Intel / manual install
         "/usr/bin/mongosh",
         QStandardPaths::findExecutable("mongosh"),
     };
 #else
-    candidates = {
+    candidates = QStringList{
         "/usr/bin/mongosh",
         "/usr/local/bin/mongosh",
         "/opt/mongosh/bin/mongosh",

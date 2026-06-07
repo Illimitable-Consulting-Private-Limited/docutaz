@@ -39,6 +39,11 @@ include(DocutazPackage)
 
 # Search for dependencies
 find_package(Threading REQUIRED)    # Wrapper arround CMake "Threads" module
+# Boost is used header-only (filesystem/date_time calls are inline; MSVC
+# auto-linking is disabled via -DBOOST_ALL_NO_LIB). We only need the headers
+# on the include path — explicit discovery makes this work where Boost is not
+# in the compiler's default search path (e.g. MSVC on Windows).
+find_package(Boost REQUIRED)
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)

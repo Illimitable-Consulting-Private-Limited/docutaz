@@ -179,7 +179,8 @@ endif(APPLE)
 target_include_directories(docutaz
     PRIVATE
         ${CMAKE_HOME_DIRECTORY}/src
-        ${CMAKE_HOME_DIRECTORY}/src/mongo_compat)
+        ${CMAKE_HOME_DIRECTORY}/src/mongo_compat
+        ${Boost_INCLUDE_DIRS})
 
 # Get build number
 find_package(Git)

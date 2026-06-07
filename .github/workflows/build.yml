@@ -33,6 +33,7 @@ jobs:
             libqt5svg5-dev \
             libssl-dev \
             libssh2-1-dev \
+            libboost-dev \
             pkg-config
 
       # ── mongo-cxx-driver ──────────────────────────────────────────────────
@@ -124,6 +125,24 @@ jobs:
           arch: win64_msvc2019_64
           cache: true
 
+      # Boost is header-only here; vcpkg provides a BoostConfig.cmake that
+      # find_package(Boost) locates via CMAKE_PREFIX_PATH (set in Configure).
+      - name: Cache vcpkg boost
+        id: cache-boost
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}\vcpkg-boost
+          key: vcpkg-boost-smart-fs-date-algo-x64-windows-v1
+
+      - name: Install Boost (vcpkg)
+        if: steps.cache-boost.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install `
+            boost-filesystem boost-date-time boost-algorithm boost-smart-ptr `
+            --triplet x64-windows `
+            --x-install-root="$env:GITHUB_WORKSPACE\vcpkg-boost"
+
       - name: Cache mongocxx install
         id: cache-mongocxx
         uses: actions/cache@v4
@@ -166,7 +185,7 @@ jobs:
         run: |
           cmake -S . -B build -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix"
+            -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-boost\x64-windows"
 
       - name: Build
         run: cmake --build build --target docutaz --parallel
@@ -216,7 +235,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install build tools
-        run: brew install ninja
+        run: brew install ninja boost
 
       - name: Install Qt 5
         uses: jurplel/install-qt-action@v4
