@@ -137,7 +137,7 @@ set(SOURCES
     core/settings/ReplicaSetSettings.cpp
     core/mongodb/SshTunnelWorker.cpp
 
-    resources/robo.qrc
+    resources/docutaz.qrc
     gui/resources/gui.qrc
 )
 
