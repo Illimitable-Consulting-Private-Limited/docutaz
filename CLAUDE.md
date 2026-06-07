@@ -12,5 +12,4 @@ See `docs/implementation-guide.md` for the full plan with code.
 cd build && cmake .. -GNinja && ninja -j$(nproc)
 
 ## Current phase
-Read the implementation guide. Your only job today is Phase 1: strip the embedded MongoDB shell from CMakeLists.txt, add find_package(libmongocxx), add find_package(libbsoncxx), and add a mongocxx::instance in main.cpp. Replace any mongo:: driver calls with stubs that compile. The project must compile at the end of this session. Run cmake and ninja and fix every error before finishing.
-Replace all mongo::BSONObj with bsoncxx::document::value. Start with MongoDocument.h and MongoShellResult.h, then run the compiler and fix each error. Do not skip any file.
+Fix the error find(...).toArray is not a function and aggregate([...]).toArray is not a function.

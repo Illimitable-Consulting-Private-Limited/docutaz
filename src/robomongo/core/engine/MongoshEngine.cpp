@@ -52,8 +52,12 @@ void MongoshEngine::init(bool /*isLoadMongoJs*/,
 {
     QMutexLocker lock(&_mutex);
     _currentDb = dbName.empty() ? _settings->defaultDatabase() : dbName;
-    _failed = !startProcess(_currentDb);
-    _initialized = !_failed;
+    // Do NOT spawn mongosh here — it is only needed for shell tabs and starting
+    // it (process spawn + connect + preamble injection) must not block
+    // connection establishment. It is started lazily by exec(), or warmed up in
+    // the background via warmUp() shortly after the connection is reported.
+    _failed = false;
+    _initialized = true;
 }
 
 MongoShellExecResult MongoshEngine::exec(const std::string& script,
@@ -85,7 +89,27 @@ MongoShellExecResult MongoshEngine::exec(const std::string& script,
 
     auto t0 = std::chrono::steady_clock::now();
 
-    if (!send("__robo_exec(\"" + encoded + "\", \"" + execId + "\");"))
+    // Phase 1 — prepare: have the preamble split the script into statements and
+    // build a wrapped, REPL-rewritable source (so mongosh's async-rewriter runs
+    // it synchronously: cursor.toArray() yields a real array, `var`s persist and
+    // stay usable across the script's lines).
+    if (!send("__robo_prepare(\"" + encoded + "\", \"" + execId + "\");"))
+        return MongoShellExecResult(true, "Failed to write to mongosh.");
+
+    const QByteArray PREP_START = ("<<<ROBO_PREP_" + execId + ">>>").toUtf8();
+    const QByteArray PREP_END   = ("<<<ROBO_PREP_END_" + execId + ">>>").toUtf8();
+    const QByteArray prepOut = readUntil(PREP_END, _timeoutSec * 1000);
+    const int ps = prepOut.indexOf(PREP_START);
+    const int pe = prepOut.indexOf(PREP_END, ps < 0 ? 0 : ps);
+    if (ps < 0 || pe < 0)
+        return MongoShellExecResult(true, "mongosh prepare failed.");
+    const QByteArray wrappedB64 =
+        prepOut.mid(ps + PREP_START.size(), pe - (ps + PREP_START.size())).trimmed();
+    const QByteArray wrapped = QByteArray::fromBase64(wrappedB64);
+
+    // Phase 2 — execute: send the wrapped source verbatim as REPL input so it is
+    // rewritten. It ends by calling __robo_emit(execId), which frames the result.
+    if (!sendRaw(wrapped))
         return MongoShellExecResult(true, "Failed to write to mongosh.");
 
     const QByteArray output = readUntil(END_SENTINEL, _timeoutSec * 1000);
@@ -99,7 +123,8 @@ MongoShellExecResult MongoshEngine::exec(const std::string& script,
         return MongoShellExecResult(false, "timeout", true);
     }
 
-    auto results = parseExecOutput(output, script, elapsedMs);
+    const QByteArray cleaned = drainLogs(output);
+    auto results = parseExecOutput(cleaned, script, elapsedMs);
     return MongoShellExecResult(
         results, _settings->serverHost(), true, _currentDb, true);
 }
@@ -176,7 +201,12 @@ bool MongoshEngine::startProcess(const std::string& dbName) {
     }
     const QByteArray startup = readUntilPrompt(15000);
     if (startup.isEmpty()) { stopProcess(); return false; }
-    return injectPreamble();
+    if (!injectPreamble()) return false;
+    // Re-apply batch size: the process may have been started lazily, after
+    // setBatchSize() was first called on a not-yet-running subprocess.
+    send("__robo_set_batch(" + QString::number(_batchSize) + ");");
+    readUntil("<<<ROBO_BATCH_OK>>>", 3000);
+    return true;
 }
 
 void MongoshEngine::stopProcess() {
@@ -218,6 +248,18 @@ bool MongoshEngine::send(const QString& line) {
     return written == data.size();
 }
 
+bool MongoshEngine::sendRaw(const QByteArray& data) {
+    if (!_proc || _proc->state() != QProcess::Running) return false;
+    QByteArray payload = data;
+    if (!payload.endsWith('\n')) payload.append('\n');
+    const int CHUNK = 4096;
+    for (int i = 0; i < payload.size(); i += CHUNK) {
+        if (_proc->write(payload.mid(i, CHUNK)) < 0) return false;
+        _proc->waitForBytesWritten(2000);
+    }
+    return true;
+}
+
 QByteArray MongoshEngine::readUntil(const QByteArray& sentinel, int timeoutMs) {
     QByteArray accumulated;
     QDeadlineTimer deadline(timeoutMs);
@@ -239,6 +281,25 @@ QByteArray MongoshEngine::readUntilPrompt(int timeoutMs) {
         if (_proc->state() != QProcess::Running) break;
     }
     return accumulated;
+}
+
+// ── Debug log draining ───────────────────────────────────────────────────────
+
+QByteArray MongoshEngine::drainLogs(const QByteArray& raw)
+{
+    static const QByteArray START("<<<ROBO_LOG>>>");
+    static const QByteArray END("<<<ROBO_LOG_END>>>");
+    QByteArray out = raw;
+    int pos = 0;
+    while ((pos = out.indexOf(START, pos)) != -1) {
+        const int msgStart = pos + START.size();
+        const int endPos   = out.indexOf(END, msgStart);
+        if (endPos < 0) break;
+        const QString msg = QString::fromUtf8(out.mid(msgStart, endPos - msgStart)).trimmed();
+        sendLog(this, LogEvent::RBM_INFO, ("[preamble] " + msg).toStdString());
+        out.remove(pos, endPos + END.size() - pos);
+    }
+    return out;
 }
 
 // ── Result parsing ───────────────────────────────────────────────────────────
@@ -319,7 +380,44 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
                         BsonBridge::ejsonToBson(ejson)));
                 } catch (...) {}
             }
-            results.emplace_back("query", "", docs, qi, originalScript, elapsedMs);
+
+            // Aggregation results include a pipeline field; populate AggrInfo for paging.
+            const QString pipelineJson = obj["pipeline"].toString("");
+            if (!pipelineJson.isEmpty() && !coll.empty()) {
+                AggrInfo aggrInfo;
+                try {
+                    mongo::BSONObj pipeDoc = BsonBridge::ejsonToBson(pipelineJson.toStdString());
+                    mongo::BSONObj pipeline = pipeDoc.getObjectField("p").copy();
+                    aggrInfo = AggrInfo(coll, qi._skip, _batchSize, pipeline,
+                                       mongo::BSONObj(), static_cast<int>(results.size()));
+                } catch (...) {}
+                results.emplace_back("query", "", docs, qi, originalScript, elapsedMs, aggrInfo);
+            } else {
+                results.emplace_back("query", "", docs, qi, originalScript, elapsedMs);
+            }
+
+        } else if (type == "array") {
+            // A materialised array (find().toArray(), aggregate().toArray(), or
+            // any array value). Render as a single Array-rooted document so the
+            // tree shows "[N elements]" with [0],[1],… children — matching the
+            // original Robomongo.
+            std::vector<std::string> elems;
+            for (const QJsonValue& d : obj["docs"].toArray()) {
+                // Serialise each element to JSON, including primitives, by
+                // wrapping in a one-element array and stripping the brackets.
+                QByteArray a = QJsonDocument(QJsonArray{d})
+                    .toJson(QJsonDocument::Compact).trimmed();
+                if (a.startsWith('[') && a.endsWith(']'))
+                    a = a.mid(1, a.size() - 2);
+                elems.push_back(a.toStdString());
+            }
+            std::vector<MongoDocumentPtr> docs;
+            try {
+                docs.push_back(boost::make_shared<MongoDocument>(
+                    BsonBridge::ejsonElementsToBsonArray(elems)));
+            } catch (...) {}
+            results.emplace_back("array", "", docs, MongoQueryInfo{},
+                                 originalScript, elapsedMs);
 
         } else if (type == "value") {
             const QJsonValue val = obj["value"];
@@ -388,6 +486,13 @@ std::string MongoshEngine::buildConnectionUri(const std::string& dbName) const {
         if (_settings->sslSettings()->allowInvalidCertificates())
             opts.push_back("tlsAllowInvalidCertificates=true");
     }
+    // Fail fast if the server is unreachable, and connect directly to a single
+    // host so mongosh doesn't spin on SDAM topology monitoring.
+    opts.push_back("serverSelectionTimeoutMS=10000");
+    opts.push_back("connectTimeoutMS=10000");
+    if (!_settings->isReplicaSet())
+        opts.push_back("directConnection=true");
+
     if (!opts.empty()) {
         uri += "?";
         for (size_t i = 0; i < opts.size(); ++i) {

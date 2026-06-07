@@ -336,6 +336,7 @@ class BSONObj {
     // Shared ownership of the raw BSON bytes.
     std::shared_ptr<std::vector<uint8_t>> _owned;
     const uint8_t* _data;  // always valid; points into _owned or static empty doc
+    bool _isArray = false;  // true when this doc semantically represents an array
 
     static const uint8_t kEmptyDoc[5];  // {5,0,0,0,0}
 
@@ -378,7 +379,10 @@ public:
         return sz <= 5;
     }
     bool isValid() const { return !isEmpty(); }
-    bool isArray() const { return false; }  // Robomongo extension; always false here
+    // Robomongo extension: a top-level BSON document whose numeric keys
+    // ("0","1",…) should be presented as an array. Set via markAsArray().
+    bool isArray() const { return _isArray; }
+    BSONObj& markAsArray() { _isArray = true; return *this; }
 
     // Field access
     BSONElement getField(const char* name) const {

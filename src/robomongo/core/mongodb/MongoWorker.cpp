@@ -174,6 +174,18 @@ namespace Robomongo
             if (_connSettings->sslSettings()->allowInvalidCertificates())
                 opts.push_back("tlsAllowInvalidCertificates=true");
         }
+        // Fail fast on unreachable servers. Without an explicit timeout the
+        // driver waits the default 30s (serverSelectionTimeoutMS), freezing the
+        // worker on a bad connection.
+        const int timeoutMs = (_mongoTimeoutSec > 0 ? static_cast<int>(_mongoTimeoutSec) : 10) * 1000;
+        opts.push_back("serverSelectionTimeoutMS=" + std::to_string(timeoutMs));
+        opts.push_back("connectTimeoutMS=" + std::to_string(timeoutMs));
+        // For a single (non-replica-set) host, connect directly. This disables
+        // SDAM topology monitoring, whose background monitor threads otherwise
+        // keep retrying an unreachable host and linger across failed attempts.
+        if (!_connSettings->isReplicaSet())
+            opts.push_back("directConnection=true");
+
         if (!opts.empty()) {
             uri += "?";
             for (size_t i = 0; i < opts.size(); ++i) {
@@ -258,7 +270,8 @@ namespace Robomongo
             !primaryCredential->manuallyVisibleDbs().empty()) {
             QString const manuallyVisibleDbs{
                 QString::fromStdString(primaryCredential->manuallyVisibleDbs())};
-            for (auto const &db : manuallyVisibleDbs.split(',').toStdList())
+            const auto splitList = manuallyVisibleDbs.split(',');
+            for (auto const &db : std::vector<QString>(splitList.begin(), splitList.end()))
                 dbNames.insert(db.toStdString());
         }
 

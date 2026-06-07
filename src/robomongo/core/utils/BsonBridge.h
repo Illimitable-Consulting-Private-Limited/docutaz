@@ -56,5 +56,24 @@ inline std::vector<mongo::BSONObj> ejsonArrayToBsonVec(
     return result;
 }
 
+// EJSON element strings → a single mongo::BSONObj representing a top-level array.
+// Builds a document with ordered numeric keys ("0","1",…) — the BSON wire form
+// of an array — then marks it so the GUI renders it as an Array. Elements are
+// inserted verbatim and may be any EJSON value (object, number, string, …).
+inline mongo::BSONObj ejsonElementsToBsonArray(
+    const std::vector<std::string>& elements)
+{
+    std::string json = "{";
+    for (std::size_t i = 0; i < elements.size(); ++i) {
+        if (i) json += ',';
+        json += '"';
+        json += std::to_string(i);
+        json += "\":";
+        json += elements[i];
+    }
+    json += '}';
+    return ejsonToBson(json).markAsArray();
+}
+
 } // BsonBridge
 } // Robomongo

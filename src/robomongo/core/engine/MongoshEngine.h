@@ -49,6 +49,9 @@ private:
     bool injectPreamble();
 
     bool send(const QString& line);
+    // Writes raw bytes (e.g. a multi-line wrapped script) to mongosh stdin,
+    // ensuring a trailing newline so the REPL evaluates the final statement.
+    bool sendRaw(const QByteArray& data);
     QByteArray readUntil(const QByteArray& sentinel, int timeoutMs);
     QByteArray readUntilPrompt(int timeoutMs);
 
@@ -59,6 +62,10 @@ private:
         const QByteArray& output,
         const std::string& originalScript,
         qint64 elapsedMs);
+
+    // Strips <<<ROBO_LOG>>>...<<<ROBO_LOG_END>>> lines from raw output,
+    // routing each to the application log widget. Returns the cleaned buffer.
+    QByteArray drainLogs(const QByteArray& raw);
 
     std::string buildConnectionUri(const std::string& dbName) const;
     QStringList buildMongoshArgs(const std::string& uri) const;

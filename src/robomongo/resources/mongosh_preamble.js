@@ -1,19 +1,46 @@
 // ROBOMONGO MONGOSH PREAMBLE — injected once at shell startup
-// Protocol version: 2
+// Protocol version: 4
+//
+// ── Execution model ─────────────────────────────────────────────────────────
+//
+// mongosh runs every REPL input through its async-rewriter (babel), which turns
+// the asynchronous shell API (find, aggregate, cursor.toArray, hasNext, next, …)
+// into synchronous-looking calls backed by Atomics.wait. That rewriting only
+// happens for code that arrives as REPL input text — NOT for code passed to a
+// plain `eval`, `new Function`, or `require`d module.
+//
+// Earlier versions ran the user's statements via `(0, eval)`, which is not
+// rewritten. There the shell API stays async: `coll.find({})` is a
+// Promise<Cursor> and `var v = coll.find({}).toArray()` leaves `v` holding a
+// Promise instead of an array. To match the original Robomongo (synchronous
+// shell semantics), the user's code must be executed as REPL input so the
+// rewriter processes it.
+//
+// Flow per execution (driven from MongoshEngine.cpp):
+//   1. C++ → __robo_prepare("<base64 script>", "<id>")
+//        We split the script into statements, wrap each so its value is
+//        captured (__robo_push), install print capture, reset state, and emit
+//        the wrapped source (base64) back to C++.
+//   2. C++ decodes the wrapped source and sends it verbatim as REPL input, so
+//        mongosh rewrites it → cursors/toArray run synchronously, `var`s persist
+//        and stay usable across the script's lines. The wrapped source ends by
+//        calling __robo_emit("<id>").
+//   3. __robo_emit classifies the captured values (draining cursors for the
+//        first page) and prints a sentinel-framed JSON result array.
+
 (function () {
     'use strict';
-    const _print = (...args) => print(...args);
+    // Bind to the original print: __robo_prepare temporarily overrides
+    // globalThis.print to capture user output, but our sentinels must always go
+    // to the real stdout.
+    const _realPrint = print;
+    const _print = function () { return _realPrint.apply(null, arguments); };
 
-    // ── Type detection ────────────────────────────────────────────────────────
+    // ── Serialisation / type detection ─────────────────────────────────────────
 
-    function _isCursor(val) {
-        if (!val || typeof val !== 'object') return false;
-        const name = val.constructor ? val.constructor.name : '';
-        return (
-            name === 'Cursor' || name === 'DBCursor' || name === 'AggregationCursor' ||
-            name === 'CommandCursor' ||
-            (typeof val.hasNext === 'function' && typeof val.toArray === 'function')
-        );
+    function _serialize(val) {
+        if (val === undefined || val === null) return null;
+        try { return EJSON.serialize(val); } catch (_) { return { __robo_text: String(val) }; }
     }
 
     function _isWriteResult(val) {
@@ -26,37 +53,26 @@
         );
     }
 
-    function _serialize(val) {
-        if (val === undefined || val === null) return null;
-        try { return EJSON.serialize(val); } catch (_) { return { __robo_text: String(val) }; }
-    }
+    // ── Cursor metadata registry ────────────────────────────────────────────────
+    // find/aggregate record paging metadata here, keyed by the returned cursor.
+    // _classify (in __robo_emit) looks it up to build a pageable "query" result.
 
-    function _classify(val, capturedPrints) {
-        if (val === undefined) {
-            if (capturedPrints.length > 0) return { type: 'text', text: capturedPrints.join('\n') };
-            return null;
-        }
-        if (_isCursor(val)) {
-            const meta = val.__robo_meta || {};
-            let docs = [];
-            try {
-                docs = val.limit(globalThis.__robo_batchSize || 50).toArray().map(d => _serialize(d));
-            } catch (e) {
-                return { type: 'error', message: e.message, code: e.code || 0 };
-            }
-            return {
-                type: 'query', ns: meta.ns || '',
-                query: meta.query ? EJSON.stringify(meta.query) : '{}',
-                projection: meta.projection ? EJSON.stringify(meta.projection) : '{}',
-                sort: meta.sort ? EJSON.stringify(meta.sort) : '{}',
-                skip: meta.skip || 0, limit: meta.limit !== undefined ? meta.limit : -1,
-                docs: docs
-            };
-        }
-        if (_isWriteResult(val)) return { type: 'value', value: _serialize(val) };
-        if (Array.isArray(val)) return { type: 'value', value: val.map(d => _serialize(d)) };
-        if (typeof val === 'object') return { type: 'value', value: _serialize(val) };
-        return { type: 'text', text: String(val) };
+    const _metaReg = new WeakMap();
+
+    function _buildQuery(meta, serializedDocs) {
+        const result = {
+            type: 'query',
+            ns: meta.ns || '',
+            query: meta.query ? EJSON.stringify(meta.query) : '{}',
+            projection: meta.projection ? EJSON.stringify(meta.projection) : '{}',
+            sort: meta.sort ? EJSON.stringify(meta.sort) : '{}',
+            skip: meta.skip || 0,
+            limit: meta.limit !== undefined ? meta.limit : -1,
+            docs: serializedDocs
+        };
+        if (meta.pipeline !== undefined)
+            result.pipeline = EJSON.stringify({ p: meta.pipeline });
+        return result;
     }
 
     // ── Statement splitter ────────────────────────────────────────────────────
@@ -64,46 +80,28 @@
     // Splits a JS script into top-level statements without an external parser.
     // Tracks string/template/comment/regex/bracket state to avoid false splits
     // on semicolons or newlines inside those constructs.
-    //
-    // Split rules (only at bracket depth 0):
-    //   1. Explicit semicolon (;)
-    //   2. Newline, when the preceding non-whitespace character is a valid
-    //      statement-ender AND the first non-whitespace on the next line does
-    //      not look like a binary-operator continuation (.  (  [  +  -  *  /
-    //      %  &  |  ^  ?  :  ,).
-    //
-    // Limitation: regex-after-identifier (e.g. `return /re/`) is mis-classified
-    // as division, which is acceptable for typical MongoDB shell scripts.
 
     function _splitStatements(src) {
         const stmts = [];
         const n = src.length;
         let i = 0, start = 0;
-        // States: N=normal LC=line-comment BC=block-comment
-        //         Sq=single-quote Dq=double-quote Tl=template Rx=regex
-        let state = 'N';
+        let state = 'N';            // N normal, LC line-comment, BC block-comment,
+                                    // Sq/Dq/Tl/Rx string/template/regex
         let depth = 0;
-        const tmplStack = []; // depth level when a ${...} template expression opened
-        let lastNonWs = ''; // last non-whitespace char seen in Normal state
+        const tmplStack = [];
+        let lastNonWs = '';
 
-        // A character that can legitimately end a statement.
         function canEndStmt(c) { return /[\w$)\]'"`/]/.test(c); }
-
-        // Characters that, when appearing at the start of a new line, suggest
-        // the previous line is not yet a complete statement.
         function isContinuation(c) { return /^[.([+\-*/%&|^?:,]/.test(c); }
-
-        // First non-whitespace character after position i.
         function peekNext() {
             let j = i + 1;
             while (j < n && /\s/.test(src[j])) j++;
             return src[j] || '';
         }
-
         function flush(pos) {
             const s = src.slice(start, pos).trim();
             if (s) stmts.push(s);
-            start = pos + 1; // skip the delimiter character
+            start = pos + 1;
             lastNonWs = '';
         }
 
@@ -113,7 +111,6 @@
             if (state === 'LC') {
                 if (c === '\n') {
                     state = 'N';
-                    // Treat the comment-closing newline as a potential statement split
                     if (depth === 0 && canEndStmt(lastNonWs)) {
                         const next = peekNext();
                         if (next && !isContinuation(next)) { flush(i); i++; continue; }
@@ -146,59 +143,42 @@
             }
             if (state === 'Rx') {
                 if (c === '\\') { i += 2; continue; }
-                if (c === '[') { // character class — read until ]
+                if (c === '[') {
                     i++;
                     while (i < n && src[i] !== ']') { if (src[i] === '\\') i++; i++; }
                     i++; continue;
                 }
                 if (c === '/') {
-                    // end of regex: skip optional flags
                     while (i + 1 < n && /[gimsuy]/.test(src[i + 1])) i++;
                     state = 'N'; lastNonWs = '/'; i++; continue;
                 }
-                if (c === '\n') { state = 'N'; i++; continue; } // unterminated regex
+                if (c === '\n') { state = 'N'; i++; continue; }
                 i++; continue;
             }
 
-            // ── Normal state ──────────────────────────────────────────────────
-
-            // Close a template-literal expression (${...}) when depth returns
+            // Normal state
             if (c === '}' && tmplStack.length > 0 && depth === tmplStack[tmplStack.length - 1] + 1) {
                 tmplStack.pop(); depth--; state = 'Tl'; i++; continue;
             }
-
             if (c === '/' && src[i + 1] === '/') { state = 'LC'; i += 2; continue; }
             if (c === '/' && src[i + 1] === '*') { state = 'BC'; i += 2; continue; }
-
-            // / is a regex literal when preceded by an operator or at start of expression
             if (c === '/') {
                 if (!lastNonWs || /[=+\-*%&|^~<>!?:,;({[\n]/.test(lastNonWs)) {
                     state = 'Rx'; i++; continue;
                 }
                 lastNonWs = '/'; i++; continue;
             }
-
             if (c === "'") { state = 'Sq'; i++; continue; }
             if (c === '"') { state = 'Dq'; i++; continue; }
             if (c === '`') { state = 'Tl'; i++; continue; }
-
             if (c === '(' || c === '[' || c === '{') { depth++; lastNonWs = c; i++; continue; }
             if (c === ')' || c === ']')               { depth--; lastNonWs = c; i++; continue; }
             if (c === '}')                             { depth--; lastNonWs = c; i++; continue; }
-
-            // Rule 1: explicit semicolon at top level
-            if (c === ';' && depth === 0) {
-                flush(i); i++; continue;
-            }
-
-            // Rule 2: newline-triggered ASI at top level
+            if (c === ';' && depth === 0) { flush(i); i++; continue; }
             if (c === '\n' && depth === 0 && canEndStmt(lastNonWs)) {
                 const next = peekNext();
-                if (next && !isContinuation(next)) {
-                    flush(i); i++; continue;
-                }
+                if (next && !isContinuation(next)) { flush(i); i++; continue; }
             }
-
             if (/\S/.test(c)) lastNonWs = c;
             i++;
         }
@@ -208,92 +188,235 @@
         return stmts;
     }
 
-    // ── Collection.find() intercept ───────────────────────────────────────────
-    // mongosh 2.x uses the class name "Collection" (not "DBCollection"), and
-    // it's not a global — reach its prototype through a live collection object.
+    // A statement whose completion value we want to capture (i.e. not a
+    // declaration or control-flow statement that has no useful value).
+    function _isExprStmt(s) {
+        return !/^(var|let|const|function|class|if|for|while|do|switch|try|return|throw|break|continue|with|debugger|import|export)\b/.test(s)
+            && !/^[{;]/.test(s);
+    }
+
+    // ── Debug logging ─────────────────────────────────────────────────────────
+    const _ROBO_DEBUG = false;
+    const _debugBuf = [];
+    function _roboLog(msg) { if (_ROBO_DEBUG) _debugBuf.push(msg); }
+    function _flushLogs() {
+        if (!_ROBO_DEBUG) return;
+        for (const m of _debugBuf) _print('<<<ROBO_LOG>>>' + m + '<<<ROBO_LOG_END>>>');
+        _debugBuf.length = 0;
+    }
+
+    // ── Collection / cursor intercepts ──────────────────────────────────────────
+    // These run rewritten (the preamble is REPL input). find/aggregate therefore
+    // resolve to real cursors when called from rewritten user code; we just record
+    // paging metadata. Cursor chain methods update that metadata so paging honours
+    // .sort()/.skip()/.limit()/.projection().
 
     try {
-        const _collProto = Object.getPrototypeOf(db.getCollection('__robodummy__'));
-        const _origFind = _collProto.find;
-        _collProto.find = function (query, projection) {
-            const cursor = _origFind.apply(this, arguments);
+        const collProto = Object.getPrototypeOf(db.getCollection('__robodummy__'));
+
+        const origFind = collProto.find;
+        collProto.find = function (query, projection) {
+            const cursor = origFind.apply(this, arguments);
             try {
-                cursor.__robo_meta = { ns: this.getFullName(), query: query || {},
-                    projection: projection || {}, sort: {}, skip: 0, limit: -1 };
+                _metaReg.set(cursor, {
+                    ns: this.getFullName(),
+                    query: query || {}, projection: projection || {},
+                    sort: {}, skip: 0, limit: -1
+                });
             } catch (_) {}
             return cursor;
         };
-    } catch (_) {}
 
-    // ── __robo_exec ───────────────────────────────────────────────────────────
-    //
-    // Splits the user's script into top-level statements and evaluates each
-    // one separately, collecting a typed result per statement.
-    //
-    // Indirect eval ((0, eval)) is used so that `var` declarations from one
-    // statement are visible in subsequent statements (they go onto globalThis,
-    // which is the mongosh REPL context object where `db` etc. also live).
-    // `let`/`const` do not propagate across statements; users should use `var`
-    // for cross-statement variables, which is standard MongoDB shell practice.
-
-    globalThis.__robo_exec = function (scriptB64, execId) {
-        const script = Buffer.from(scriptB64, 'base64').toString('utf8');
-        const START = '<<<ROBO_START_' + execId + '>>>';
-        const END   = '<<<ROBO_END_'   + execId + '>>>';
-
-        const stmts = _splitStatements(script);
-        const output = [];
-
-        // Capture print/printjson output per statement; save originals once.
-        const origPrint     = globalThis.print;
-        const origPrintjson = globalThis.printjson;
-
-        for (const stmt of stmts) {
-            // Handle the "use <dbname>" shell command (not valid JS, handled here)
-            const useMatch = stmt.trim().match(/^use\s+(\S+)$/);
-            if (useMatch) {
-                try {
-                    db = db.getSiblingDB(useMatch[1]);
-                    output.push({ type: 'text', text: 'switched to db ' + useMatch[1] });
-                } catch (e) {
-                    output.push({ type: 'error', message: e.message, code: e.code || 0, codeName: e.codeName || '' });
-                    break;
-                }
-                continue;
-            }
-
-            const captured = [];
-            globalThis.print     = function () { captured.push(Array.from(arguments).join(' ')); };
-            globalThis.printjson = function (v) { captured.push(tojson(v)); };
-
-            let result, error;
+        const origAggregate = collProto.aggregate;
+        collProto.aggregate = function () {
+            const cursor = origAggregate.apply(this, arguments);
             try {
-                result = (0, eval)(stmt);  // eslint-disable-line no-eval
-            } catch (e) {
-                error = { type: 'error', message: e.message, code: e.code || 0, codeName: e.codeName || '' };
-            }
+                _metaReg.set(cursor, {
+                    ns: this.getFullName(),
+                    pipeline: arguments[0] || [], skip: 0
+                });
+            } catch (_) {}
+            return cursor;
+        };
 
-            // Always restore before processing results (even on error path)
-            globalThis.print     = origPrint;
-            globalThis.printjson = origPrintjson;
-
-            if (error) {
-                output.push(error);
-                break; // fail fast on error — same behaviour as original Robomongo
-            }
-
-            const classified = _classify(result, captured);
-            if (classified) output.push(classified);
-            if (captured.length > 0 && classified && classified.type !== 'text')
-                output.push({ type: 'text', text: captured.join('\n') });
+        // Patch cursor chain methods so paging metadata tracks them. Obtain the
+        // cursor prototype from a sample cursor (resolved synchronously here
+        // because the preamble is rewritten).
+        const sampleCursor = collProto.find.call(db.getCollection('__robodummy__'), {});
+        const curProto = Object.getPrototypeOf(sampleCursor);
+        const chainMethods = [['sort', 'sort'], ['skip', 'skip'], ['limit', 'limit'],
+                              ['projection', 'projection'], ['project', 'projection']];
+        for (const [method, metaKey] of chainMethods) {
+            const orig = curProto[method];
+            if (typeof orig !== 'function') continue;
+            curProto[method] = function (arg) {
+                try { const m = _metaReg.get(this); if (m) m[metaKey] = arg; } catch (_) {}
+                return orig.apply(this, arguments);
+            };
         }
+    } catch (e) {
+        _roboLog('intercept install failed: ' + (e && e.message ? e.message : String(e)));
+    }
 
-        _print(START);
-        _print(JSON.stringify(output));
-        _print(END);
+    // ── Per-execution capture state ──────────────────────────────────────────────
+
+    let _items = [];          // captured statement values, in order
+    let _pendingPrints = [];  // print() output awaiting the next push/flush
+    let _error = null;        // first uncaught error (stops the script)
+    let _origPrint = null;
+    let _origPrintjson = null;
+
+    function _flushPrints() {
+        if (_pendingPrints.length) {
+            _items.push({ kind: 'prints', data: _pendingPrints });
+            _pendingPrints = [];
+        }
+    }
+
+    // Called by the wrapped script to capture each expression statement's value.
+    globalThis.__robo_push = function (val) {
+        _flushPrints();
+        _items.push({ kind: 'value', data: val });
+    };
+    // Capture a plain status line (e.g. "switched to db x").
+    globalThis.__robo_text = function (text) {
+        _flushPrints();
+        _items.push({ kind: 'text', data: text });
     };
 
-    // ── __robo_use ────────────────────────────────────────────────────────────
+    // ── __robo_prepare ───────────────────────────────────────────────────────────
+    // Build the wrapped, REPL-rewritable source for one execution and hand it back
+    // to C++ (base64) to be sent as REPL input.
+
+    globalThis.__robo_prepare = function (scriptB64, execId) {
+        const script = Buffer.from(scriptB64, 'base64').toString('utf8');
+        const stmts = _splitStatements(script);
+
+        // Reset capture state and install print interception for the upcoming run.
+        _items = [];
+        _pendingPrints = [];
+        _error = null;
+        _origPrint = globalThis.print;
+        _origPrintjson = globalThis.printjson;
+        // print(): primitives coalesce into text lines (so loops stay one block),
+        // but an object/array argument is captured as a value so it renders as a
+        // document/array tree — matching original Robomongo's print(doc).
+        globalThis.print = function () {
+            const args = Array.from(arguments);
+            if (args.length && args.every(a => a === null || typeof a !== 'object')) {
+                _pendingPrints.push(args.map(a => String(a)).join(' '));
+                return;
+            }
+            for (const a of args) {
+                if (a !== null && typeof a === 'object') { _flushPrints(); _items.push({ kind: 'value', data: a }); }
+                else _pendingPrints.push(String(a));
+            }
+        };
+        globalThis.printjson = function (v) {
+            if (v !== null && typeof v === 'object') { _flushPrints(); _items.push({ kind: 'value', data: v }); }
+            else _pendingPrints.push(String(v));
+        };
+
+        let body = '';
+        for (const raw of stmts) {
+            const s = raw.trim();
+            if (!s) continue;
+            const useMatch = s.match(/^use\s+(\S+)$/);
+            if (useMatch) {
+                const name = JSON.stringify(useMatch[1]);
+                body += 'db = db.getSiblingDB(' + name + '); __robo_text("switched to db " + ' + name + ');\n';
+            } else if (_isExprStmt(s)) {
+                body += '__robo_push(\n(' + s + ')\n);\n';
+            } else {
+                body += s + ';\n';
+            }
+        }
+
+        const wrapped =
+            'try {\n' + body + '} catch (__robo_e) {\n' +
+            '  globalThis.__robo_set_error(__robo_e);\n' +
+            '}\n' +
+            '__robo_emit(' + JSON.stringify(execId) + ');\n';
+
+        _print('<<<ROBO_PREP_' + execId + '>>>' +
+               Buffer.from(wrapped, 'utf8').toString('base64') +
+               '<<<ROBO_PREP_END_' + execId + '>>>');
+    };
+
+    globalThis.__robo_set_error = function (e) {
+        _error = {
+            type: 'error',
+            message: (e && e.message) ? e.message : String(e),
+            code: (e && e.code) || 0,
+            codeName: (e && e.codeName) || ''
+        };
+    };
+
+    // ── __robo_emit ───────────────────────────────────────────────────────────────
+    // Classify captured values (draining cursors for the first page) and print the
+    // sentinel-framed JSON result array. Runs rewritten, so cursor iteration here is
+    // synchronous (Atomics-backed).
+
+    globalThis.__robo_emit = function (execId) {
+        // Restore print first, so result serialisation can't be captured.
+        if (_origPrint) globalThis.print = _origPrint;
+        if (_origPrintjson) globalThis.printjson = _origPrintjson;
+        _flushPrints();
+
+        const batchSize = globalThis.__robo_batchSize || 50;
+        const output = [];
+
+        for (const item of _items) {
+            if (item.kind === 'prints') {
+                output.push({ type: 'text', text: item.data.join('\n') });
+                continue;
+            }
+            if (item.kind === 'text') {
+                output.push({ type: 'text', text: item.data });
+                continue;
+            }
+            const val = item.data;
+            if (val === undefined) continue;
+
+            if (Array.isArray(val)) {
+                output.push({ type: 'array', docs: val.map(d => _serialize(d)) });
+            } else if (val && typeof val === 'object' && _metaReg.has(val)) {
+                const meta = _metaReg.get(val);
+                const docs = [];
+                try {
+                    let count = 0;
+                    while (count < batchSize && val.hasNext()) {
+                        docs.push(_serialize(val.next()));
+                        count++;
+                    }
+                } catch (e) {
+                    output.push({ type: 'error', message: e.message, code: e.code || 0 });
+                    continue;
+                }
+                output.push(_buildQuery(meta, docs));
+            } else if (_isWriteResult(val)) {
+                output.push({ type: 'value', value: _serialize(val) });
+            } else if (val && typeof val === 'object') {
+                output.push({ type: 'value', value: _serialize(val) });
+            } else {
+                output.push({ type: 'text', text: String(val) });
+            }
+        }
+
+        if (_error) output.push(_error);
+
+        _flushLogs();
+        _print('<<<ROBO_START_' + execId + '>>>');
+        _print(JSON.stringify(output));
+        _print('<<<ROBO_END_' + execId + '>>>');
+
+        // Clear state for the next run.
+        _items = [];
+        _pendingPrints = [];
+        _error = null;
+    };
+
+    // ── __robo_use ──────────────────────────────────────────────────────────────
 
     globalThis.__robo_use = function (dbNameB64) {
         const name = Buffer.from(dbNameB64, 'base64').toString('utf8');
@@ -301,14 +424,14 @@
         catch (e) { _print('<<<ROBO_USE_ERR>>>' + e.message); }
     };
 
-    // ── __robo_ping ───────────────────────────────────────────────────────────
+    // ── __robo_ping ───────────────────────────────────────────────────────────────
 
     globalThis.__robo_ping = function () {
         try { db.runCommand({ ping: 1 }); _print('<<<ROBO_PING_OK>>>'); }
         catch (e) { _print('<<<ROBO_PING_ERR>>>' + e.message); }
     };
 
-    // ── __robo_complete ───────────────────────────────────────────────────────
+    // ── __robo_complete ───────────────────────────────────────────────────────────
 
     globalThis.__robo_complete = function (prefixB64) {
         const prefix = Buffer.from(prefixB64, 'base64').toString('utf8');
@@ -323,7 +446,7 @@
         _print('<<<ROBO_COMPLETE>>>' + JSON.stringify(results) + '<<<ROBO_COMPLETE_END>>>');
     };
 
-    // ── __robo_set_batch ──────────────────────────────────────────────────────
+    // ── __robo_set_batch ──────────────────────────────────────────────────────────
 
     globalThis.__robo_set_batch = function (n) {
         globalThis.__robo_batchSize = n;
