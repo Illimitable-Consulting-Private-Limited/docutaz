@@ -150,24 +150,26 @@ jobs:
         with:
           arch: x64
 
-      # Boost is header-only here; vcpkg provides a BoostConfig.cmake that
-      # find_package(Boost) locates via CMAKE_PREFIX_PATH (set in Configure).
-      - name: Cache vcpkg boost
-        id: cache-boost
+      # vcpkg provides Boost (header-only here) and OpenSSL. find_package(Boost)
+      # and our cmake/FindOpenSSL.cmake locate them via CMAKE_PREFIX_PATH
+      # (set in Configure). mongo-c-driver uses Windows SChannel, not OpenSSL,
+      # so OpenSSL here is only for the bundled libssh2 / ssh / docutaz link.
+      - name: Cache vcpkg deps
+        id: cache-vcpkg
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}\vcpkg-boost
-          key: vcpkg-boost-smart-fs-date-algo-x64-windows-v1
+          key: vcpkg-boost-openssl-x64-windows-v2
 
-      - name: Install Boost (vcpkg)
-        if: steps.cache-boost.outputs.cache-hit != 'true'
+      - name: Install Boost + OpenSSL (vcpkg)
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           # --classic is required: the repo-root vcpkg.json would otherwise put
           # vcpkg in manifest mode (which rejects package args and would try to
           # build mongo-cxx-driver from the manifest — we build that separately).
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install --classic `
-            boost-filesystem boost-date-time boost-algorithm boost-smart-ptr `
+            boost-filesystem boost-date-time boost-algorithm boost-smart-ptr openssl `
             --triplet x64-windows `
             --x-install-root="$env:GITHUB_WORKSPACE\vcpkg-boost"
 
@@ -216,7 +218,7 @@ jobs:
           cmake -S . -B build -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 `
+            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" `
             -DDOCUTAZ_BUILD_TESTS=OFF `
             -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-boost\x64-windows"
 
@@ -246,6 +248,12 @@ jobs:
           $mongoBin = "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin"
           if (Test-Path $mongoBin) {
             Get-ChildItem $mongoBin -Filter "*.dll" | Copy-Item -Destination $outDir
+          }
+          # OpenSSL runtime DLLs (libssh2 links them dynamically)
+          $vcpkgBin = "$env:GITHUB_WORKSPACE\vcpkg-boost\x64-windows\bin"
+          if (Test-Path $vcpkgBin) {
+            Get-ChildItem $vcpkgBin -Filter "libssl*.dll"    | Copy-Item -Destination $outDir
+            Get-ChildItem $vcpkgBin -Filter "libcrypto*.dll" | Copy-Item -Destination $outDir
           }
           Compress-Archive -Path $outDir -DestinationPath "docutaz-$ver-windows-x86_64.zip"
 

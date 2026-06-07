@@ -112,13 +112,17 @@ endif()
     
 # todo: refactor
 if(SYSTEM_WINDOWS)
+    # Locate the import libraries rather than assuming a flat layout — vcpkg and
+    # most OpenSSL distributions put them under lib/ (libssl.lib / libcrypto.lib).
+    find_library(_OPENSSL_SSL_LIB    NAMES ssl libssl ssleay32      HINTS "${OpenSSL_DIR}/lib" "${OpenSSL_DIR}")
+    find_library(_OPENSSL_CRYPTO_LIB NAMES crypto libcrypto libeay32 HINTS "${OpenSSL_DIR}/lib" "${OpenSSL_DIR}")
     set_target_properties(ssl PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES   "${OpenSSL_DIR}/include"
-        IMPORTED_IMPLIB                 "${OpenSSL_DIR}/libssl.lib"
+        IMPORTED_IMPLIB                 "${_OPENSSL_SSL_LIB}"
     )
     set_target_properties(crypto PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES   "${OpenSSL_DIR}/include"
-        IMPORTED_IMPLIB                 "${OpenSSL_DIR}/libcrypto.lib"
+        IMPORTED_IMPLIB                 "${_OPENSSL_CRYPTO_LIB}"
     )
 else()
   find_library(_OPENSSL_SSL_LIB NAMES ssl ssleay32 HINTS "${OpenSSL_DIR}/lib64" "${OpenSSL_DIR}/lib" NO_DEFAULT_PATH)
