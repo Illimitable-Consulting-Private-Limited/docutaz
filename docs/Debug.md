@@ -18,7 +18,7 @@ GUI: http://dependencywalker.com/
 
 CMD LINE:   
 Open Visual Studio Native command prompt  
-`dumpbin /dependents robo3t.exe`
+`dumpbin /dependents docutaz.exe`
 
 ### Linux
 

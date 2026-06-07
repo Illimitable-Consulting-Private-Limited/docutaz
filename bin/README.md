@@ -24,8 +24,4 @@ Pack Robomongo:
 
     $ bin/pack
 
-More: 
-- [Build Robo 3T - Mac OS X and Linux](https://github.com/paralect/robomongo/blob/master/docs/BuildRobo3TOnMacAndLinux.md) 
-- [Build Robo 3T - Windows](https://github.com/paralect/robomongo/blob/master/docs/BuildRobo3TOnWindows.md)
-- [Unit Tests](wiki/Unit-Tests)
-- [Static Code Analysis](wiki/Static-Code-Analysis)
+See the top-level [README](../README.md) for full build instructions.
