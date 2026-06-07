@@ -146,7 +146,10 @@ jobs:
         if: steps.cache-boost.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install `
+          # --classic is required: the repo-root vcpkg.json would otherwise put
+          # vcpkg in manifest mode (which rejects package args and would try to
+          # build mongo-cxx-driver from the manifest — we build that separately).
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install --classic `
             boost-filesystem boost-date-time boost-algorithm boost-smart-ptr `
             --triplet x64-windows `
             --x-install-root="$env:GITHUB_WORKSPACE\vcpkg-boost"
