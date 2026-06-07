@@ -8,7 +8,7 @@
 # - Imported shared(dynamic) libraries "ssl" and "crypto" are created.
 #
 # - It is assumed that OpenSSL has been built and path to OpenSSL build directory is 
-#   added into system(environment) variable ROBOMONGO_CMAKE_PREFIX_PATH.
+#   added into system(environment) variable DOCUTAZ_CMAKE_PREFIX_PATH.
 #
 ##################################################
 

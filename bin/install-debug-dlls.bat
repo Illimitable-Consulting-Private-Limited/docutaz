@@ -13,7 +13,7 @@ if not exist %INSTALL_DIR%*.dll (
 )
 
 rem // Find OpenSSL and Qt paths
-for %%i in (%ROBOMONGO_CMAKE_PREFIX_PATH%) do (
+for %%i in (%DOCUTAZ_CMAKE_PREFIX_PATH%) do (
   set xx=%%i
   if not "!xx!"=="!xx:ssl=!" ( set OPENSSL_DIR=!xx! )
   if not "!xx!"=="!xx:qt=!" ( set Qt_DIR=!xx! )

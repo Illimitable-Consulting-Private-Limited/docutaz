@@ -25,6 +25,6 @@ INSTALL_PREFIX=$BUILD_DIR/install
 # i.e. /path/to/robomongo/build/debug/package
 PACK_PREFIX=$BUILD_DIR/package
 
-PREFIX_PATH=$ROBOMONGO_CMAKE_PREFIX_PATH
+PREFIX_PATH=$DOCUTAZ_CMAKE_PREFIX_PATH
 
 mkdir -p $BUILD_DIR
