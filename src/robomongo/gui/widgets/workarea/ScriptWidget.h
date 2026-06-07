@@ -9,7 +9,7 @@ QT_END_NAMESPACE
 #include "robomongo/core/domain/MongoShellResult.h"
 #include "robomongo/core/domain/CursorPosition.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class FindFrame;
     class TopStatusBar;

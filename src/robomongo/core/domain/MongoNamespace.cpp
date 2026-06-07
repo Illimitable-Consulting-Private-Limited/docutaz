@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     MongoNamespace::MongoNamespace(const std::string &ns) :
         _ns(ns)

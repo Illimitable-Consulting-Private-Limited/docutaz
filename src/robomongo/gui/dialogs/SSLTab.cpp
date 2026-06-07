@@ -43,7 +43,7 @@ namespace
     QString const CRL_FILE_HINT = " mongo --tlsCRLFile : Certificate Revocation List file for TLS";
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     SSLTab::SSLTab(ConnectionSettings *connSettings) 
         : _connSettings(connSettings)

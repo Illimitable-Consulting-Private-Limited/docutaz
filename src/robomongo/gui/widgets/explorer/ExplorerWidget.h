@@ -9,7 +9,7 @@ QT_END_NAMESPACE
 
 #include "robomongo/core/events/MongoEvents.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MainWindow;
 

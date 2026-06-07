@@ -28,7 +28,7 @@
 #include "robomongo/gui/widgets/workarea/WelcomeTab.h"
 #include "robomongo/utils/common.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     
     /* ------------------------ ConnectionListWidgetItem ------------------------ */

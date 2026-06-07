@@ -1,7 +1,7 @@
 #include "robomongo/core/EventBusDispatcher.h"
 #include "robomongo/core/EventWrapper.h"
 
-namespace Robomongo
+namespace Docutaz
 {
 
     EventBusDispatcher::EventBusDispatcher(QObject *parent) :

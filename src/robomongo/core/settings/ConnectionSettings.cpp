@@ -21,7 +21,7 @@ namespace
     const int maxLength = 300;
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * Creates ConnectionSettings with default values

@@ -8,7 +8,7 @@
 #include <QPlainTextEdit>
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     LogWidget::LogWidget(QWidget* parent) 
         : BaseClass(parent), _logTextEdit(new QTextEdit(this))

@@ -12,7 +12,7 @@
 #include "robomongo/core/settings/ConnectionSettings.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
 
     ExplorerFunctionTreeItem::ExplorerFunctionTreeItem(QTreeWidgetItem *parent, MongoDatabase *database, 

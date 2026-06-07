@@ -9,7 +9,7 @@
 #include "robomongo/core/events/MongoEvents.h"
 #include "robomongo/core/utils/SingletonPattern.hpp"
 
-namespace Robomongo
+namespace Docutaz
 {  
     class Logger : public QObject, public Patterns::LazySingleton<Logger>
     {

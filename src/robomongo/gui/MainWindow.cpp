@@ -62,34 +62,34 @@ namespace
         toolBar->setIconSize(QSize(size, size));
     }
 
-    void saveViewMode(Robomongo::ViewMode mode)
+    void saveViewMode(Docutaz::ViewMode mode)
     {
-        Robomongo::AppRegistry::instance().settingsManager()->setViewMode(mode);
-        Robomongo::AppRegistry::instance().settingsManager()->save();
+        Docutaz::AppRegistry::instance().settingsManager()->setViewMode(mode);
+        Docutaz::AppRegistry::instance().settingsManager()->save();
     }
     
     void saveAutoExpand(bool isExpand)
     {
-        Robomongo::AppRegistry::instance().settingsManager()->setAutoExpand(isExpand);
-        Robomongo::AppRegistry::instance().settingsManager()->save();
+        Docutaz::AppRegistry::instance().settingsManager()->setAutoExpand(isExpand);
+        Docutaz::AppRegistry::instance().settingsManager()->save();
     }
     
     void saveAutoExec(bool isAutoExec)
     {
-        Robomongo::AppRegistry::instance().settingsManager()->setAutoExec(isAutoExec);
-        Robomongo::AppRegistry::instance().settingsManager()->save();
+        Docutaz::AppRegistry::instance().settingsManager()->setAutoExec(isAutoExec);
+        Docutaz::AppRegistry::instance().settingsManager()->save();
     }
 
     void saveMinimizeToTraySettings(bool isMinimizingToTray)
     {
-        Robomongo::AppRegistry::instance().settingsManager()->setMinimizeToTray(isMinimizingToTray);
-        Robomongo::AppRegistry::instance().settingsManager()->save();
+        Docutaz::AppRegistry::instance().settingsManager()->setMinimizeToTray(isMinimizingToTray);
+        Docutaz::AppRegistry::instance().settingsManager()->save();
     }
 
     void saveLineNumbers(bool showLineNumbers)
     {
-        Robomongo::AppRegistry::instance().settingsManager()->setLineNumbers(showLineNumbers);
-        Robomongo::AppRegistry::instance().settingsManager()->save();
+        Docutaz::AppRegistry::instance().settingsManager()->setLineNumbers(showLineNumbers);
+        Docutaz::AppRegistry::instance().settingsManager()->save();
     }
 
 
@@ -97,7 +97,7 @@ namespace
 /* End of anonymous namespace */
 
 
-namespace Robomongo
+namespace Docutaz
 {
 /* -------------------------------- ConnectionMenu ---------------------------- */
     class ConnectionMenu : public QMenu
@@ -149,7 +149,7 @@ namespace Robomongo
 
         qApp->setStyleSheet(QString(
             "QWidget#queryWidget { background-color:#E7E5E4; margin: 0px; padding:0px; } \n"
-            "Robomongo--ExplorerTreeWidget#explorerTree { padding: 1px 0px 0px 0px; background-color: %1; border: 0px; } \n"
+            "Docutaz--ExplorerTreeWidget#explorerTree { padding: 1px 0px 0px 0px; background-color: %1; border: 0px; } \n"
             "QMainWindow::separator { background: #E7E5E4; width: 1px; } \n"
             "QMessageBox { messagebox-text-interaction-flags: 5; }"  // Make QMessageBox text selectable
         ).arg(explorerColor));
@@ -581,7 +581,7 @@ namespace Robomongo
         _updateLabel->setIndent(_updateLabel->fontMetrics().width("T"));
 
         _closeButton = new QPushButton;
-        _closeButton->setIcon(QIcon(":/robomongo/icons/close_hover_16x16.png"));
+        _closeButton->setIcon(QIcon(":/docutaz/icons/close_hover_16x16.png"));
         _closeButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
         _closeButton->setMouseTracking(true);
         _closeButton->setAttribute(Qt::WA_Hover);
@@ -1221,11 +1221,11 @@ namespace Robomongo
             return false;
 
         if (event->type() == QEvent::HoverEnter) {
-            closeUpdatesBarButton->setIcon(QIcon(":/robomongo/icons/close_hover_16x16_original.png"));
+            closeUpdatesBarButton->setIcon(QIcon(":/docutaz/icons/close_hover_16x16_original.png"));
             return true;
         }
         else  if (event->type() == QEvent::HoverLeave) {
-            closeUpdatesBarButton->setIcon(QIcon(":/robomongo/icons/close_hover_16x16.png"));
+            closeUpdatesBarButton->setIcon(QIcon(":/docutaz/icons/close_hover_16x16.png"));
             return true;
         }
 

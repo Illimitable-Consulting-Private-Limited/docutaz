@@ -3,7 +3,7 @@
 #include "robomongo/core/events/MongoEvents.h"
 #include "robomongo/gui/widgets/explorer/ExplorerTreeItem.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class EventBus;
     class MongoServerLoadingDatabasesEvent;

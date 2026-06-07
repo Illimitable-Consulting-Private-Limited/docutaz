@@ -3,9 +3,9 @@
 
 namespace
 {
-    const char *viewModeAsoc[Robomongo::Custom+1] = {"Text mode", "Tree mode", "Table mode", "Custom mode"};
-    const char *timesAsoc[Robomongo::LocalTime+1] = {"UTC", "Local Timezone"};
-    const char *uuidAsoc[Robomongo::PythonLegacy+1] = {"Default encoding", "Java encoding", "CSharp encoding", "Python encoding"};
+    const char *viewModeAsoc[Docutaz::Custom+1] = {"Text mode", "Tree mode", "Table mode", "Custom mode"};
+    const char *timesAsoc[Docutaz::LocalTime+1] = {"UTC", "Local Timezone"};
+    const char *uuidAsoc[Docutaz::PythonLegacy+1] = {"Default encoding", "Java encoding", "CSharp encoding", "Python encoding"};
 
     template<typename type, int size>
     inline type findTypeInArray(const char *(&arr)[size], const char *text)
@@ -21,7 +21,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     const char *convertUUIDEncodingToString(UUIDEncoding uuidCode)
     {

@@ -2,7 +2,7 @@
 
 #include <QObject>
 
-namespace Robomongo
+namespace Docutaz
 {
     class EventBusDispatcher;
     struct EventBusSubscriber

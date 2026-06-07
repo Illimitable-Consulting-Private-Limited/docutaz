@@ -33,7 +33,7 @@ namespace
         ;
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     R_REGISTER_EVENT(CollectionIndexesLoadingEvent)      
 

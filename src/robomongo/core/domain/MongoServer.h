@@ -4,7 +4,7 @@
 #include "robomongo/core/settings/ConnectionSettings.h"
 #include "robomongo/core/events/MongoEvents.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoWorker;
     class MongoDatabase;

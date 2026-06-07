@@ -1,7 +1,7 @@
 #pragma once
 #include <QObject>
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief The EventBusDispatcher class

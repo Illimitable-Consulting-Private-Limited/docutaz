@@ -47,7 +47,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     ScriptWidget::ScriptWidget(MongoShell *shell, QueryWidget *parent) :
         _shell(shell),

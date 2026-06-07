@@ -19,7 +19,7 @@
 #include "robomongo/gui/widgets/explorer/ExplorerUserTreeItem.h"
 #include "robomongo/utils/common.h"
 
-namespace Robomongo
+namespace Docutaz
 {
 
     ExplorerWidget::ExplorerWidget(MainWindow *parentMainWindow) : BaseClass(parentMainWindow),

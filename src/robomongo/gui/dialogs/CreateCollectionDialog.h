@@ -13,7 +13,7 @@ class QComboBox;
 QT_END_NAMESPACE
 class QsciScintilla;
 
-namespace Robomongo
+namespace Docutaz
 {
     class FindFrame;
     class Indicator;

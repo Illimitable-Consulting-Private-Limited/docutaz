@@ -11,7 +11,7 @@ QT_END_NAMESPACE
 
 #include "robomongo/core/domain/MongoUser.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class CreateUserDialog : public QDialog
     {

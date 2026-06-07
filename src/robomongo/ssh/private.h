@@ -1,5 +1,5 @@
-#ifndef ROBOMONGO_SSH_PRIVATE_H
-#define ROBOMONGO_SSH_PRIVATE_H
+#ifndef DOCUTAZ_SSH_PRIVATE_H
+#define DOCUTAZ_SSH_PRIVATE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,4 +96,4 @@ int rbm_array_remove(void ***array, int *currentsize, void *data);
 #ifdef __cplusplus
 }
 #endif
-#endif // ROBOMONGO_SSH_PRIVATE_H
+#endif // DOCUTAZ_SSH_PRIVATE_H

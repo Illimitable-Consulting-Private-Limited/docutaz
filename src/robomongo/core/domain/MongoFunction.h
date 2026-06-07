@@ -2,7 +2,7 @@
 
 #include <mongo/bson/bsonobj.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoFunction
     {

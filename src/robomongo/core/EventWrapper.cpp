@@ -1,5 +1,5 @@
 #include "robomongo/core/EventWrapper.h"
-namespace Robomongo
+namespace Docutaz
 {
     EventWrapper::EventWrapper(Event *event, QList<QObject *> receivers) 
         : QEvent(event->type()), _event(event), _receivers(receivers) {}

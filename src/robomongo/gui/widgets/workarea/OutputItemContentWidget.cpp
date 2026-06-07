@@ -22,7 +22,7 @@
 #include "robomongo/gui/editors/JSLexer.h"
 #include "robomongo/gui/editors/FindFrame.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     OutputItemContentWidget::OutputItemContentWidget(ViewMode viewMode, MongoShell *shell, 
                                                      const QString &text, double secs, bool multipleResults, 
@@ -408,7 +408,7 @@ namespace Robomongo
         return _mod;
     }
 
-    FindFrame *Robomongo::OutputItemContentWidget::configureLogText()
+    FindFrame *Docutaz::OutputItemContentWidget::configureLogText()
     {
         const QFont &textFont = GuiRegistry::instance().font();
 

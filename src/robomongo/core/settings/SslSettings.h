@@ -4,7 +4,7 @@
 #include <QVariant>
 #include <QVariantMap>
 
-namespace Robomongo
+namespace Docutaz
 {
     class SslSettings
     {

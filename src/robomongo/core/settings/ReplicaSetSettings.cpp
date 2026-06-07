@@ -2,7 +2,7 @@
 
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
 
     ReplicaSetSettings::ReplicaSetSettings() 

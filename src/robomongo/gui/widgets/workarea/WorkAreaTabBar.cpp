@@ -4,7 +4,7 @@
 #include <QTabWidget>
 #include <QScrollArea>
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief Creates WorkAreaTabBar, without parent widget. We are
@@ -157,15 +157,15 @@ namespace Robomongo
             #endif
             "QTabBar::close-button { "
             #ifdef __APPLE__           
-                "image: url(:/robomongo/icons/close_2_Mac_16x16.png);"                
+                "image: url(:/docutaz/icons/close_2_Mac_16x16.png);"                
             #else      
-                "image: url(:/robomongo/icons/close_2_16x16.png);"
+                "image: url(:/docutaz/icons/close_2_16x16.png);"
             #endif      
                 "width: 10px;"
                 "height: 10px;"
             "}"
             "QTabBar::close-button:hover { "
-                  "image: url(:/robomongo/icons/close_hover_16x16.png);"
+                  "image: url(:/docutaz/icons/close_hover_16x16.png);"
                   "width: 15px;"
                   "height: 15px;"
             "}"

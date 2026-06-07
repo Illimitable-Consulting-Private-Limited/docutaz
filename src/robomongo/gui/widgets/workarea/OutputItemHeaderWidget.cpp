@@ -26,7 +26,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
 
     OutputItemHeaderWidget::OutputItemHeaderWidget(

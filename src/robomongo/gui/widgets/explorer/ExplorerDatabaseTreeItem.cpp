@@ -24,15 +24,15 @@
 
 namespace
 {
-    void openCurrentDatabaseShell(Robomongo::MongoDatabase *database, const QString &script, bool execute = true, 
-                                  const Robomongo::CursorPosition &cursor = Robomongo::CursorPosition())
+    void openCurrentDatabaseShell(Docutaz::MongoDatabase *database, const QString &script, bool execute = true, 
+                                  const Docutaz::CursorPosition &cursor = Docutaz::CursorPosition())
     {
-        Robomongo::AppRegistry::instance().app()->openShell(database, script, execute, 
-                                                            Robomongo::QtUtils::toQString(database->name()), cursor);
+        Docutaz::AppRegistry::instance().app()->openShell(database, script, execute, 
+                                                            Docutaz::QtUtils::toQString(database->name()), cursor);
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace detail
     {

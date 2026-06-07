@@ -8,7 +8,7 @@ QT_END_NAMESPACE
 #include "robomongo/core/domain/MongoShellResult.h"
 #include "robomongo/core/Enums.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class OutputItemContentWidget;
     class ProgressBarPopup;

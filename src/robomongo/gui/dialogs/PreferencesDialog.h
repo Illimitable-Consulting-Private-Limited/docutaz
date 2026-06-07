@@ -7,7 +7,7 @@ class QCheckBox;
 class QLineEdit;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class PreferencesDialog : public QDialog
     {

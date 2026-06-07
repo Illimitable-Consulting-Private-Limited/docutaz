@@ -9,7 +9,7 @@ class QAction;
 class QMenu;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class MainWindow;
     class MongoShell;

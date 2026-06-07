@@ -4,7 +4,7 @@
 #include "robomongo/core/domain/ScriptInfo.h"
 #include "robomongo/core/domain/MongoAggregateInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     struct AggrInfo;
 

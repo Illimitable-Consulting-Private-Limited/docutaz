@@ -14,7 +14,7 @@
 #include "robomongo/core/settings/ConnectionSettings.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ExplorerUserTreeItem::ExplorerUserTreeItem(
         QTreeWidgetItem *parent, MongoDatabase *const database, const MongoUser &user) 
@@ -49,7 +49,7 @@ namespace Robomongo
 
     void ExplorerUserTreeItem::ui_viewUser()
     {
-        auto const& app { Robomongo::AppRegistry::instance().app() };
+        auto const& app { Docutaz::AppRegistry::instance().app() };
         app->openShell(
             _database, QString::fromStdString("db.getUser(\"" + _user.name() + "\")"), true,
             QtUtils::toQString(_database->name()), CursorPosition()

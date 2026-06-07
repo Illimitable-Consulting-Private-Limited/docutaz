@@ -10,7 +10,7 @@
 #include "robomongo/core/settings/SettingsManager.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     Logger::Logger()
     {

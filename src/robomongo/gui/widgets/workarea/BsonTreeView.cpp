@@ -10,7 +10,7 @@
 #include "robomongo/gui/widgets/workarea/BsonTreeItem.h"
 #include "robomongo/gui/widgets/workarea/OutputWidget.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     BsonTreeView::BsonTreeView(MongoShell *shell, const MongoQueryInfo &queryInfo, QWidget *parent)
         : BaseClass(parent), _notifier(this, shell, queryInfo), 

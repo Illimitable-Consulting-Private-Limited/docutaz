@@ -5,7 +5,7 @@
 #include <mongo/bson/bsonobj.h>
 #include <mongo/bson/bsonelement.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief BSON tree item (represents array or object)

@@ -19,7 +19,7 @@ struct Status {
     static Status OK() { return {true, ""}; }
 };
 
-namespace Robomongo {
+namespace Docutaz {
 
 class ParseMsgAssertionException : public std::exception {
 public:
@@ -43,5 +43,5 @@ BSONObj fromjson(const std::string& str);
 // Parse with length output (len = number of JSON chars consumed).
 BSONObj fromjson(const char* str, int* len = nullptr);
 
-}  // namespace Robomongo
+}  // namespace Docutaz
 }  // namespace mongo

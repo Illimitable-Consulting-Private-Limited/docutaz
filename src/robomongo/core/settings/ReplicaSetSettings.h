@@ -8,7 +8,7 @@
 #include <mongo/util/net/hostandport.h>
 #include <mongo/client/mongo_uri.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     class ReplicaSetSettings
     {

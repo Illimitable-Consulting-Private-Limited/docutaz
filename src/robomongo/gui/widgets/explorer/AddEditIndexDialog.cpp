@@ -30,7 +30,7 @@ namespace
         bool result = false;
         if (!text.isEmpty()) {
             try {
-                mongo::Robomongo::fromjson(text.toUtf8());
+                mongo::Docutaz::fromjson(text.toUtf8());
                 result = true;
             }
             catch (const std::exception &) {
@@ -53,12 +53,12 @@ namespace
         return helpLabel;
     }
 
-    Robomongo::FindFrame *createFindFrame(QWidget *parent = NULL, const QString &text = QString())
+    Docutaz::FindFrame *createFindFrame(QWidget *parent = NULL, const QString &text = QString())
     {
-        const QFont &textFont = Robomongo::GuiRegistry::instance().font();
-        QsciLexerJavaScript *javaScriptLexer = new Robomongo::JSLexer(parent);
+        const QFont &textFont = Docutaz::GuiRegistry::instance().font();
+        QsciLexerJavaScript *javaScriptLexer = new Docutaz::JSLexer(parent);
         javaScriptLexer->setFont(textFont);
-        Robomongo::FindFrame *findFrame = new Robomongo::FindFrame(parent);
+        Docutaz::FindFrame *findFrame = new Docutaz::FindFrame(parent);
         findFrame->sciScintilla()->setLexer(javaScriptLexer);
         findFrame->sciScintilla()->setTabWidth(4);
         findFrame->sciScintilla()->setAppropriateBraceMatching();
@@ -70,7 +70,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     AddEditIndexDialog::AddEditIndexDialog(
         const IndexInfo &info, const QString &databaseName, const QString &serverAdress, 

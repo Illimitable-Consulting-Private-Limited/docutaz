@@ -17,7 +17,7 @@
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/settings/SettingsManager.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     PreferencesDialog::PreferencesDialog(QWidget *parent)
         : BaseClass(parent)
@@ -108,32 +108,32 @@ namespace Robomongo
     void PreferencesDialog::syncWithSettings()
     {
 
-        utils::setCurrentText(_defDisplayModeComboBox, convertViewModeToString(Robomongo::AppRegistry::instance().settingsManager()->viewMode()));
-        utils::setCurrentText(_timeZoneComboBox, convertTimesToString(Robomongo::AppRegistry::instance().settingsManager()->timeZone()));
-        utils::setCurrentText(_uuidEncodingComboBox, convertUUIDEncodingToString(Robomongo::AppRegistry::instance().settingsManager()->uuidEncoding()));
+        utils::setCurrentText(_defDisplayModeComboBox, convertViewModeToString(Docutaz::AppRegistry::instance().settingsManager()->viewMode()));
+        utils::setCurrentText(_timeZoneComboBox, convertTimesToString(Docutaz::AppRegistry::instance().settingsManager()->timeZone()));
+        utils::setCurrentText(_uuidEncodingComboBox, convertUUIDEncodingToString(Docutaz::AppRegistry::instance().settingsManager()->uuidEncoding()));
         _loadMongoRcJsCheckBox->setChecked(AppRegistry::instance().settingsManager()->loadMongoRcJs());
         _disabelConnectionShortcutsCheckBox->setChecked(AppRegistry::instance().settingsManager()->disableConnectionShortcuts());
-        utils::setCurrentText(_stylesComboBox, Robomongo::AppRegistry::instance().settingsManager()->currentStyle());
+        utils::setCurrentText(_stylesComboBox, Docutaz::AppRegistry::instance().settingsManager()->currentStyle());
         _mongoshPathEdit->setText(AppRegistry::instance().settingsManager()->mongoshPath());
     }
 
     void PreferencesDialog::accept()
     {
         ViewMode mode = convertStringToViewMode(QtUtils::toStdString(_defDisplayModeComboBox->currentText()).c_str());
-        Robomongo::AppRegistry::instance().settingsManager()->setViewMode(mode);
+        Docutaz::AppRegistry::instance().settingsManager()->setViewMode(mode);
 
         SupportedTimes time = convertStringToTimes(QtUtils::toStdString(_timeZoneComboBox->currentText()).c_str());
-        Robomongo::AppRegistry::instance().settingsManager()->setTimeZone(time);
+        Docutaz::AppRegistry::instance().settingsManager()->setTimeZone(time);
 
         UUIDEncoding uuidC = convertStringToUUIDEncoding(QtUtils::toStdString(_uuidEncodingComboBox->currentText()).c_str());
-        Robomongo::AppRegistry::instance().settingsManager()->setUuidEncoding(uuidC);
+        Docutaz::AppRegistry::instance().settingsManager()->setUuidEncoding(uuidC);
 
         AppRegistry::instance().settingsManager()->setLoadMongoRcJs(_loadMongoRcJsCheckBox->isChecked());
         AppRegistry::instance().settingsManager()->setDisableConnectionShortcuts(_disabelConnectionShortcutsCheckBox->isChecked());
-        Robomongo::AppRegistry::instance().settingsManager()->setCurrentStyle(_stylesComboBox->currentText());
+        Docutaz::AppRegistry::instance().settingsManager()->setCurrentStyle(_stylesComboBox->currentText());
         AppStyleUtils::applyStyle(_stylesComboBox->currentText());
         AppRegistry::instance().settingsManager()->setMongoshPath(_mongoshPathEdit->text().trimmed());
-        Robomongo::AppRegistry::instance().settingsManager()->save();
+        Docutaz::AppRegistry::instance().settingsManager()->save();
 
         return BaseClass::accept();
     }

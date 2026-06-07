@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace HexUtils
     {
@@ -89,7 +89,7 @@ namespace Robomongo
             return hexToUuid(hex);
         }
 
-        std::string uuidToHex(const std::string &uuid, Robomongo::UUIDEncoding encoding)
+        std::string uuidToHex(const std::string &uuid, Docutaz::UUIDEncoding encoding)
         {
             switch(encoding) {
             case DefaultEncoding: return uuidToHex(uuid);
@@ -154,7 +154,7 @@ namespace Robomongo
             return uuidToHex(uuid);
         }
 
-        std::string formatUuid(const mongo::BSONElement &element, Robomongo::UUIDEncoding encoding)
+        std::string formatUuid(const mongo::BSONElement &element, Docutaz::UUIDEncoding encoding)
         {
             mongo::BinDataType binType = element.binDataType();
 

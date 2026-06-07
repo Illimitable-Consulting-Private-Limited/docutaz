@@ -3,7 +3,7 @@
 
 #include "robomongo/core/mongodb/ReplicaSet.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief Error object is a part of every Event in Robomongo. Before the

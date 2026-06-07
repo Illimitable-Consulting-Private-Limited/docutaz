@@ -5,7 +5,7 @@
 
 #include "robomongo/core/Core.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionListWidgetItem;
     class SettingsManager;

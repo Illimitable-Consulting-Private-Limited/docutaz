@@ -9,7 +9,7 @@ QT_END_NAMESPACE
 #include "robomongo/core/domain/MongoShellResult.h"
 #include "robomongo/gui/widgets/workarea/PagingWidget.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class OutputItemContentWidget;
     class Indicator;

@@ -8,7 +8,7 @@ QT_END_NAMESPACE
 
 #include "robomongo/core/domain/MongoFunction.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class FindFrame;
 

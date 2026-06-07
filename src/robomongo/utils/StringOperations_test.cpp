@@ -14,6 +14,6 @@
 
 TEST(StringOperationsTests, captilizeFirstChar)
 {
-    // EXPECT_EQ("Abcc", Robomongo::captilizeFirstChar("abc")); // Simulating failing test
-    EXPECT_EQ("Abc", Robomongo::captilizeFirstChar("abc")); // Simulating passing test
+    // EXPECT_EQ("Abcc", Docutaz::captilizeFirstChar("abc")); // Simulating failing test
+    EXPECT_EQ("Abc", Docutaz::captilizeFirstChar("abc")); // Simulating passing test
 }

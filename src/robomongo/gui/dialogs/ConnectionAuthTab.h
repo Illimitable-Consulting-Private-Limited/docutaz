@@ -12,7 +12,7 @@ class QPushButton;
 class QComboBox;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
 

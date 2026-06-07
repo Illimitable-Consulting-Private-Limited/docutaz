@@ -8,7 +8,7 @@
 #include <mongo/client/mongo_uri.h>
 #include <mongo/util/net/hostandport.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     class CredentialSettings;
     class SshSettings;
@@ -183,4 +183,4 @@ namespace Robomongo
     };
 }
 
-Q_DECLARE_METATYPE(Robomongo::ConnectionSettings *)
+Q_DECLARE_METATYPE(Docutaz::ConnectionSettings *)

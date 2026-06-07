@@ -2,7 +2,7 @@
 
 #include <QString>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace MongoUtils
     {

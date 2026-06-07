@@ -6,7 +6,7 @@
 #include <QContextMenuEvent>
 #include <robomongo/gui/GuiRegistry.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     ExplorerTreeWidget::ExplorerTreeWidget(QWidget *parent) : QTreeWidget(parent)
     {

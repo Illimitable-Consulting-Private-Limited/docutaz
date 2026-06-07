@@ -16,7 +16,7 @@
 #include "robomongo/gui/GuiRegistry.h"
 
 
-namespace Robomongo
+namespace Docutaz
 {
     const QSize CopyCollection::minimumSize = QSize(300, 150);
 

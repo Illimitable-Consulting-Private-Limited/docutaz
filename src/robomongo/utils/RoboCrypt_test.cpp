@@ -21,8 +21,8 @@ TEST(RoboCrypt_CoreTests, encrypt_decrypt)
         "<>?/.,;':][p{}|\""
     };
     for (auto const& pwd : pwds) {
-        const std::string encryptedPwd = Robomongo::RoboCrypt::encrypt(pwd);
-        const std::string decryptedPwd = Robomongo::RoboCrypt::decrypt(encryptedPwd);
+        const std::string encryptedPwd = Docutaz::RoboCrypt::encrypt(pwd);
+        const std::string decryptedPwd = Docutaz::RoboCrypt::decrypt(encryptedPwd);
         EXPECT_EQ(pwd, decryptedPwd);
     }
 }

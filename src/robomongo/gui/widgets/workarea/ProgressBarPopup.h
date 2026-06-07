@@ -5,7 +5,7 @@ QT_BEGIN_NAMESPACE
 class QLabel;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ProgressBarPopup : public QFrame
     {

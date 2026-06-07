@@ -1,6 +1,6 @@
 #include "robomongo/core/events/MongoEventsInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     IndexInfo::IndexInfo(
         const MongoCollectionInfo &collection, const std::string &name, const std::string &keys,

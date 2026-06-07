@@ -1,5 +1,5 @@
-#ifndef ROBOMONGO_SSH_H
-#define ROBOMONGO_SSH_H
+#ifndef DOCUTAZ_SSH_H
+#define DOCUTAZ_SSH_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -68,4 +68,4 @@ void rbm_ssh_session_close(struct rbm_ssh_session *session);
 #ifdef __cplusplus
 }
 #endif
-#endif // ROBOMONGO_SSH_H
+#endif // DOCUTAZ_SSH_H

@@ -3,7 +3,7 @@
 #include "robomongo/core/domain/MongoFunction.h"
 #include "robomongo/gui/widgets/explorer/ExplorerTreeItem.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoDatabase;
 

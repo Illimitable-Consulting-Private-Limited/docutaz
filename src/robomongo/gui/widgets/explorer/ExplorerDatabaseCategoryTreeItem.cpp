@@ -17,7 +17,7 @@
 #include "robomongo/core/utils/QtUtils.h"
 
 
-namespace Robomongo
+namespace Docutaz
 {
 
     void openDatabaseShell(MongoDatabase *database, const QString &script, 

@@ -11,7 +11,7 @@
 #include "robomongo/core/domain/MongoFunction.h"
 #include "robomongo/core/events/MongoEventsInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoClient
     {

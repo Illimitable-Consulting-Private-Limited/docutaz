@@ -20,15 +20,15 @@
 
 namespace
 {
-     void openCurrentServerShell(Robomongo::MongoServer* server, Robomongo::ConnectionSettings* connSettings, 
+     void openCurrentServerShell(Docutaz::MongoServer* server, Docutaz::ConnectionSettings* connSettings, 
                                  const QString &script)
      {
-         auto const scriptStr = Robomongo::ScriptInfo(script, true);
-         Robomongo::AppRegistry::instance().app()->openShell(server, connSettings, scriptStr);
+         auto const scriptStr = Docutaz::ScriptInfo(script, true);
+         Docutaz::AppRegistry::instance().app()->openShell(server, connSettings, scriptStr);
      }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     ExplorerReplicaSetTreeItem::ExplorerReplicaSetTreeItem(QTreeWidgetItem *parent, MongoServer *const server, 
         const mongo::HostAndPort& repMemberHostAndPort, const bool isPrimary, const bool isUp)

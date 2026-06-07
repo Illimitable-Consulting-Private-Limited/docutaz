@@ -16,7 +16,7 @@
 #include "robomongo/core/domain/MongoServer.h"
 #include "robomongo/core/settings/SettingsManager.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     void changeShellTimeoutDialog()
     {

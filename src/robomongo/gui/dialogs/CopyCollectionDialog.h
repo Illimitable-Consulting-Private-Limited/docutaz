@@ -7,7 +7,7 @@ class QDialogButtonBox;
 class QComboBox;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoDatabase;
 

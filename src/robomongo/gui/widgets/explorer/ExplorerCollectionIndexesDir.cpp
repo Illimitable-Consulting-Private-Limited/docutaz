@@ -11,7 +11,7 @@
 #include "robomongo/gui/widgets/explorer/ExplorerCollectionTreeItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerDatabaseTreeItem.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ExplorerCollectionIndexesDir::ExplorerCollectionIndexesDir(QTreeWidgetItem *parent)
         :BaseClass(parent)
@@ -35,7 +35,7 @@ namespace Robomongo
         BaseClass::_contextMenu->addAction(refreshIndex);
 
         setText(0, "Indexes");
-        setIcon(0, Robomongo::GuiRegistry::instance().folderIcon());
+        setIcon(0, Docutaz::GuiRegistry::instance().folderIcon());
 
         setExpanded(false);
         setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);

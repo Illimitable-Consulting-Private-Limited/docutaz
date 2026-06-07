@@ -10,7 +10,7 @@
 #include "robomongo/core/domain/MongoShellResult.h"
 #include "robomongo/core/Enums.h"
 
-namespace Robomongo {
+namespace Docutaz {
 
 class ConnectionSettings;
 

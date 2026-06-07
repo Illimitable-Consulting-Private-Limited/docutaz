@@ -2,7 +2,7 @@
 
 #include "robomongo/gui/widgets/explorer/ExplorerTreeItem.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class ExplorerDatabaseTreeItem;
 

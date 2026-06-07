@@ -12,7 +12,7 @@ class QTreeWidgetItem;
 class QDialogButtonBox;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
     class ConnectionDialog;

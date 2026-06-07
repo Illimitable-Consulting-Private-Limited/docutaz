@@ -1,7 +1,7 @@
 #include "robomongo/core/events/MongoEvents.h"
 #include "robomongo/core/Core.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     R_REGISTER_EVENT(EstablishConnectionRequest)
     R_REGISTER_EVENT(EstablishConnectionResponse)

@@ -5,7 +5,7 @@ QT_BEGIN_NAMESPACE
 class QLineEdit;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class PagingWidget : public QWidget
     {

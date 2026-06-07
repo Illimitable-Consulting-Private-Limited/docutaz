@@ -9,7 +9,7 @@
 #include <cstring>
 
 namespace mongo {
-namespace Robomongo {
+namespace Docutaz {
 
 static BSONObj parseWithBsoncxx(const char* str, int* outLen) {
     if (!str || *str == '\0') {
@@ -38,5 +38,5 @@ BSONObj fromjson(const char* str, int* len) {
     return parseWithBsoncxx(str, len);
 }
 
-}  // namespace Robomongo
+}  // namespace Docutaz
 }  // namespace mongo

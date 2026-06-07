@@ -2,7 +2,7 @@
 
 #include <Qsci/qsciscintilla.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     class RoboScintilla : public QsciScintilla
     {

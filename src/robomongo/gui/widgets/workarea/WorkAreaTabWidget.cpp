@@ -14,7 +14,7 @@
 #include "robomongo/gui/widgets/workarea/WelcomeTab.h"
 #include "robomongo/gui/GuiRegistry.h"
 
-namespace Robomongo
+namespace Docutaz
 {
 
     /**

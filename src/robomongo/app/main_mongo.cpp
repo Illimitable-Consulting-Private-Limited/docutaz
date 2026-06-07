@@ -6,7 +6,7 @@
 #include <mongo/bson/bsonobjbuilder.h>
 #include <robomongo/core/utils/BsonUtils.h>
 
-using namespace Robomongo;
+using namespace Docutaz;
 
 int main(int argc, char *argv[])
 {

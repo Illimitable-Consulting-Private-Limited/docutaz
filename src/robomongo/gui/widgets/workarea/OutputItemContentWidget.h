@@ -8,7 +8,7 @@
 #include "robomongo/core/Enums.h"
 #include <vector>
 
-namespace Robomongo
+namespace Docutaz
 {
     class FindFrame;
     class BsonTreeView;

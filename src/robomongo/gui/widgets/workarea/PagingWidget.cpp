@@ -21,7 +21,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     PagingWidget::PagingWidget(QWidget *parent)
         :BaseClass(parent)

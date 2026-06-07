@@ -2,7 +2,7 @@
 #include <QTreeWidgetItem>
 #include "robomongo/core/Core.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class CollectionStatsTreeItem : public QTreeWidgetItem
     {

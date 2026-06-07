@@ -8,7 +8,7 @@ class QLabel;
 class QScrollArea;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class WelcomeTab : public QWidget
     {

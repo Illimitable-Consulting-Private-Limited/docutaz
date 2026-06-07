@@ -14,7 +14,7 @@
 #include "robomongo/gui/widgets/workarea/ProgressBarPopup.h"
 #include "robomongo/gui/widgets/workarea/WorkAreaTabBar.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     OutputWidget::OutputWidget(QWidget *parent) :
         QTabWidget(parent), _splitter(new QSplitter), _tabbedResults(false)
@@ -276,12 +276,12 @@ namespace Robomongo
             "}"
             "QTabBar::close-button { "
                 "margin-top: 2px;"              
-                "image: url(:/robomongo/icons/close_2_Mac_16x16.png);"
+                "image: url(:/docutaz/icons/close_2_Mac_16x16.png);"
                 "width: 10px;"
                 "height: 10px;"
                 "}"
             "QTabBar::close-button:hover { "
-                "image: url(:/robomongo/icons/close_hover_16x16.png);"
+                "image: url(:/docutaz/icons/close_hover_16x16.png);"
                 "width: 15px;"
                 "height: 15px;"
             "}"
@@ -302,12 +302,12 @@ namespace Robomongo
 #else // Wind and Linux
         QString styles = QString(
             "QTabBar::close-button { "
-                "image: url(:/robomongo/icons/close_2_16x16.png);"
+                "image: url(:/docutaz/icons/close_2_16x16.png);"
                 "width: 10px;"
                 "height: 10px;"
             "}"
             "QTabBar::close-button:hover { "
-                  "image: url(:/robomongo/icons/close_hover_16x16.png);"
+                  "image: url(:/docutaz/icons/close_hover_16x16.png);"
                   "width: 15px;"
                   "height: 15px;"
             "}"

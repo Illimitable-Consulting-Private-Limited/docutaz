@@ -15,7 +15,7 @@ QT_END_NAMESPACE
 #include "robomongo/core/Core.h"
 #include "robomongo/core/domain/MongoShellResult.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class BsonWidget;
     class DocumentListLoadedEvent;

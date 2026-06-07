@@ -4,7 +4,7 @@
 #include <QColor>
 #include <Qsci/qscilexerjavascript.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     class JSLexer : public QsciLexerJavaScript
     {

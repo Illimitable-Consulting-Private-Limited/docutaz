@@ -5,7 +5,7 @@
 
 #include "robomongo/core/domain/ScriptInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class EventBus;
     class MongoServer;

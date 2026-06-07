@@ -3,7 +3,7 @@
 #include <QTabBar>
 #include <QMenu>
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief Tab bar for WorkAreaTabWidget.

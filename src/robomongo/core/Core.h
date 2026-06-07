@@ -11,7 +11,7 @@ namespace mongo
 /*
 ** Smart pointers for Mongo* staff
 */
-namespace Robomongo
+namespace Docutaz
 {
     class AppRegistry;
     typedef boost::scoped_ptr<AppRegistry> AppRegistryScopedPtr;

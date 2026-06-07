@@ -3,7 +3,7 @@
 #include "robomongo/core/domain/MongoAggregateInfo.h"
 #include "robomongo/core/domain/MongoDocument.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     /* --------------  MongoShellResult Class --------- */
     class MongoShellResult

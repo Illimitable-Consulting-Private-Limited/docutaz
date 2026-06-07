@@ -7,7 +7,7 @@ class QTextEdit;
 QT_END_NAMESPACE
 #include "robomongo/core/events/MongoEventsInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class FindFrame;
     class AddEditIndexDialog: public QDialog

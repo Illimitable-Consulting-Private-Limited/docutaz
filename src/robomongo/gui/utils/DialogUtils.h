@@ -2,7 +2,7 @@
 
 #include <QMessageBox>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace utils
     {

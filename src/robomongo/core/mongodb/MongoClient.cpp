@@ -54,16 +54,16 @@ static bool cmdOk(bsoncxx::document::view result) {
     return false;
 }
 
-Robomongo::IndexInfo makeIndexInfoFromBsonObj(
-    const Robomongo::MongoCollectionInfo &collection,
+Docutaz::IndexInfo makeIndexInfoFromBsonObj(
+    const Docutaz::MongoCollectionInfo &collection,
     const mongo::BSONObj &obj)
 {
-    using namespace Robomongo::BsonUtils;
-    Robomongo::IndexInfo info(collection);
+    using namespace Docutaz::BsonUtils;
+    Docutaz::IndexInfo info(collection);
     info._name = obj.getStringField("name");
     mongo::BSONObj keyObj = obj.getObjectField("key");
     if (keyObj.isValid())
-        info._keys = jsonString(keyObj, mongo::TenGen, 1, Robomongo::DefaultEncoding, Robomongo::Utc);
+        info._keys = jsonString(keyObj, mongo::TenGen, 1, Docutaz::DefaultEncoding, Docutaz::Utc);
     info._unique   = obj.getBoolField("unique");
     info._backGround = obj.getBoolField("background");
     info._sparse   = obj.getBoolField("sparse");
@@ -72,13 +72,13 @@ Robomongo::IndexInfo makeIndexInfoFromBsonObj(
     info._languageOverride = obj.getStringField("language_override");
     mongo::BSONObj weightsObj = obj.getObjectField("weights");
     if (weightsObj.isValid())
-        info._textWeights = jsonString(weightsObj, mongo::TenGen, 1, Robomongo::DefaultEncoding,
-                                       Robomongo::Utc);
+        info._textWeights = jsonString(weightsObj, mongo::TenGen, 1, Docutaz::DefaultEncoding,
+                                       Docutaz::Utc);
     return info;
 }
 } // namespace
 
-namespace Robomongo {
+namespace Docutaz {
 
 MongoClient::MongoClient(mongocxx::client& client) : _client(client) {}
 

@@ -5,7 +5,7 @@
 #include <QMutex>
 #include <vector>
 
-namespace Robomongo
+namespace Docutaz
 {
     class Event;
     class EventWrapper;

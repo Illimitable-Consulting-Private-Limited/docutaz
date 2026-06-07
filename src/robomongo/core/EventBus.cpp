@@ -17,7 +17,7 @@ namespace
     {
         RemoveIfReciver(QObject *receiver) : _receiver(receiver) {}
 
-        bool operator()(const Robomongo::EventBus::EventTypeAndSubscriber& item) const {
+        bool operator()(const Docutaz::EventBus::EventTypeAndSubscriber& item) const {
             if (item.second->receiver == _receiver) {
                 delete item.second;
                 return true;
@@ -31,7 +31,7 @@ namespace
     struct FindIfReciver
     {
         FindIfReciver(QThread *thread) : _thread(thread) {}
-        bool operator()(const Robomongo::EventBus::ThreadAndDispatcher &item) const {
+        bool operator()(const Docutaz::EventBus::ThreadAndDispatcher &item) const {
             if (item.first == _thread) 
                 return true;
             
@@ -41,7 +41,7 @@ namespace
     };
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     EventBus::EventBus() : QObject(),
         _lock(QMutex::Recursive)

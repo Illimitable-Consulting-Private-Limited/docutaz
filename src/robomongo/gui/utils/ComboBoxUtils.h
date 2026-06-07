@@ -2,7 +2,7 @@
 
 #include <QComboBox>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace utils
     {

@@ -7,7 +7,7 @@
 #include "robomongo/gui/widgets/workarea/BsonTreeModel.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     BsonTableModelProxy::BsonTableModelProxy(QObject *parent) 
         : BaseClass(parent)

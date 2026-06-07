@@ -19,7 +19,7 @@
 
 #include <QApplication>
 
-namespace Robomongo {
+namespace Docutaz {
     R_REGISTER_EVENT(MongoServerLoadingDatabasesEvent)
 
     MongoServer::MongoServer(int handle, ConnectionSettings *settings, ConnectionType connectionType) 
@@ -440,7 +440,7 @@ namespace Robomongo {
                    "Please double check if same host names and ports are used as in server's replica set"
                    " configuration. \nIf same set name is used for different replica sets, this configuration"
                    " is supported only on different instances of Robomongo. "
-                   " Please open a new Robomongo instance for each replica set which has the same set name."
+                   " Please open a new Docutaz instance for each replica set which has the same set name."
                    "\n\nReason:\n" << event->error().errorMessage();
             }
             else {
@@ -499,4 +499,4 @@ namespace Robomongo {
             mainWindow->hideQueryWidgetProgressBar();
     }
 
-}   // namespace Robomongo
+}   // namespace Docutaz

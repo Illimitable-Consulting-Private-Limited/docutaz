@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Robomongo
+namespace Docutaz
 {
     void changeShellTimeoutDialog();
 }

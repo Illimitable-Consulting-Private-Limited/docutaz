@@ -18,7 +18,7 @@
 #include "robomongo/core/utils/Logger.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     EulaDialog::EulaDialog(bool showFormPage, QWidget *parent)
         : QWizard(parent), _showFormPage(showFormPage)
@@ -46,7 +46,7 @@ namespace Robomongo
         auto textBrowser = new QTextBrowser;
         textBrowser->setOpenExternalLinks(true);
         textBrowser->setOpenLinks(true);
-        QFile file(":/robomongo/gnu_gpl3_license.html");
+        QFile file(":/docutaz/gnu_gpl3_license.html");
         if (file.open(QFile::ReadOnly | QFile::Text))
             textBrowser->setText(file.readAll());
 

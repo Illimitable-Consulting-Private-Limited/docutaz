@@ -3,7 +3,7 @@
 #include <QAbstractItemModel>
 #include "robomongo/core/Core.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class BsonTreeItem;
 

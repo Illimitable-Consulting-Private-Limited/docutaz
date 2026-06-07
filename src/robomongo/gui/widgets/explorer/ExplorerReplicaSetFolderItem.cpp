@@ -15,21 +15,21 @@
 
 namespace
 {
-    void openCurrentServerShell(Robomongo::MongoServer *const server, const QString &script, bool execute = true, 
-                                const Robomongo::CursorPosition &cursor = Robomongo::CursorPosition())
+    void openCurrentServerShell(Docutaz::MongoServer *const server, const QString &script, bool execute = true, 
+                                const Docutaz::CursorPosition &cursor = Docutaz::CursorPosition())
     {
-        Robomongo::AppRegistry::instance().app()->openShell(server, script, std::string(), execute, 
-            Robomongo::QtUtils::toQString(server->connectionRecord()->getReadableName()), cursor);
+        Docutaz::AppRegistry::instance().app()->openShell(server, script, std::string(), execute, 
+            Docutaz::QtUtils::toQString(server->connectionRecord()->getReadableName()), cursor);
     }
 
-    void openCurrentServerShell(Robomongo::MongoServer* server, Robomongo::ConnectionSettings* connSettings,
+    void openCurrentServerShell(Docutaz::MongoServer* server, Docutaz::ConnectionSettings* connSettings,
                                 const QString &script)
     {
-        Robomongo::AppRegistry::instance().app()->openShell(server, connSettings, Robomongo::ScriptInfo(script, true));
+        Docutaz::AppRegistry::instance().app()->openShell(server, connSettings, Docutaz::ScriptInfo(script, true));
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
 
     ExplorerReplicaSetFolderItem::ExplorerReplicaSetFolderItem(ExplorerTreeItem *parent, MongoServer *const server) :

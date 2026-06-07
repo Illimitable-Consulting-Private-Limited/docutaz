@@ -2,7 +2,7 @@
 
 #include <QDialog>
 
-namespace Robomongo
+namespace Docutaz
 {
     class AboutDialog : public QDialog
     {

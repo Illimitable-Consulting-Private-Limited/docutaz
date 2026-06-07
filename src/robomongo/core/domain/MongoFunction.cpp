@@ -2,7 +2,7 @@
 #include "robomongo/core/utils/BsonUtils.h"
 #include <mongo/client/dbclient_base.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     MongoFunction::MongoFunction(const mongo::BSONObj &obj)
     {

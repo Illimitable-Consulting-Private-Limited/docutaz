@@ -8,7 +8,7 @@ class QTextEdit;
 class QAction;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class LogWidget : public QWidget
     {

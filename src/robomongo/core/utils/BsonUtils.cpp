@@ -13,7 +13,7 @@
 #include "robomongo/shell/db/ptimeutil.h"
 
 using namespace mongo;
-namespace Robomongo
+namespace Docutaz
 {
     namespace BsonUtils
     {

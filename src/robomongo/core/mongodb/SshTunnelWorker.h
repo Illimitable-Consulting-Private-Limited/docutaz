@@ -12,7 +12,7 @@ QT_END_NAMESPACE
 struct rbm_ssh_tunnel_config;
 struct rbm_ssh_session;
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
     class EstablishSshConnectionRequest;

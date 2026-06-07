@@ -60,7 +60,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     ScriptInfo::ScriptInfo(const QString &script, bool execute, const std::string &dbname, 
                            const CursorPosition &position, const QString &title, const QString &filePath) :

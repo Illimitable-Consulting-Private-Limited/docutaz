@@ -25,17 +25,17 @@
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/core/EventBus.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace detail
     {
-        bool isSimpleType(Robomongo::BsonTreeItem const *item)
+        bool isSimpleType(Docutaz::BsonTreeItem const *item)
         {
             return BsonUtils::isSimpleType(item->type()) ||
                    BsonUtils::isUuidType(item->type(), item->binType());
         }
 
-        bool isObjectIdType(Robomongo::BsonTreeItem *item)
+        bool isObjectIdType(Docutaz::BsonTreeItem *item)
         {
             return mongo::jstOID == item->type();
         }
@@ -72,11 +72,11 @@ namespace Robomongo
             for (QModelIndexList::const_iterator it = indexes.begin(); it != indexes.end(); ++it)
             {
                 QModelIndex isUnique = *it;
-                Robomongo::BsonTreeItem *item = Robomongo::QtUtils::item<Robomongo::BsonTreeItem*>(isUnique);
+                Docutaz::BsonTreeItem *item = Docutaz::QtUtils::item<Docutaz::BsonTreeItem*>(isUnique);
                 if (item) {
                     for (QModelIndexList::const_iterator jt = result.begin(); jt != result.end(); ++jt)
                     {
-                        Robomongo::BsonTreeItem *jItem = Robomongo::QtUtils::item<Robomongo::BsonTreeItem*>(*jt);
+                        Docutaz::BsonTreeItem *jItem = Docutaz::QtUtils::item<Docutaz::BsonTreeItem*>(*jt);
                         if (jItem && jItem->superParent() == item->superParent()) {
                             isUnique = QModelIndex();
                             break;

@@ -45,7 +45,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     const QColor RoboScintilla::marginsBackgroundColor = QColor(73, 76, 78);
     const QColor RoboScintilla::caretForegroundColor = QColor("#FFFFFF");

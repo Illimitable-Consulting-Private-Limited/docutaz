@@ -23,7 +23,7 @@
 #include "robomongo/utils/qzip/qzipreader_p.h"
 #include "robomongo/utils/RoboCrypt.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     // 3T config files
     auto const Studio3T_PropertiesDat {
@@ -102,7 +102,7 @@ namespace Robomongo
         _version(SchemaVersion),
         _uuidEncoding(DefaultEncoding),
         _timeZone(Utc),
-        _viewMode(Robomongo::Tree),
+        _viewMode(Docutaz::Tree),
         _autocompletionMode(AutocompleteAll),
         _loadMongoRcJs(false),
         _mongoshPath(""),

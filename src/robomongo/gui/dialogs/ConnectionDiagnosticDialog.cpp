@@ -20,7 +20,7 @@
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/core/mongodb/SshTunnelWorker.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ConnectionDiagnosticDialog::ConnectionDiagnosticDialog(ConnectionSettings *connection, QWidget *parent) :
         QDialog(parent),

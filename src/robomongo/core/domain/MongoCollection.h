@@ -3,7 +3,7 @@
 #include "robomongo/core/domain/MongoDatabase.h"
 #include "robomongo/core/domain/MongoCollectionInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoCollection
     {

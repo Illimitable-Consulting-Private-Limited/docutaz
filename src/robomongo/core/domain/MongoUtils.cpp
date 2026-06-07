@@ -3,7 +3,7 @@
 using namespace std;
 #include "mongo/util/md5.hpp"
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace MongoUtils
     {

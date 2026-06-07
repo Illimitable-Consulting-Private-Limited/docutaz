@@ -47,10 +47,10 @@ int main(int argc, char *argv[])
 #endif
 
     // EULA License Agreement
-    auto const& settings { Robomongo::AppRegistry::instance().settingsManager() };
+    auto const& settings { Docutaz::AppRegistry::instance().settingsManager() };
     if (!settings->acceptedEulaVersions().contains(PROJECT_VERSION)) {
         bool const showFormPage { settings->programExitedNormally() && !settings->disableHttpsFeatures() };
-        Robomongo::EulaDialog eulaDialog(showFormPage);
+        Docutaz::EulaDialog eulaDialog(showFormPage);
         settings->setProgramExitedNormally(false);
         settings->save();
         int const result = eulaDialog.exec();
@@ -65,16 +65,16 @@ int main(int argc, char *argv[])
     }
 
     // Init GUI style
-    Robomongo::AppStyleUtils::initStyle();
+    Docutaz::AppStyleUtils::initStyle();
 
     settings->setProgramExitedNormally(false);
     settings->save();
 
-    Robomongo::MainWindow mainWindow;
+    Docutaz::MainWindow mainWindow;
     mainWindow.show();
 
-    for (auto const& msgAndSeverity : Robomongo::RoboCrypt::roboCryptLogs())
-        Robomongo::LOG_MSG(msgAndSeverity.first, msgAndSeverity.second);
+    for (auto const& msgAndSeverity : Docutaz::RoboCrypt::roboCryptLogs())
+        Docutaz::LOG_MSG(msgAndSeverity.first, msgAndSeverity.second);
 
     int rc = app.exec();
     rbm_ssh_cleanup();

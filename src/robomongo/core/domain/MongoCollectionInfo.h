@@ -2,7 +2,7 @@
 #include <mongo/bson/bsonobj.h>
 #include "robomongo/core/domain/MongoNamespace.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoCollectionInfo
     {

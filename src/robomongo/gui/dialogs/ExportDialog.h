@@ -16,7 +16,7 @@ class QTextEdit;
 class QProcess;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class Indicator;
 

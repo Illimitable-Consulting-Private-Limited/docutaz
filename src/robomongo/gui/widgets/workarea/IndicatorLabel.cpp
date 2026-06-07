@@ -4,7 +4,7 @@
 #include <QHBoxLayout>
 #include <QIcon>
 
-namespace Robomongo
+namespace Docutaz
 {
 
     Indicator::Indicator(const QIcon &icon, const QString &text)

@@ -1,7 +1,7 @@
 
 #include "robomongo/core/mongodb/ReplicaSet.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ReplicaSet::ReplicaSet(std::string const& setName, const mongo::HostAndPort primary,
                            std::vector<std::pair<std::string, bool>> const& membersAndHealths, 

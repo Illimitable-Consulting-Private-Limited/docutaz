@@ -4,7 +4,7 @@
 #include <QBrush>
 #include <QAbstractItemView>
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief GuiRegistry is a simple registry-like singleton, that provides access to

@@ -11,7 +11,7 @@
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     const QSize CreateDatabaseDialog::dialogSize = QSize(300, 150);
 

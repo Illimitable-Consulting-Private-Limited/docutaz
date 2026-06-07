@@ -4,7 +4,7 @@
 
 #include "robomongo/core/domain/CursorPosition.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class ScriptInfo
     {

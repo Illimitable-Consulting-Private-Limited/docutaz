@@ -17,7 +17,7 @@
 #include "robomongo/gui/GuiRegistry.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     FunctionTextEditor::FunctionTextEditor(const QString &server, const QString &database,
                                            const MongoFunction &function, QWidget *parent) :

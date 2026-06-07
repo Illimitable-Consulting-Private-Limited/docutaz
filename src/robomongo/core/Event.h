@@ -7,7 +7,7 @@
 
 #include "robomongo/core/EventError.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief Abstract base class for all events in Robomongo.

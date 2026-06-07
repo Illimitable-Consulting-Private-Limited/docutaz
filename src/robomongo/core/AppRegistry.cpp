@@ -4,7 +4,7 @@
 #include "robomongo/core/settings/SettingsManager.h"
 #include "robomongo/core/domain/App.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     AppRegistry::AppRegistry() :
         _bus(new EventBus()),

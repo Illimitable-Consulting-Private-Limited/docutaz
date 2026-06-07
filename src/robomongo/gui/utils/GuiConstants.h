@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace HighDpiConstants
     {
@@ -21,4 +21,4 @@ namespace Robomongo
         else                             return SCRAM_SHA_1;
     }
 
-} /* end of Robomongo namespace */
+} /* end of Docutaz namespace */

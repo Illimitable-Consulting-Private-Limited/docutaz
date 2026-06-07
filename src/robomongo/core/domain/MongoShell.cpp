@@ -8,7 +8,7 @@
 #include "robomongo/core/utils/Logger.h"
 #include "robomongo/core/settings/SettingsManager.h"
 
-namespace Robomongo
+namespace Docutaz
 {  
     auto const& eventBus = []() { return AppRegistry::instance().bus(); };
 

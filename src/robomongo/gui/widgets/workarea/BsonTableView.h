@@ -3,7 +3,7 @@
 
 #include "robomongo/core/domain/Notifier.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class BsonTableView : public QTableView , public INotifierObserver
     {

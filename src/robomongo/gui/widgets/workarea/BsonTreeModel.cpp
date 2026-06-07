@@ -11,7 +11,7 @@
 
 namespace
 {
-    using namespace Robomongo;
+    using namespace Docutaz;
 
     QString arrayValue(int itemsCount) {
         QString elements = itemsCount == 1 ? "element" : "elements";
@@ -65,7 +65,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     BsonTreeModel::BsonTreeModel(const std::vector<MongoDocumentPtr> &documents, QObject *parent) :
         BaseClass(parent),

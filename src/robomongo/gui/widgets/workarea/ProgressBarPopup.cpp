@@ -4,7 +4,7 @@
 #include <QMovie>
 #include <QVBoxLayout>
 
-namespace Robomongo
+namespace Docutaz
 {
 
     ProgressBarPopup::ProgressBarPopup(QWidget *parent) :

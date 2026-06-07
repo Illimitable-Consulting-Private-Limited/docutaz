@@ -3,7 +3,7 @@
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/utils/RoboCrypt.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     SslSettings::SslSettings() :
         _sslEnabled(false), _caFile(""), _pemKeyFile(""),  _pemPassPhrase(""), _crlFile(""), 

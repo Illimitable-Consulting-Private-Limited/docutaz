@@ -15,7 +15,7 @@
 #include "robomongo/core/KeyboardManager.h"
 #include "robomongo/gui/widgets/workarea/ScriptWidget.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     FindFrame::FindFrame(QWidget *parent) : 
         BaseClass(parent),
@@ -30,7 +30,7 @@ namespace Robomongo
         _commentSign("// "),
         _commentSignLength(3)
     {
-        _close->setIcon(QIcon(":/robomongo/icons/close_2_16x16.png"));
+        _close->setIcon(QIcon(":/docutaz/icons/close_2_16x16.png"));
         _close->setToolButtonStyle(Qt::ToolButtonIconOnly);
         _close->setIconSize(QSize(16, 16));
         _close->hide(); // We do not need close button because ESC works

@@ -13,7 +13,7 @@ class QComboBox;
 class QFrame;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
 

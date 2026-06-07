@@ -14,7 +14,7 @@ QT_END_NAMESPACE
 #define VERIFY(x) Q_ASSERT(x)
 #endif //QT_NO_DEBUG
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace QtUtils
     {

@@ -13,7 +13,7 @@
 #include "robomongo/gui/widgets/explorer/ExplorerCollectionTreeItem.h"
 #include "robomongo/gui/widgets/explorer/ExplorerDatabaseTreeItem.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ExplorerCollectionIndexItem::ExplorerCollectionIndexItem(
         ExplorerCollectionIndexesDir *parent, const IndexInfo &info)
@@ -28,7 +28,7 @@ namespace Robomongo
         BaseClass::_contextMenu->addAction(dropIndex);
 
         setText(0, QtUtils::toQString(_info._name));
-        setIcon(0, Robomongo::GuiRegistry::instance().indexIcon());
+        setIcon(0, Docutaz::GuiRegistry::instance().indexIcon());
     }
 
     void ExplorerCollectionIndexItem::ui_dropIndex()

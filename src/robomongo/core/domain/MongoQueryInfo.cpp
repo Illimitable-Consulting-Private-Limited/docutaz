@@ -1,6 +1,6 @@
 #include "robomongo/core/domain/MongoQueryInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace detail
     {

@@ -13,7 +13,7 @@ class QRadioButton;
 class QComboBox;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
 
@@ -157,4 +157,4 @@ namespace Robomongo
         */
         ConnectionSettings *const _connSettings;
     };
-} /* end of Robomongo namespace */
+} /* end of Docutaz namespace */

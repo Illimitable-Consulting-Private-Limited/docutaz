@@ -6,8 +6,8 @@ namespace
 {
     struct removeIfFound
     {
-        removeIfFound(Robomongo::BsonTreeItem *item) :_whatSearch(item) {}
-        bool operator()(const Robomongo::BsonTreeItem* item) const
+        removeIfFound(Docutaz::BsonTreeItem *item) :_whatSearch(item) {}
+        bool operator()(const Docutaz::BsonTreeItem* item) const
         {
             if (item == _whatSearch) {
                 delete _whatSearch;
@@ -15,14 +15,14 @@ namespace
             }
             return false;
         }
-        const Robomongo::BsonTreeItem *const _whatSearch;
+        const Docutaz::BsonTreeItem *const _whatSearch;
     };
 
-    const Robomongo::BsonTreeItem *findSuperRoot(const Robomongo::BsonTreeItem *const item)
+    const Docutaz::BsonTreeItem *findSuperRoot(const Docutaz::BsonTreeItem *const item)
     {
-        Robomongo::BsonTreeItem *parent = qobject_cast<Robomongo::BsonTreeItem *>(item->parent());
+        Docutaz::BsonTreeItem *parent = qobject_cast<Docutaz::BsonTreeItem *>(item->parent());
         if (parent) {
-            Robomongo::BsonTreeItem *grParent = qobject_cast<Robomongo::BsonTreeItem *>(parent->parent());
+            Docutaz::BsonTreeItem *grParent = qobject_cast<Docutaz::BsonTreeItem *>(parent->parent());
             if (grParent) {
                return findSuperRoot(parent);
             }
@@ -30,7 +30,7 @@ namespace
         return item;
     }
 }
-namespace Robomongo
+namespace Docutaz
 {
     BsonTreeItem::BsonTreeItem(QObject *parent) 
         :BaseClass(parent)

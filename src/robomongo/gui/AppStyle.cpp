@@ -6,7 +6,7 @@
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/settings/SettingsManager.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     const QString AppStyle::StyleName = "Native";
 

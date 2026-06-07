@@ -22,15 +22,15 @@
 
 namespace
 {
-     void openCurrentServerShell(Robomongo::MongoServer *const server, const QString &script, bool execute = true, 
-                                 const Robomongo::CursorPosition &cursor = Robomongo::CursorPosition())
+     void openCurrentServerShell(Docutaz::MongoServer *const server, const QString &script, bool execute = true, 
+                                 const Docutaz::CursorPosition &cursor = Docutaz::CursorPosition())
      {
-         QString const connName = Robomongo::QtUtils::toQString(server->connectionRecord()->getReadableName());
-         Robomongo::AppRegistry::instance().app()->openShell(server, script, std::string(), execute, connName, cursor);
+         QString const connName = Docutaz::QtUtils::toQString(server->connectionRecord()->getReadableName());
+         Docutaz::AppRegistry::instance().app()->openShell(server, script, std::string(), execute, connName, cursor);
      }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     ExplorerServerTreeItem::ExplorerServerTreeItem(QTreeWidget *view, MongoServer *const server, ConnectionInfo connInfo)
         : BaseClass(view), _server(server), _bus(AppRegistry::instance().bus()), _replicaSetFolder(nullptr),

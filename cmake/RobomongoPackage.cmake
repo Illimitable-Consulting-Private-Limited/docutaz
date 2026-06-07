@@ -72,7 +72,7 @@ elseif(SYSTEM_WINDOWS)
 
     # Default installation directory (not full path), just the path after
     # default "c:\Program Files"
-    set(CPACK_PACKAGE_INSTALL_DIRECTORY "${ROBOMONGO_DISPLAY_FULL_NAME}")
+    set(CPACK_PACKAGE_INSTALL_DIRECTORY "${DOCUTAZ_DISPLAY_FULL_NAME}")
 
     # A path to the executable inside installed package that contains icon
     # This icon is used in Windows "Add or remove programs" control panel
@@ -80,8 +80,8 @@ elseif(SYSTEM_WINDOWS)
 
     # Create shortcuts on desktop and start-up menu
     set(CPACK_NSIS_CREATE_ICONS_EXTRA "
-        CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${ROBOMONGO_DISPLAY_FULL_NAME}.lnk' '$INSTDIR\\\\${exe_name}'
-        CreateShortCut '$DESKTOP\\\\${ROBOMONGO_DISPLAY_FULL_NAME}.lnk' '$INSTDIR\\\\${exe_name}'
+        CreateShortCut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\${DOCUTAZ_DISPLAY_FULL_NAME}.lnk' '$INSTDIR\\\\${exe_name}'
+        CreateShortCut '$DESKTOP\\\\${DOCUTAZ_DISPLAY_FULL_NAME}.lnk' '$INSTDIR\\\\${exe_name}'
     ")
 
     # Cleanup during uninstallation. This cleanup is required because shortcuts
@@ -91,12 +91,12 @@ elseif(SYSTEM_WINDOWS)
     # when creating shortcuts). This solution was found somewhere in internet.
     set(CPACK_NSIS_DELETE_ICONS_EXTRA "
         !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
-        Delete '$DESKTOP\\\\${ROBOMONGO_DISPLAY_FULL_NAME}.lnk'
-        Delete '$SMPROGRAMS\\\\$MUI_TEMP\\\\${ROBOMONGO_DISPLAY_FULL_NAME}.lnk'
+        Delete '$DESKTOP\\\\${DOCUTAZ_DISPLAY_FULL_NAME}.lnk'
+        Delete '$SMPROGRAMS\\\\$MUI_TEMP\\\\${DOCUTAZ_DISPLAY_FULL_NAME}.lnk'
     ")
 
     # The title displayed at the top of the installer
-    set(CPACK_NSIS_PACKAGE_NAME "${ROBOMONGO_DISPLAY_FULL_NAME}")
+    set(CPACK_NSIS_PACKAGE_NAME "${DOCUTAZ_DISPLAY_FULL_NAME}")
 
     # Installer images (for sidebar and topbar)
     set(CPACK_PACKAGE_ICON "${files_dir}\\\\nsis-topbar.bmp")

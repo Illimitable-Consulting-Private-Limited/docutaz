@@ -5,7 +5,7 @@
 #include "robomongo/core/domain/Notifier.h"
 #include "robomongo/gui/widgets/workarea/OutputItemContentWidget.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class InsertDocumentResponse;
 

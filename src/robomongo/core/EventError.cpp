@@ -2,7 +2,7 @@
 
 #include "robomongo/utils/StringOperations.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     EventError::EventError() :
         _isNull(true) {}

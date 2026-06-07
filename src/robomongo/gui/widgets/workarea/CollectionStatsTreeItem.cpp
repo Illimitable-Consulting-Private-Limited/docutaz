@@ -18,7 +18,7 @@ namespace
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
 
     CollectionStatsTreeItem::CollectionStatsTreeItem(MongoDocumentPtr document)

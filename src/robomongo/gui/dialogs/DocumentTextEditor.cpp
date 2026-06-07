@@ -21,7 +21,7 @@
 #include "robomongo/shell/bson/json.h"
 
 
-namespace Robomongo
+namespace Docutaz
 {
     const QSize DocumentTextEditor::minimumSize = QSize(800, 400);
 
@@ -156,11 +156,11 @@ namespace Robomongo
             _obj.clear();
             while (offset != jsonLen)
             {
-                mongo::BSONObj doc = mongo::Robomongo::fromjson(json+offset, &len);
+                mongo::BSONObj doc = mongo::Docutaz::fromjson(json+offset, &len);
                 _obj.push_back(doc);
                 offset += len;
             }
-        } catch (const mongo::Robomongo::ParseMsgAssertionException &ex) {
+        } catch (const mongo::Docutaz::ParseMsgAssertionException &ex) {
 //            v0.9
             QString message = QtUtils::toQString(ex.reason());
             int offset = ex.offset();

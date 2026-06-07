@@ -3,7 +3,7 @@
 #include "robomongo/core/Core.h"
 #include "robomongo/core/utils/SingletonPattern.hpp"
 
-namespace Robomongo
+namespace Docutaz
 {
     class SettingsManager;
 

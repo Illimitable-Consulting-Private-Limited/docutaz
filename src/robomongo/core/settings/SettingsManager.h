@@ -10,7 +10,7 @@
 
 #include "robomongo/core/Enums.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
     struct ConfigFileAndImportFunction;

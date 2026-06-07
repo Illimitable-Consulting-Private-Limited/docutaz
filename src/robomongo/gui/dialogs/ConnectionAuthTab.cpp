@@ -12,7 +12,7 @@
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/gui/GuiRegistry.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ConnectionAuthTab::ConnectionAuthTab(ConnectionSettings *settings) :
         _settings(settings)

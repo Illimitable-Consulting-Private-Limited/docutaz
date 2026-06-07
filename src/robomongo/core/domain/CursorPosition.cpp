@@ -1,6 +1,6 @@
 #include "robomongo/core/domain/CursorPosition.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     CursorPosition::CursorPosition() :
         _isNull(true),

@@ -4,7 +4,7 @@
 #include <mongo/bson/bsonobj.h>
 #include "robomongo/core/domain/MongoQueryInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class FindFrame;
 

@@ -39,7 +39,7 @@
 #include "robomongo/gui/utils/GuiConstants.h"
 #include "robomongo/gui/GuiRegistry.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace
     {
@@ -107,9 +107,9 @@ namespace Robomongo
         selectedCollLay->setAlignment(Qt::AlignTop);
         selectedCollLay->setColumnStretch(2, 1);
 
-        auto serverIcon = new QLabel("<html><img src=':/robomongo/icons/server_16x16.png'></html>");
-        auto dbIcon = new QLabel("<html><img src=':/robomongo/icons/database_16x16.png'></html>");
-        auto collIcon = new QLabel("<html><img src=':/robomongo/icons/collection_16x16.png'></html>");
+        auto serverIcon = new QLabel("<html><img src=':/docutaz/icons/server_16x16.png'></html>");
+        auto dbIcon = new QLabel("<html><img src=':/docutaz/icons/database_16x16.png'></html>");
+        auto collIcon = new QLabel("<html><img src=':/docutaz/icons/collection_16x16.png'></html>");
 
         selectedCollLay->addWidget(serverIcon,                      1, 0);
         selectedCollLay->addWidget(new QLabel("Server: "),          1, 1);

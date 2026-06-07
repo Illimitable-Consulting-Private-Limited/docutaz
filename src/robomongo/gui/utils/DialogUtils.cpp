@@ -1,6 +1,6 @@
 #include "robomongo/gui/utils/DialogUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace utils
     {

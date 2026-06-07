@@ -2,7 +2,7 @@
 #include "robomongo/core/Enums.h"
 #include <mongo/bson/bsonelement.h>
 
-namespace Robomongo
+namespace Docutaz
 {
 
     /**

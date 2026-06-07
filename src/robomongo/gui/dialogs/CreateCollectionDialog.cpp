@@ -24,7 +24,7 @@
 #include "robomongo/gui/editors/PlainJavaScriptEditor.h"
 #include "robomongo/shell/bson/json.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     enum
     {
@@ -433,9 +433,9 @@ namespace Robomongo
     bool CreateCollectionDialog::validate(JSONFrame* frame, mongo::BSONObj& bsonObj, bool silentOnSuccess /* = true */)
     {
         try {
-            bsonObj = mongo::Robomongo::fromjson(jsonText(frame).toStdString());
+            bsonObj = mongo::Docutaz::fromjson(jsonText(frame).toStdString());
         }
-        catch (const mongo::Robomongo::ParseMsgAssertionException &ex) {
+        catch (const mongo::Docutaz::ParseMsgAssertionException &ex) {
             // v0.9
             QString message = QtUtils::toQString(ex.reason());
             int offset = ex.offset();

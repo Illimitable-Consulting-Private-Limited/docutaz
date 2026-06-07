@@ -1,7 +1,7 @@
 #include "robomongo/core/domain/MongoCollection.h"
 #include "robomongo/core/domain/MongoUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     MongoCollection::MongoCollection(MongoDatabase *database, const MongoCollectionInfo &info) :
         _ns(info.ns()),

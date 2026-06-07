@@ -2,7 +2,7 @@
 
 #include <string>
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoNamespace
     {

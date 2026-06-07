@@ -7,7 +7,7 @@
 #include "robomongo/core/events/MongoEventsInfo.h"
 #include "robomongo/core/domain/MongoCollection.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class LoadCollectionIndexesResponse;
     struct AddEditIndexResponse;

@@ -30,7 +30,7 @@
 #include <signal.h>
 #endif
 
-namespace Robomongo {
+namespace Docutaz {
 
 MongoshEngine::MongoshEngine(ConnectionSettings* connection, int timeoutSec,
                              QObject* parent)
@@ -223,7 +223,7 @@ void MongoshEngine::stopProcess() {
 }
 
 bool MongoshEngine::injectPreamble() {
-    QFile f(":/robomongo/mongosh_preamble.js");
+    QFile f(":/docutaz/mongosh_preamble.js");
     if (!f.open(QIODevice::ReadOnly)) return false;
     const QByteArray preamble = f.readAll();
     f.close();

@@ -13,7 +13,7 @@
 #include <vector>
 #include <stdexcept>
 
-namespace Robomongo {
+namespace Docutaz {
 namespace BsonBridge {
 
 // EJSON string → mongo::BSONObj (copies BSON bytes)

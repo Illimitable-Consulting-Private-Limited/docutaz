@@ -2,7 +2,7 @@
 
 #include <QTreeWidget>
 
-namespace Robomongo
+namespace Docutaz
 {
     class ExplorerTreeWidget : public QTreeWidget
     {

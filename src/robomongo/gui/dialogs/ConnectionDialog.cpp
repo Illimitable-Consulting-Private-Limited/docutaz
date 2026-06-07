@@ -18,7 +18,7 @@
 #include "robomongo/gui/dialogs/SSLTab.h"
 #include "robomongo/gui/dialogs/ConnectionDiagnosticDialog.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
      * @brief Constructs dialog with specified connection

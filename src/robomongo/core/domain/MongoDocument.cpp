@@ -5,7 +5,7 @@
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/utils/BsonUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     MongoDocument::MongoDocument()
     {

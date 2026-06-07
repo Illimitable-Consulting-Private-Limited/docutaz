@@ -8,7 +8,7 @@
 #include "robomongo/core/EventBus.h"
 #include "robomongo/utils/StringOperations.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     void genericEventErrorHandler(Event *event, const std::string &userFriendlyMessage, EventBus* bus, 
                                   QObject* sender)

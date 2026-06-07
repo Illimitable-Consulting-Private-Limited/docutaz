@@ -15,7 +15,7 @@
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/gui/GuiRegistry.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     const char * rolesText[CreateUserDialog::RolesCount] = {
         "read",

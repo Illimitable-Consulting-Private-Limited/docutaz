@@ -4,7 +4,7 @@
 
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ExplorerTreeItem::ExplorerTreeItem(QTreeWidgetItem *parent)
         :QObject(), BaseClass(parent), _contextMenu(new QMenu(treeWidget()) )

@@ -39,7 +39,7 @@
 
 using namespace mongo;
 
-namespace Robomongo
+namespace Docutaz
 {
     QueryWidget::QueryWidget(MongoShell *shell, QWidget *parent) :
         QWidget(parent),

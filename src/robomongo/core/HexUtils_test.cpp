@@ -14,6 +14,6 @@
 
 TEST(hex_utils_tests, test_1)
 {
-    EXPECT_TRUE(Robomongo::HexUtils::isHexString("a"));
+    EXPECT_TRUE(Docutaz::HexUtils::isHexString("a"));
 }
 

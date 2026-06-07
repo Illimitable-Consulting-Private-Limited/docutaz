@@ -24,7 +24,7 @@
 
 #include "mongo/client/mongo_uri.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     ConnectionBasicTab::ConnectionBasicTab(ConnectionSettings *settings, ConnectionDialog *connectionDialog) :
         _settings(settings), _connectionDialog(connectionDialog)

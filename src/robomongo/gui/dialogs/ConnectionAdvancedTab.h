@@ -8,7 +8,7 @@ class QCheckBox;
 class QPushButton;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
 

@@ -3,7 +3,7 @@
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/utils/RoboCrypt.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     SshSettings::SshSettings() :
         _port(22),

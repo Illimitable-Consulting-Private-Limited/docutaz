@@ -2,7 +2,7 @@
 
 #include <Qsci/qscilexerjavascript.h>
 
-namespace Robomongo
+namespace Docutaz
 {
     JSLexer::JSLexer(QObject *parent) : QsciLexerJavaScript(parent)
     {

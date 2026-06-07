@@ -27,7 +27,7 @@
 #include "robomongo/core/utils/QtUtils.h"
 #include "robomongo/utils/StringOperations.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     std::string const APP_VERSION = PROJECT_VERSION;
 

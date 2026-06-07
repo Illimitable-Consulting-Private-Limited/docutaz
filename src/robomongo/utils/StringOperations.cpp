@@ -1,6 +1,6 @@
 #include "robomongo/utils/StringOperations.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     std::string captilizeFirstChar(std::string str)
     {

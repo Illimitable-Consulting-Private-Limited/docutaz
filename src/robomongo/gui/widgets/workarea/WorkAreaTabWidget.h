@@ -2,7 +2,7 @@
 
 #include <QTabWidget>
 
-namespace Robomongo
+namespace Docutaz
 {
     class QueryWidget;
     class OpeningShellEvent;

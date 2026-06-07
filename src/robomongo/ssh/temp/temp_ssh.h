@@ -1,5 +1,5 @@
-#ifndef ROBOMONGO_SSH_H
-#define ROBOMONGO_SSH_H
+#ifndef DOCUTAZ_SSH_H
+#define DOCUTAZ_SSH_H
 
 #include <libssh2.h>
 
@@ -96,4 +96,4 @@ int rbm_ssh_open_tunnel(struct rbm_ssh_session *connection);
 }
 #endif
 
-#endif // ROBOMONGO_SSH_H
+#endif // DOCUTAZ_SSH_H

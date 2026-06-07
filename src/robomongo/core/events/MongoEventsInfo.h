@@ -2,7 +2,7 @@
 #include <string>
 #include "robomongo/core/domain/MongoCollectionInfo.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     struct IndexInfo
     {

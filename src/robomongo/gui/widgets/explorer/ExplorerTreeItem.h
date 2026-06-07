@@ -5,7 +5,7 @@ QT_BEGIN_NAMESPACE
 class QMenu;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ExplorerTreeItem :public QObject, public QTreeWidgetItem
     {

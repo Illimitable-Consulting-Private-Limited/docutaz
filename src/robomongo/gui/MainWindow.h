@@ -14,7 +14,7 @@ class QNetworkReply;
 class QNetworkAccessManager;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionFailedEvent;
     class ScriptExecutingEvent;

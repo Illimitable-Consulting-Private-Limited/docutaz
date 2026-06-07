@@ -2,7 +2,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "robomongo/core/Event.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class EventWrapper : public QEvent
     {

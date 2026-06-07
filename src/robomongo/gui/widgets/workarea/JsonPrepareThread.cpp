@@ -6,7 +6,7 @@
 #include "robomongo/core/utils/BsonUtils.h"
 #include "robomongo/core/utils/QtUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     JsonPrepareThread::JsonPrepareThread(const std::vector<MongoDocumentPtr> &bsonObjects, UUIDEncoding uuidEncoding, SupportedTimes timeZone)
         :_bsonObjects(bsonObjects),

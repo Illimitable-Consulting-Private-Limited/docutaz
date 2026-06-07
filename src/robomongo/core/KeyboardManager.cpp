@@ -1,6 +1,6 @@
 #include "robomongo/core/KeyboardManager.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     bool KeyboardManager::isNewTabShortcut(QKeyEvent *keyEvent)
     {

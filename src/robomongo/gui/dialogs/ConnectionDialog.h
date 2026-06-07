@@ -5,7 +5,7 @@
 #include "robomongo/core/Core.h"
 #include "robomongo/gui/utils/GuiConstants.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class ConnectionSettings;
     class ConnectionAuthTab;

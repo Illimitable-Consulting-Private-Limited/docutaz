@@ -4,7 +4,7 @@
 
 #include <mongo/logger/log_severity.h>
 
-namespace Robomongo {
+namespace Docutaz {
     
     class RoboCrypt {    
         using LogAndSeverity = std::pair<std::string, mongo::logger::LogSeverity>;

@@ -4,7 +4,7 @@
 
 #include "robomongo/core/Core.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class CollectionStatsTreeWidget : public QTreeWidget
     {

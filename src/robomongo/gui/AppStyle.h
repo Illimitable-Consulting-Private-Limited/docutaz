@@ -3,7 +3,7 @@
 #include <QStyle>
 #include <QProxyStyle>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace AppStyleUtils
     {

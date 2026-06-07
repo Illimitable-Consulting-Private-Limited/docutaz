@@ -3,7 +3,7 @@
 
 #include <QAbstractProxyModel>
 
-namespace Robomongo
+namespace Docutaz
 {
     class BsonTreeItem;
 

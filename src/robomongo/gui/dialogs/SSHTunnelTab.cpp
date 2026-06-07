@@ -29,7 +29,7 @@ namespace {
     }
 }
 
-namespace Robomongo
+namespace Docutaz
 {
     SshTunnelTab::SshTunnelTab(ConnectionSettings *settings) :
         _settings(settings)

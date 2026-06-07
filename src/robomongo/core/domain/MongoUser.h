@@ -4,7 +4,7 @@
 
 #include "robomongo/core/utils/BsonUtils.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoUser
     {

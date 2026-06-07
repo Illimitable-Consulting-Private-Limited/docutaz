@@ -4,7 +4,7 @@
 
 #include "robomongo/gui/widgets/workarea/CollectionStatsTreeItem.h"
 
-namespace Robomongo
+namespace Docutaz
 {
 
     CollectionStatsTreeWidget::CollectionStatsTreeWidget(const std::vector<MongoDocumentPtr> &documents, QWidget *parent) 

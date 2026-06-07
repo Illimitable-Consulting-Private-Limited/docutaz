@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <functional>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace stdutils
     {

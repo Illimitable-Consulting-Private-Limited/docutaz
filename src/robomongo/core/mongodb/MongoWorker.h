@@ -15,7 +15,7 @@ class QThread;
 class QTimer;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoClient;
     class MongoshEngine;

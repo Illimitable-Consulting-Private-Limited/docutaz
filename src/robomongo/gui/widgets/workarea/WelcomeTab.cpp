@@ -4,7 +4,7 @@
 #include <QScrollArea>
 #include <QVBoxLayout>
 
-namespace Robomongo
+namespace Docutaz
 {
 
 static const char* BODY_HTML = R"(
@@ -58,7 +58,7 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
 {
     setContentsMargins(0, 0, 0, 0);
 
-    _logoPx.load(":/robomongo/docutaz-branding-trans.png");
+    _logoPx.load(":/docutaz/docutaz-branding-trans.png");
 
     _logo = new QLabel(this);
     _logo->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -91,4 +91,4 @@ void WelcomeTab::resize()
     _logo->setPixmap(_logoPx.scaled(maxW, h, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }
 
-} // namespace Robomongo
+} // namespace Docutaz

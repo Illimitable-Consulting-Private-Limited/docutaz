@@ -8,7 +8,7 @@
 #include "robomongo/core/utils/Logger.h"
 #include "robomongo/utils/common.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     R_REGISTER_EVENT(MongoDatabaseCollectionListLoadedEvent)
     R_REGISTER_EVENT(MongoDatabaseUsersLoadedEvent)

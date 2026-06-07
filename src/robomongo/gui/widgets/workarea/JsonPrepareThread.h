@@ -7,7 +7,7 @@
 
 #include "robomongo/core/Enums.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     /*
     ** In this thread we are running task to prepare JSON string from list of BSON objects

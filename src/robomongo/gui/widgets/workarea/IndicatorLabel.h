@@ -6,7 +6,7 @@ class QIcon;
 class QLabel;
 QT_END_NAMESPACE
 
-namespace Robomongo
+namespace Docutaz
 {
     class Indicator : public QWidget
     {

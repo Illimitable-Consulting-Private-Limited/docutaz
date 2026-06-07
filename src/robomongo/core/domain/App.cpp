@@ -19,7 +19,7 @@
 #include "robomongo/core/utils/StdUtils.h"
 #include "robomongo/core/utils/Logger.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace detail
     {
@@ -275,7 +275,7 @@ namespace Robomongo
         QWidget* parentWin = nullptr;
         for (QWidget* w : QApplication::topLevelWidgets()) {
             if (w->isWindow() &&
-                QString(w->metaObject()->className()) == "Robomongo::MainWindow") {
+                QString(w->metaObject()->className()) == "Docutaz::MainWindow") {
                 parentWin = w;
                 break;
             }

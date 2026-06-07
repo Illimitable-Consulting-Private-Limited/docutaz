@@ -16,7 +16,7 @@
 #include "robomongo/core/Enums.h"
 #include "robomongo/core/mongodb/ReplicaSet.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     class MongoServer;
     class MongoShell;
@@ -239,7 +239,7 @@ namespace Robomongo
     {
         R_EVENT
             AddEditIndexRequest(QObject *sender, const IndexInfo &oldInfo, const IndexInfo &newInfo)
-            : Robomongo::Event(sender), oldInfo_(oldInfo), newInfo_(newInfo) {}
+            : Docutaz::Event(sender), oldInfo_(oldInfo), newInfo_(newInfo) {}
         const IndexInfo &oldInfo() const
         {
             return oldInfo_;

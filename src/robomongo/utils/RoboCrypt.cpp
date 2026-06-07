@@ -12,7 +12,7 @@
 #include <QString>
 #include <QTextStream>
 
-namespace Robomongo {
+namespace Docutaz {
 
     long long RoboCrypt::_KEY = 0;
     std::vector<RoboCrypt::LogAndSeverity> RoboCrypt::_roboCryptLogs;

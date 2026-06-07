@@ -6,7 +6,7 @@
 class QLabel;
 class QMovie;
 
-namespace Robomongo
+namespace Docutaz
 {
     struct ConnectionEstablishedEvent;
     class ConnectionFailedEvent;

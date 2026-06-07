@@ -3,7 +3,7 @@
 #include <QThread>
 #include <QTreeWidgetItem>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace QtUtils
     {

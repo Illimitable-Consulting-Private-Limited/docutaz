@@ -5,7 +5,7 @@
 #include <string>
 #include <QObject>
 
-namespace Robomongo /* todo ::utils */
+namespace Docutaz /* todo ::utils */
 {
     class Event;
     class EventBus;

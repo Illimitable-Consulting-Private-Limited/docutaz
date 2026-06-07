@@ -7,7 +7,7 @@
 
 class QString;
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace BsonUtils
     {

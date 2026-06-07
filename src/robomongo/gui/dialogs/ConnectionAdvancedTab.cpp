@@ -23,7 +23,7 @@
 #include "robomongo/gui/utils/GuiConstants.h"
 */
 
-namespace Robomongo
+namespace Docutaz
 {
 
     ConnectionAdvancedTab::ConnectionAdvancedTab(ConnectionSettings *settings) :

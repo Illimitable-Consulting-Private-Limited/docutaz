@@ -3,7 +3,7 @@
 #include <mongo/util/net/hostandport.h>
 #include <vector>
 
-namespace Robomongo
+namespace Docutaz
 {
     /**
     * @brief Struct to represent live information of a replica set.

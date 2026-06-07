@@ -13,7 +13,7 @@
 #include "robomongo/ssh/ssh.h"
 #include "robomongo/core/domain/App.h"
 
-namespace Robomongo
+namespace Docutaz
 {
     SshTunnelWorker::SshTunnelWorker(ConnectionSettings *settings) : QObject(),
         _settings(settings),

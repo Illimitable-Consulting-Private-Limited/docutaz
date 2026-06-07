@@ -2,7 +2,7 @@
 
 #include <QKeyEvent>
 
-namespace Robomongo
+namespace Docutaz
 {
     namespace KeyboardManager
     {
