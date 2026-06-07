@@ -19,37 +19,31 @@ namespace
     auto const MONTH { QString::number(QDate::currentDate().month()) };
 
     const QString description {
-        "<h3>" PROJECT_NAME_TITLE " " PROJECT_VERSION 
+        "<h3>" PROJECT_NAME_TITLE " " PROJECT_VERSION
             " (Build " BUILD_NUMBER + QString(" - ") + MONTH + "/" + YEAR + ")</h3>"
-        "Shell-centric MongoDB management tool.<br/>"
-        "<a href=\"https://" PROJECT_GITHUB_ISSUES "\">Submit</a> issues/proposals on GitHub.<br/>"
+        "A cross-platform MongoDB management tool for developers who work with documents.<br/>"
         "<br/>"
-
-        "<a href=\"https://" PROJECT_DOMAIN "\">" PROJECT_DOMAIN "</a> <br/>"
-        "Copyright 2014-" + YEAR +
-        " <a href= " PROJECT_COMPANYNAME_DOMAIN " >" PROJECT_COMPANYNAME 
-        "</a>. All rights reserved.<br/>"
+        "Copyright 2026-" + YEAR + " " PROJECT_COMPANYNAME ". All rights reserved.<br/>"
         "<br/>"
-
         "The program is provided AS IS with NO WARRANTY OF ANY KIND, "
         "INCLUDING THE WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A "
         "PARTICULAR PURPOSE.<br/>"
         "<br>"
-
-        "<b>Dependencies: <br></b>"
+        "<b>Dependencies:<br></b>"
         "Mongo-Shell " MongoDB_VERSION "<br>"
-        "Qt " PROJECT_QT_VERSION "<br>"
-        "OpenSSL " 	   OPENSSL_VERSION "<br>"
-        "libssh2 " 	   LIBSSH2_VERSION "<br>"
-        "QJson "   	   QJSON_VERSION "<br>"
+        "Qt "          PROJECT_QT_VERSION "<br>"
+        "OpenSSL "     OPENSSL_VERSION "<br>"
+        "libssh2 "     LIBSSH2_VERSION "<br>"
+        "QJson "       QJSON_VERSION "<br>"
         "QScintilla "  QSCINTILLA_VERSION_STR "<br>"
         "Google Test " GOOGLE_TEST_VERSION "<br>"
-        "ESPRIMA "      ESPRIMA_VERSION "<br>"
+        "ESPRIMA "     ESPRIMA_VERSION "<br>"
         "<br>"
-
-        "<b>Credits: <br/></b>"
-        "Some icons are designed by Freepik <a href=https://www.flaticon.com>www.flaticon.com</a>"
-        "<br/>"
+        "<b>Credits:<br/></b>"
+        "Some icons are designed by Freepik "
+        "<a href=\"https://www.flaticon.com\">www.flaticon.com</a><br/>"
+        "Based on <a href=\"https://github.com/Studio3T/robomongo\">Robomongo</a> "
+        "by Studio 3T.<br/>"
     };        
 }
 
@@ -86,7 +80,7 @@ namespace Robomongo
         auto textBrowser = new QTextBrowser;
         textBrowser->setOpenExternalLinks(true);
         textBrowser->setOpenLinks(true);
-        QFile file(":gnu_gpl3_license.html");
+        QFile file(":/robomongo/gnu_gpl3_license.html");
         if (file.open(QFile::ReadOnly | QFile::Text))
             textBrowser->setText(file.readAll());
         

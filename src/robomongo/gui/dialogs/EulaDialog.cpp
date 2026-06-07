@@ -46,7 +46,7 @@ namespace Robomongo
         auto textBrowser = new QTextBrowser;
         textBrowser->setOpenExternalLinks(true);
         textBrowser->setOpenLinks(true);
-        QFile file(":gnu_gpl3_license.html");
+        QFile file(":/robomongo/gnu_gpl3_license.html");
         if (file.open(QFile::ReadOnly | QFile::Text))
             textBrowser->setText(file.readAll());
 
