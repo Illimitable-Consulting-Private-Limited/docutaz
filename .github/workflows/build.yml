@@ -235,11 +235,11 @@ jobs:
           if-no-files-found: error
 
   # ──────────────────────────────────────────────────────────────────────────
-  # macOS (Intel) — Qt via aqtinstall, mongocxx built from source
-  # For Apple Silicon change macos-13 → macos-latest and x64 → arm64 below.
+  # macOS (Apple Silicon / arm64) — native Qt via Homebrew qt@5, mongocxx
+  # built from source. Qt 5.15 has no native arm64 binary via aqtinstall.
   # ──────────────────────────────────────────────────────────────────────────
   macos:
-    name: macOS 13 (Intel)
+    name: macOS (Apple Silicon / arm64)
     runs-on: macos-14   # Apple Silicon (arm64) runner
 
     env:
