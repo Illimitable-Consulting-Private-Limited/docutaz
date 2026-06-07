@@ -125,6 +125,14 @@ jobs:
           arch: win64_msvc2019_64
           cache: true
 
+      # Activate the MSVC toolchain so Ninja compiles with cl.exe (matching the
+      # MSVC-ABI Qt above). Without this, CMake picks up the MinGW gcc that ships
+      # on the runner's PATH, producing an ABI mismatch against Qt/mongocxx.
+      - name: Set up MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
       # Boost is header-only here; vcpkg provides a BoostConfig.cmake that
       # find_package(Boost) locates via CMAKE_PREFIX_PATH (set in Configure).
       - name: Cache vcpkg boost
@@ -148,7 +156,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}\mongocxx-prefix
-          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-windows-v1
+          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-windows-msvc-v2
 
       - name: Build mongo-c-driver (Windows)
         if: steps.cache-mongocxx.outputs.cache-hit != 'true'
@@ -159,6 +167,7 @@ jobs:
           tar xf mongoc.tar.gz
           cmake -S "mongo-c-driver-$env:MONGOC_VERSION" -B build-mongoc -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_INSTALL_PREFIX="$env:GITHUB_WORKSPACE\mongocxx-prefix" `
             -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF `
             -DENABLE_TESTS=OFF `
@@ -175,6 +184,7 @@ jobs:
           tar xf mongocxx.tar.gz
           cmake -S "mongo-cxx-driver-r$env:MONGOCXX_VERSION" -B build-mongocxx -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_INSTALL_PREFIX="$env:GITHUB_WORKSPACE\mongocxx-prefix" `
             -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix"
           cmake --build build-mongocxx
@@ -185,6 +195,7 @@ jobs:
         run: |
           cmake -S . -B build -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
             -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-boost\x64-windows"
 
       - name: Build

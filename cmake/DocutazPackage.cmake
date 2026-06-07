@@ -65,7 +65,8 @@ elseif(SYSTEM_WINDOWS)
     set(exe_name "robo3t.exe")
 
     set(CPACK_GENERATOR NSIS ZIP)
-    set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/DESCRIPTION")
+    # No DESCRIPTION file in the tree — CPack falls back to
+    # CPACK_PACKAGE_DESCRIPTION set above.
 
     # License file will be shown in the installation wizard
     set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")

@@ -144,12 +144,11 @@ set(SOURCES
 # Robomongo target
 add_executable(docutaz MACOSX_BUNDLE WIN32 app/main.cpp ${SOURCES})
 
-# Disable WebEngineWidgets for Linux
-SET(WebEngineWidgets "Qt5::WebEngineWidgets") 
-if(SYSTEM_LINUX)
-   SET(WebEngineWidgets)  
-endif()
- 
+# WebEngineWidgets is no longer used by any source — keep the variable empty
+# so the link line stays clean and CI need not install the heavy qtwebengine
+# module on Windows/macOS.
+SET(WebEngineWidgets)
+
 target_link_libraries(docutaz
     PRIVATE
         Qt5::Widgets
