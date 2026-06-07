@@ -51,7 +51,7 @@ The following are bundled under `src/third-party/`:
 
 ```bash
 # Clone
-git clone https://github.com/YOUR_USERNAME/docutaz.git
+git clone https://github.com/Illimitable-Consulting-Private-Limited/docutaz.git
 cd docutaz
 
 # Configure
