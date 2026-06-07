@@ -89,10 +89,16 @@ endif()
 add_subdirectory(src/docutaz/ssh)
 add_subdirectory(${QJSON_DIR})
 add_subdirectory(${QSCINTILLA_DIR})
-add_subdirectory(${GOOGLE_TEST_DIR})
 add_subdirectory(src/docutaz)
-add_subdirectory(src/docutaz-unit-tests)
-add_subdirectory(src/tests EXCLUDE_FROM_ALL)
+
+# Unit tests (and the GoogleTest dependency they need) are optional. They are
+# not part of release builds; CI configures with -DDOCUTAZ_BUILD_TESTS=OFF.
+option(DOCUTAZ_BUILD_TESTS "Build unit tests" ON)
+if(DOCUTAZ_BUILD_TESTS)
+    add_subdirectory(${GOOGLE_TEST_DIR})
+    add_subdirectory(src/docutaz-unit-tests)
+    add_subdirectory(src/tests EXCLUDE_FROM_ALL)
+endif()
 
 # Show configuration summary
 include(DocutazConfigurationSummary)
