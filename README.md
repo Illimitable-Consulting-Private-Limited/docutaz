@@ -100,13 +100,9 @@ To configure the `mongosh` path manually: **Options → Preferences → Shell**.
 
 ---
 
-## Origin and license
+## License
 
-Docutaz is a fork of [Robomongo](https://github.com/Studio3T/robomongo) (last released as Robo 3T 1.4.4 by Studio 3T).  
-The original embedded `mongo` shell has been replaced with a `mongosh` subprocess engine, and the driver layer rewritten against `mongo-cxx-driver` 4.x for MongoDB 8+ compatibility.
-
-Licensed under the **GNU General Public License v3.0** — see [LICENSE](LICENSE).  
-Your contributions are also GPL v3.
+GPL v3 — see [LICENSE](LICENSE). Fork of the [Robomongo](https://github.com/Studio3T/robomongo) open-source project.
 
 ---
 
