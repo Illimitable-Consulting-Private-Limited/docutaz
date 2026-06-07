@@ -28,6 +28,16 @@ int main(int argc, char *argv[])
     // Initialize Qt application
     QApplication app(argc, argv);
 
+    // Identify the application so the desktop environment can match the
+    // window to its .desktop entry and show the launcher/taskbar icon.
+    // On Wayland the icon comes from the .desktop file matched by app_id
+    // (= desktopFileName), NOT from setWindowIcon(); without this the icon
+    // never appears under Wayland compositors.
+    QApplication::setApplicationName("Docutaz");
+    QApplication::setApplicationDisplayName("Docutaz");
+    QApplication::setOrganizationName("Docutaz");
+    QApplication::setDesktopFileName("docutaz");
+
     // On Unix/Linux Qt uses the system locale by default, which can break
     // POSIX float/string conversions. Reset to "C" locale.
     setlocale(LC_NUMERIC, "C");

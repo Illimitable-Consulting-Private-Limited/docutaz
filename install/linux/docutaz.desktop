@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Docutaz
+GenericName=MongoDB Management Tool
+Comment=A cross-platform MongoDB management tool
+Exec=docutaz
+Icon=docutaz
+Terminal=false
+Categories=Development;Database;
+Keywords=MongoDB;Database;NoSQL;Query;
+StartupWMClass=docutaz
+StartupNotify=true

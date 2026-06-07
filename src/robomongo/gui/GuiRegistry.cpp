@@ -410,7 +410,13 @@ namespace Robomongo
 
     const QIcon &GuiRegistry::mainWindowIcon() const
     {
-        static const QIcon mainWindowIc = QIcon(":/robomongo/icons/logo-256x256.png");
+        static const QIcon mainWindowIc = [] {
+            QIcon icon(":/robomongo/icons/logo-256x256.png");
+            // Provide a small-size variant so the launcher/taskbar/title-bar
+            // icon stays crisp instead of downscaling the 256px image.
+            icon.addFile(":/robomongo/icons/logo-20x20.png");
+            return icon;
+        }();
         return mainWindowIc;
     }
 
