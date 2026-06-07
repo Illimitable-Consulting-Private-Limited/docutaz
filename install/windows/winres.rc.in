@@ -26,14 +26,14 @@ IDI_ICON1               ICON        "@windows_icon@"
 	BEGIN
 		BLOCK "040904e4"
 		BEGIN
-			VALUE "CompanyName", "3T Software Labs Ltd\0"
-			VALUE "FileDescription", "Robo 3T, MongoDB management tool\0"
+			VALUE "CompanyName", "Docutaz\0"
+			VALUE "FileDescription", "Docutaz, MongoDB management tool\0"
 			VALUE "FileVersion", VER_FILEVERSION_STR
-			VALUE "LegalCopyright", "Copyright 3T Software Labs Ltd, 2014 - 2017\0"
-			VALUE "ProductName", "Robo 3T\0"
+			VALUE "LegalCopyright", "Copyright Docutaz, 2026\0"
+			VALUE "ProductName", "Docutaz\0"
 			VALUE "ProductVersion", VER_PRODUCTVERSION_STR
-			VALUE "OriginalFilename", "robo3t.exe\0"
-			VALUE "InternalName", "Robo 3T\0"
+			VALUE "OriginalFilename", "docutaz.exe\0"
+			VALUE "InternalName", "Docutaz\0"
 		END
 	END
 	BLOCK "VarFileInfo"

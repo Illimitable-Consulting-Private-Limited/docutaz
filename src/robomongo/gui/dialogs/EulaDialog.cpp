@@ -11,14 +11,7 @@
 #include <QTextBrowser>
 #include <QLineEdit>
 #include <QRadioButton>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
-#include <QUrlQuery>
-#include <QJsonObject>
-#include <QJsonDocument>
 #include <QDesktopWidget>
-#include <QTimeZone>
 
 #include "robomongo/core/AppRegistry.h"
 #include "robomongo/core/settings/SettingsManager.h"
@@ -86,8 +79,7 @@ namespace Robomongo
         _phone = new QLineEdit;
         _company = new QLineEdit;
 
-        auto buttomLabel = new QLabel("By submitting this form I agree to 3T Software Labs "
-            "<a href='https://studio3t.com/privacy-policy'>Privacy Policy</a>.");
+        auto buttomLabel = new QLabel("We will only use your email to send you updates about Docutaz.");
         buttomLabel->setOpenExternalLinks(true);
 
         auto bodyLabel = new QLabel("\nShare your email address with us and we'll keep you "
@@ -151,10 +143,6 @@ namespace Robomongo
     void EulaDialog::accept()
     {
         saveWindowSettings();
-
-        if(_showFormPage) 
-            postUserData();
-
         QDialog::accept();
     }
 
@@ -205,54 +193,6 @@ namespace Robomongo
     void EulaDialog::on_finish_clicked()
     {
         accept();
-    }
-
-    void EulaDialog::postUserData() const
-    {
-        if (_emailEdit->text().isEmpty() || 
-            AppRegistry::instance().settingsManager()->disableHttpsFeatures()
-        )
-            return;
-
-        // OS string
-#ifdef _WIN32
-        QString const OS = "win";
-#elif __APPLE__
-        QString const OS = "osx";
-#elif __linux__
-        QString const OS = "linux";
-#else
-        QString const OS = "unknown";
-#endif
-
-        // Timezone string
-        QDateTime now = QDateTime::currentDateTime();
-        now.setOffsetFromUtc(now.offsetFromUtc());
-        QString dateAndTimezone = now.toString(Qt::ISODate);
-        QString const date = QDateTime::currentDateTime().toString(Qt::ISODate);
-        QString const timezone = "UTC" + dateAndTimezone.remove(date);
-
-        // Build post data and send
-        QJsonObject jsonStr {
-            { "email", _emailEdit->text() },
-            { "firstName", _nameEdit->text() },
-            { "lastName", _lastNameEdit->text() },
-            { "phone", _phone->text() },
-            { "company", _company->text() },
-            { "os", OS },
-            { "timezone", timezone }
-        };      
-
-        QJsonDocument jsonDoc(jsonStr);
-        QUrlQuery postData(jsonDoc.toJson());
-        postData = QUrlQuery("rd=" + postData.toString(QUrl::FullyEncoded).toUtf8());
-      
-        QNetworkRequest request(QUrl("https://rm-form.3t.io/"));
-        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-
-        auto networkManager = new QNetworkAccessManager;
-        _reply = networkManager->post(request, postData.toString(QUrl::FullyEncoded).toUtf8());
-        debugLog("EulaDialog: Form posted");
     }
 
     void EulaDialog::saveWindowSettings() const

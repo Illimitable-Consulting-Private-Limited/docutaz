@@ -9,7 +9,6 @@ class QCheckBox;
 class QPushButton;
 class QDialogButtonBox;
 class QComboBox;
-class QNetworkReply;
 QT_END_NAMESPACE
 
 namespace Robomongo
@@ -39,18 +38,7 @@ namespace Robomongo
         void on_finish_clicked();
 
     private:
-
-        // Send name, last name and email data of user to home server
-        void postUserData() const;
-
-        /**
-        * @brief Restore window settings from system registry
-        */
         void restoreWindowSettings();
-
-        /**
-        * @brief Save window settings into system registry
-        */
         void saveWindowSettings() const;
 
         QLineEdit* _nameEdit;
@@ -59,8 +47,6 @@ namespace Robomongo
         QLineEdit* _phone;
         QLineEdit* _company;
 
-        QByteArray _postData;
-        mutable QNetworkReply* _reply;
         bool _showFormPage = true;
     };
 }
