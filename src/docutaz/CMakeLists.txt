@@ -159,8 +159,13 @@ target_link_libraries(docutaz
         qscintilla
         mongo::mongocxx_shared
         mongo::bsoncxx_shared
-        OpenSSL::SSL
-        OpenSSL::Crypto
+        # ssl/crypto are the imported targets created by our own
+        # cmake/FindOpenSSL.cmake. We deliberately do NOT use the standard
+        # OpenSSL::SSL/OpenSSL::Crypto targets: those only exist when the
+        # mongo-c-driver pulls OpenSSL transitively (Linux), but not on macOS
+        # (Secure Transport) or Windows (SChannel).
+        ssl
+        crypto
         ssh
         Threads::Threads)   # Target from FindThreads CMake module
 
