@@ -1,11 +1,12 @@
-Robo 3T, shell-centric cross-platform MongoDB management tool.
+Docutaz, cross-platform MongoDB management tool.
 
-Copyright 2014-2017 3T Software Labs Ltd.
+Copyright 2026 Onan Saha.
 
-The Robo 3T is released under the terms of the GNU General Public
-License, version 3.
+Docutaz is a fork of Robomongo / Robo 3T.
+Original code Copyright 2014-2017 3T Software Labs Ltd.
 
-The Robo 3T Project includes files written by third parties
+Released under the GNU General Public License, version 3.
+
+The Docutaz project includes files written by third parties
 and used with permission or subject to their respective license
 agreements.
-

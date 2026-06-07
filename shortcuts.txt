@@ -1,6 +1,5 @@
-Robomongo shortcut key reference
-================================
-"3T", "Robomongo"
+Docutaz shortcut key reference
+==============================
 ### Windows/Linux users
 
    Ctrl+Enter or F5 or Ctrl+R

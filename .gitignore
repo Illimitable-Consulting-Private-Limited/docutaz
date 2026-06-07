@@ -1,4 +1,11 @@
-# Robomongo-specific
+# Docutaz-specific
+
+# Local branding assets and AI assistant memory
+branding/
+.claude/
+
+# External driver build (not part of the source tree)
+mongo-cxx-driver/
 
 CMakeLists.txt.user*
 
