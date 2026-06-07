@@ -1,0 +1,15 @@
+#pragma once
+
+#include <QTreeWidget>
+
+#include "docutaz/core/Core.h"
+
+namespace Docutaz
+{
+    class CollectionStatsTreeWidget : public QTreeWidget
+    {
+        Q_OBJECT
+    public:
+        CollectionStatsTreeWidget(const std::vector<MongoDocumentPtr> &documents, QWidget *parent = NULL);
+    };
+}

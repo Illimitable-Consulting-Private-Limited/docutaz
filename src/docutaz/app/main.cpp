@@ -1,0 +1,82 @@
+#include <QApplication>
+#include <QDesktopWidget>
+
+#include <locale.h>
+
+#include <mongocxx/instance.hpp>
+
+#include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/settings/SettingsManager.h"
+#include "docutaz/core/utils/Logger.h"
+#include "docutaz/gui/MainWindow.h"
+#include "docutaz/gui/AppStyle.h"
+#include "docutaz/gui/dialogs/EulaDialog.h"
+#include "docutaz/ssh/ssh.h"
+#include "docutaz/utils/RoboCrypt.h"
+
+int main(int argc, char *argv[])
+{
+    if (rbm_ssh_init())
+        return 1;
+
+    // Must be created before any mongocxx objects and destroyed last.
+    mongocxx::instance mongocxxInstance{};
+
+    // Cross Platform High DPI support - Qt 5.7
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+    // Initialize Qt application
+    QApplication app(argc, argv);
+
+    // Identify the application so the desktop environment can match the
+    // window to its .desktop entry and show the launcher/taskbar icon.
+    // On Wayland the icon comes from the .desktop file matched by app_id
+    // (= desktopFileName), NOT from setWindowIcon(); without this the icon
+    // never appears under Wayland compositors.
+    QApplication::setApplicationName("Docutaz");
+    QApplication::setApplicationDisplayName("Docutaz");
+    QApplication::setOrganizationName("Docutaz");
+    QApplication::setDesktopFileName("docutaz");
+
+    // On Unix/Linux Qt uses the system locale by default, which can break
+    // POSIX float/string conversions. Reset to "C" locale.
+    setlocale(LC_NUMERIC, "C");
+
+#ifdef Q_OS_MAC
+    app.setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
+
+    // EULA License Agreement
+    auto const& settings { Docutaz::AppRegistry::instance().settingsManager() };
+    if (!settings->acceptedEulaVersions().contains(PROJECT_VERSION)) {
+        bool const showFormPage { settings->programExitedNormally() && !settings->disableHttpsFeatures() };
+        Docutaz::EulaDialog eulaDialog(showFormPage);
+        settings->setProgramExitedNormally(false);
+        settings->save();
+        int const result = eulaDialog.exec();
+        settings->setProgramExitedNormally(true);
+        settings->save();
+        if (QDialog::Rejected == result) {
+            rbm_ssh_cleanup();
+            return 1;
+        }
+        settings->addAcceptedEulaVersion(PROJECT_VERSION);
+        settings->save();
+    }
+
+    // Init GUI style
+    Docutaz::AppStyleUtils::initStyle();
+
+    settings->setProgramExitedNormally(false);
+    settings->save();
+
+    Docutaz::MainWindow mainWindow;
+    mainWindow.show();
+
+    for (auto const& msgAndSeverity : Docutaz::RoboCrypt::roboCryptLogs())
+        Docutaz::LOG_MSG(msgAndSeverity.first, msgAndSeverity.second);
+
+    int rc = app.exec();
+    rbm_ssh_cleanup();
+    return rc;
+}
