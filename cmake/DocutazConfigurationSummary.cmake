@@ -6,7 +6,7 @@ endif()
 
 # Show configuration summary and build tip
 message("")
-message(" _______________[ Robo 3T configuration summary ]________________")
+message(" _______________[ Docutaz configuration summary ]________________")
 message("| ")
 message("|-- Dependencies:")
 message("| ")
