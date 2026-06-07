@@ -55,7 +55,7 @@ set(SOURCES
     utils/StringOperations.cpp
     utils/common.cpp
     utils/SimpleCrypt.cpp
-    utils/RoboCrypt.cpp
+    utils/DocutazCrypt.cpp
 
     # Isolated Scope #3
     gui/GuiRegistry.cpp

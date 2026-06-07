@@ -1,7 +1,7 @@
 #include "docutaz/core/settings/SslSettings.h"
 
 #include "docutaz/core/utils/QtUtils.h"
-#include "docutaz/utils/RoboCrypt.h"
+#include "docutaz/utils/DocutazCrypt.h"
 
 namespace Docutaz
 {
@@ -25,7 +25,7 @@ namespace Docutaz
         map.insert("usePemFile", usePemFile());
         map.insert("pemKeyFile", QtUtils::toQString(pemKeyFile()));
         map.insert("pemPassPhraseEncrypted", pemPassPhrase().empty() ? "" :
-                                             QtUtils::toQString(RoboCrypt::encrypt(pemPassPhrase())));
+                                             QtUtils::toQString(DocutazCrypt::encrypt(pemPassPhrase())));
         map.insert("useAdvancedOptions", useAdvancedOptions());
         map.insert("crlFile", QtUtils::toQString(crlFile()));
         map.insert("allowInvalidHostnames", allowInvalidHostnames());
@@ -46,7 +46,7 @@ namespace Docutaz
         if (map.contains("pemPassPhrase")) // Robo 1.2 and below
             setPemPassPhrase((map.value("pemPassPhrase").toString().toStdString()));
         else if (map.contains("pemPassPhraseEncrypted")) // From Robo 1.3
-            setPemPassPhrase(RoboCrypt::decrypt((map.value("pemPassPhraseEncrypted").toString().toStdString())));
+            setPemPassPhrase(DocutazCrypt::decrypt((map.value("pemPassPhraseEncrypted").toString().toStdString())));
 
         setUseAdvancedOptions(map.value("useAdvancedOptions").toBool());
         setCrlFile(QtUtils::toStdString(map.value("crlFile").toString()));

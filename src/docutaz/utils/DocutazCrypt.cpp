@@ -1,4 +1,4 @@
-#include "RoboCrypt.h"
+#include "DocutazCrypt.h"
 
 #include "docutaz/core/utils/Logger.h"       
 
@@ -14,13 +14,13 @@
 
 namespace Docutaz {
 
-    long long RoboCrypt::_KEY = 0;
-    std::vector<RoboCrypt::LogAndSeverity> RoboCrypt::_roboCryptLogs;
+    long long DocutazCrypt::_KEY = 0;
+    std::vector<DocutazCrypt::LogAndSeverity> DocutazCrypt::_roboCryptLogs;
 
-    void RoboCrypt::initKey() 
+    void DocutazCrypt::initKey() 
     {
         using MongoSeverity = mongo::logger::LogSeverity;
-        auto addToRoboCryptLogs = [](std::string msg, MongoSeverity severity) {
+        auto addToDocutazCryptLogs = [](std::string msg, MongoSeverity severity) {
             _roboCryptLogs.push_back({ msg, severity });
         };
 
@@ -30,17 +30,17 @@ namespace Docutaz {
         if (fileInfo.exists() && fileInfo.isFile()) {   // a) Read existing key from file
             QFile keyFile{ QString::fromStdString(KEY_FILE) };
             if (!keyFile.open(QIODevice::ReadOnly))
-                addToRoboCryptLogs("RoboCrypt: Failed to open key file: " + KEY_FILE, MongoSeverity::Error());
+                addToDocutazCryptLogs("DocutazCrypt: Failed to open key file: " + KEY_FILE, MongoSeverity::Error());
 
             QTextStream in{ &keyFile };
             fileContent = in.readAll();
             if(fileContent.isEmpty())
-                addToRoboCryptLogs("RoboCrypt: Key file is empty: " + KEY_FILE, MongoSeverity::Error());
+                addToDocutazCryptLogs("DocutazCrypt: Key file is empty: " + KEY_FILE, MongoSeverity::Error());
 
             _KEY = fileContent.toLongLong();
         }
         else {  // b) Generate a new key and save it into file
-            addToRoboCryptLogs("RoboCrypt: No key found, generating a new key and saving it into file", 
+            addToDocutazCryptLogs("DocutazCrypt: No key found, generating a new key and saving it into file", 
                                 MongoSeverity::Warning());
             // Generate a new key
             std::random_device randomDevice;
@@ -51,7 +51,7 @@ namespace Docutaz {
             // Save the key into file
             QFile file{ QString::fromStdString(KEY_FILE) };
             if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-                addToRoboCryptLogs("RoboCrypt: Failed to save the key into file: " + KEY_FILE, MongoSeverity::Error());
+                addToDocutazCryptLogs("DocutazCrypt: Failed to save the key into file: " + KEY_FILE, MongoSeverity::Error());
                             
             QTextStream out(&file);
             out << QString::number(_KEY);

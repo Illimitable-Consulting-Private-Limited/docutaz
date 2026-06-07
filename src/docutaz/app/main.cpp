@@ -12,7 +12,7 @@
 #include "docutaz/gui/AppStyle.h"
 #include "docutaz/gui/dialogs/EulaDialog.h"
 #include "docutaz/ssh/ssh.h"
-#include "docutaz/utils/RoboCrypt.h"
+#include "docutaz/utils/DocutazCrypt.h"
 
 int main(int argc, char *argv[])
 {
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     Docutaz::MainWindow mainWindow;
     mainWindow.show();
 
-    for (auto const& msgAndSeverity : Docutaz::RoboCrypt::roboCryptLogs())
+    for (auto const& msgAndSeverity : Docutaz::DocutazCrypt::roboCryptLogs())
         Docutaz::LOG_MSG(msgAndSeverity.first, msgAndSeverity.second);
 
     int rc = app.exec();

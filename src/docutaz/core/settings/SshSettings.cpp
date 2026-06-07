@@ -1,7 +1,7 @@
 #include "docutaz/core/settings/SshSettings.h"
 
 #include "docutaz/core/utils/QtUtils.h"
-#include "docutaz/utils/RoboCrypt.h"
+#include "docutaz/utils/DocutazCrypt.h"
 
 namespace Docutaz
 {
@@ -25,11 +25,11 @@ namespace Docutaz
         map.insert("port", port());
         map.insert("userName", QtUtils::toQString(userName()));
         map.insert("userPasswordEncrypted", userPassword().empty() ? "" : 
-                                            QtUtils::toQString(RoboCrypt::encrypt(userPassword())));
+                                            QtUtils::toQString(DocutazCrypt::encrypt(userPassword())));
         map.insert("privateKeyFile", QtUtils::toQString(privateKeyFile()));
         map.insert("publicKeyFile", QtUtils::toQString(publicKeyFile()));
         map.insert("passphraseEncrypted", passphrase().empty() ? "" : 
-                                          QtUtils::toQString(RoboCrypt::encrypt(passphrase())));
+                                          QtUtils::toQString(DocutazCrypt::encrypt(passphrase())));
         map.insert("method", QtUtils::toQString(authMethod()));
         map.insert("enabled", enabled());
         map.insert("askPassword", askPassword());
@@ -45,7 +45,7 @@ namespace Docutaz
         if (map.contains("userPassword")) // Robo 1.2 and below
             setUserPassword((map.value("userPassword").toString().toStdString()));
         else if (map.contains("userPasswordEncrypted")) // From Robo 1.3
-            setUserPassword(RoboCrypt::decrypt((map.value("userPasswordEncrypted").toString().toStdString())));
+            setUserPassword(DocutazCrypt::decrypt((map.value("userPasswordEncrypted").toString().toStdString())));
 
         setPrivateKeyFile(QtUtils::toStdString(map.value("privateKeyFile").toString()));
         setPublicKeyFile(QtUtils::toStdString(map.value("publicKeyFile").toString()));
@@ -54,7 +54,7 @@ namespace Docutaz
         if (map.contains("passphrase")) // Robo 1.2 and below
             setPassphrase((map.value("passphrase").toString().toStdString()));
         else if (map.contains("passphraseEncrypted")) // From Robo 1.3
-            setPassphrase(RoboCrypt::decrypt((map.value("passphraseEncrypted").toString().toStdString())));
+            setPassphrase(DocutazCrypt::decrypt((map.value("passphraseEncrypted").toString().toStdString())));
 
         setAuthMethod(QtUtils::toStdString(map.value("method").toString()));
         setEnabled(map.value("enabled").toBool());

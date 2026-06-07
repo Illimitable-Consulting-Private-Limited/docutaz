@@ -6,7 +6,7 @@
 
 namespace Docutaz {
     
-    class RoboCrypt {    
+    class DocutazCrypt {    
         using LogAndSeverity = std::pair<std::string, mongo::logger::LogSeverity>;
     public: 
         static SimpleCrypt& simpleCrypter() {

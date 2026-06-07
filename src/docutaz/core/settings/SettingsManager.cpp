@@ -21,7 +21,7 @@
 #include "docutaz/gui/AppStyle.h"
 #include "docutaz/utils/common.h"
 #include "docutaz/utils/qzip/qzipreader_p.h"
-#include "docutaz/utils/RoboCrypt.h"
+#include "docutaz/utils/DocutazCrypt.h"
 
 namespace Docutaz
 {
@@ -119,7 +119,7 @@ namespace Docutaz
         if (!QDir().mkpath(ConfigDir))
             LOG_MSG("ERROR: Could not create settings path: " + ConfigDir, mongo::logger::LogSeverity::Error());
 
-        RoboCrypt::initKey();
+        DocutazCrypt::initKey();
         if (!load()) {  // if load fails (probably due to non-existing config. file or directory)
             save();     // create empty settings file
             load();     // try loading again for the purpose of import from previous Robomongo versions

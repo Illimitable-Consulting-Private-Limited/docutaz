@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "docutaz/utils/RoboCrypt.h"
+#include "docutaz/utils/DocutazCrypt.h"
 
 #include <string>
 
@@ -12,7 +12,7 @@
    }
 */
 
-TEST(RoboCrypt_CoreTests, encrypt_decrypt)
+TEST(DocutazCrypt_CoreTests, encrypt_decrypt)
 {  
     auto const pwds = {
         "Tyu_aBq",
@@ -21,8 +21,8 @@ TEST(RoboCrypt_CoreTests, encrypt_decrypt)
         "<>?/.,;':][p{}|\""
     };
     for (auto const& pwd : pwds) {
-        const std::string encryptedPwd = Docutaz::RoboCrypt::encrypt(pwd);
-        const std::string decryptedPwd = Docutaz::RoboCrypt::decrypt(encryptedPwd);
+        const std::string encryptedPwd = Docutaz::DocutazCrypt::encrypt(pwd);
+        const std::string decryptedPwd = Docutaz::DocutazCrypt::decrypt(encryptedPwd);
         EXPECT_EQ(pwd, decryptedPwd);
     }
 }

@@ -1,7 +1,7 @@
 #include "docutaz/core/settings/CredentialSettings.h"
 
 #include "docutaz/core/utils/QtUtils.h"
-#include "docutaz/utils/RoboCrypt.h"
+#include "docutaz/utils/DocutazCrypt.h"
 
 namespace Docutaz
 {
@@ -28,7 +28,7 @@ namespace Docutaz
         if(map.contains("userPassword")) // Robo 1.2 and below
             _userPassword = map.value("userPassword").toString().toStdString();
         else if(map.contains("userPasswordEncrypted")) // From Robo 1.3
-            _userPassword = RoboCrypt::decrypt(map.value("userPasswordEncrypted").toString().toStdString());
+            _userPassword = DocutazCrypt::decrypt(map.value("userPasswordEncrypted").toString().toStdString());
     }
 
     /**
@@ -45,7 +45,7 @@ namespace Docutaz
         QVariantMap map;
         map.insert("userName", QtUtils::toQString(userName()));
         map.insert("userPasswordEncrypted", userPassword().empty() ? "" :
-                                            QtUtils::toQString(RoboCrypt::encrypt(userPassword())));
+                                            QtUtils::toQString(DocutazCrypt::encrypt(userPassword())));
         map.insert("databaseName", QtUtils::toQString(databaseName()));
         map.insert("mechanism", QtUtils::toQString(mechanism()));
         map.insert("useManuallyVisibleDbs", _useManuallyVisibleDbs);

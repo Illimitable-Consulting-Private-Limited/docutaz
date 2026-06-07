@@ -20,7 +20,7 @@ namespace Docutaz
     FindFrame::FindFrame(QWidget *parent) : 
         BaseClass(parent),
         _parent(parent),
-        _scin(new RoboScintilla()),
+        _scin(new DocutazScintilla()),
         _findPanel(new QFrame(this)),
         _close(new QToolButton(this)),
         _findLine(new QLineEdit(this)),

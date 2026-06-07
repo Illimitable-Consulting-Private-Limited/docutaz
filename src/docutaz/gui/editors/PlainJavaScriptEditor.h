@@ -4,7 +4,7 @@
 
 namespace Docutaz
 {
-    class RoboScintilla : public QsciScintilla
+    class DocutazScintilla : public QsciScintilla
     {
         Q_OBJECT
     public:
@@ -14,7 +14,7 @@ namespace Docutaz
         static const QColor caretForegroundColor;
         static const QColor matchedBraceForegroundColor;
 
-        RoboScintilla(QWidget *parent = NULL);
+        DocutazScintilla(QWidget *parent = NULL);
         void setIgnoreEnterKey(bool ignore) { _ignoreEnterKey = ignore; }
         void setIgnoreTabKey(bool ignore) { _ignoreTabKey = ignore; }
         int lineNumberMarginWidth() const;

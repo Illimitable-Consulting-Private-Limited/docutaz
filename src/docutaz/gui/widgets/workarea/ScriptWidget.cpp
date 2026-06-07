@@ -193,7 +193,7 @@ namespace Docutaz
 
         _completer->complete(rect);
         _completer->popup()->setCurrentIndex(_completer->completionModel()->index(0, 0));
-        RoboScintilla* scin = static_cast<RoboScintilla*>(_queryText->sciScintilla());
+        DocutazScintilla* scin = static_cast<DocutazScintilla*>(_queryText->sciScintilla());
         scin->setIgnoreEnterKey(true);
         scin->setIgnoreTabKey(true);
     }
@@ -213,7 +213,7 @@ namespace Docutaz
     void ScriptWidget::hideAutocompletion()
     {
         _completer->popup()->hide();
-        RoboScintilla *scin = static_cast<RoboScintilla*>(_queryText->sciScintilla());
+        DocutazScintilla *scin = static_cast<DocutazScintilla*>(_queryText->sciScintilla());
         scin->setIgnoreEnterKey(false);
         scin->setIgnoreTabKey(false);
     }

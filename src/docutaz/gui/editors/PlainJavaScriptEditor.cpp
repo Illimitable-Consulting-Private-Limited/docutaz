@@ -47,11 +47,11 @@ namespace
 
 namespace Docutaz
 {
-    const QColor RoboScintilla::marginsBackgroundColor = QColor(73, 76, 78);
-    const QColor RoboScintilla::caretForegroundColor = QColor("#FFFFFF");
-    const QColor RoboScintilla::matchedBraceForegroundColor = QColor("#FF8861");
+    const QColor DocutazScintilla::marginsBackgroundColor = QColor(73, 76, 78);
+    const QColor DocutazScintilla::caretForegroundColor = QColor("#FFFFFF");
+    const QColor DocutazScintilla::matchedBraceForegroundColor = QColor("#FF8861");
 
-    RoboScintilla::RoboScintilla(QWidget *parent) : QsciScintilla(parent),
+    DocutazScintilla::DocutazScintilla(QWidget *parent) : QsciScintilla(parent),
         _ignoreEnterKey(false),
         _ignoreTabKey(false),
         _lineNumberDigitWidth(0),
@@ -93,18 +93,18 @@ namespace Docutaz
         VERIFY(connect(this, SIGNAL(linesChanged()), this, SLOT(updateLineNumbersMarginWidth())));
     }
 
-    int RoboScintilla::lineNumberMarginWidth() const
+    int DocutazScintilla::lineNumberMarginWidth() const
     {
         return marginWidth(0);
     }
 
-    int RoboScintilla::textWidth(int style, const QString &text)
+    int DocutazScintilla::textWidth(int style, const QString &text)
     {
         const char *byteArray = (text.toUtf8()).constData();
         return SendScintilla(SCI_TEXTWIDTH, style, byteArray);
     }
 
-    void RoboScintilla::wheelEvent(QWheelEvent *e)
+    void DocutazScintilla::wheelEvent(QWheelEvent *e)
     {
         if (this->isActiveWindow()) {
             QsciScintilla::wheelEvent(e);
@@ -115,7 +115,7 @@ namespace Docutaz
         }
     }
 
-    void RoboScintilla::setLineNumbers(bool displayNumbers)
+    void DocutazScintilla::setLineNumbers(bool displayNumbers)
     {
         if (displayNumbers) {
             setMarginWidth(0, _lineNumberMarginWidth);
@@ -125,12 +125,12 @@ namespace Docutaz
         }
     }
 
-    void RoboScintilla::toggleLineNumbers()
+    void DocutazScintilla::toggleLineNumbers()
     {
         setLineNumbers(!lineNumberMarginWidth());
     }
 
-    void RoboScintilla::keyPressEvent(QKeyEvent *keyEvent)
+    void DocutazScintilla::keyPressEvent(QKeyEvent *keyEvent)
     {
         if (_ignoreEnterKey) {
             if (keyEvent->key() == Qt::Key_Return) {
@@ -172,7 +172,7 @@ namespace Docutaz
         }
     }
 
-    void RoboScintilla::updateLineNumbersMarginWidth()
+    void DocutazScintilla::updateLineNumbersMarginWidth()
     {
         int numberOfDigits = getNumberOfDigits(lines());
         _lineNumberMarginWidth = numberOfDigits * _lineNumberDigitWidth + rowNumberWidth;
@@ -183,7 +183,7 @@ namespace Docutaz
         }
     }
 
-    void RoboScintilla::setAppropriateBraceMatching() {
+    void DocutazScintilla::setAppropriateBraceMatching() {
 #ifdef Q_OS_MAC
         // On Mac OS when brace matching is enabled, text
         // will blink when you move cursor to some brace or

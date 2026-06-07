@@ -13,7 +13,7 @@ class QsciScintilla;
 
 namespace Docutaz
 {
-    class RoboScintilla;
+    class DocutazScintilla;
 
     class FindFrame : public QFrame
     {
@@ -25,7 +25,7 @@ namespace Docutaz
         };
         typedef QFrame BaseClass;
         explicit FindFrame(QWidget *parent);
-        RoboScintilla *const sciScintilla() const
+        DocutazScintilla *const sciScintilla() const
         {
             return _scin;
         }
@@ -42,7 +42,7 @@ namespace Docutaz
     private:
         void findElement(bool forward);
         void setLineComment(const int lineIndex, const bool commentOut);
-        RoboScintilla *const _scin;
+        DocutazScintilla *const _scin;
         QFrame *const _findPanel;
         QLineEdit *const _findLine;
         QToolButton *const _close;
