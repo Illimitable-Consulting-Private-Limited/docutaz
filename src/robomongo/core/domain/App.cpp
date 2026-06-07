@@ -3,6 +3,8 @@
 #include <QHash>
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QApplication>
+#include <QWidget>
 
 #include "robomongo/core/domain/MongoServer.h"
 #include "robomongo/core/domain/MongoShell.h"
@@ -265,11 +267,29 @@ namespace Robomongo
         if (!event->informUser)
             return;
 
-        QMessageBox(
+        // Parent to the main window and use window modality. A parentless
+        // QMessageBox becomes application-modal in exec(), which — if another
+        // modal dialog (e.g. the connection error dialog) is shown right after —
+        // sits in front while its own event loop is suspended beneath the newer
+        // dialog's loop, making both unclickable and freezing the UI.
+        QWidget* parentWin = nullptr;
+        for (QWidget* w : QApplication::topLevelWidgets()) {
+            if (w->isWindow() &&
+                QString(w->metaObject()->className()) == "Robomongo::MainWindow") {
+                parentWin = w;
+                break;
+            }
+        }
+
+        QMessageBox box(
             event->qMessageBoxIcon(),
             QString::fromStdString(event->severity()),
-            QtUtils::toQString(event->severity() + ": " + event->message)
-        ).exec();
+            QtUtils::toQString(event->severity() + ": " + event->message),
+            QMessageBox::Ok,
+            parentWin
+        );
+        box.setWindowModality(Qt::WindowModal);
+        box.exec();
     }
 
     void App::handle(ListenSshConnectionResponse *event) {

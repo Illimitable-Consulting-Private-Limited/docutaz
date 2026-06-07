@@ -56,19 +56,28 @@ namespace Robomongo
 
     void EventBus::publish(Event *event)
     {
-        QMutexLocker lock(&_lock);
         QList<QObject*> theReceivers;
         EventBusDispatcher *dis = nullptr;
-        for (auto const& item : _subscribersByEventType) {            
-            if (event->type() == item.first) {
-                EventBusSubscriber *subscriber = item.second;
-                if (!subscriber->sender || subscriber->sender == event->sender()) {
-                    theReceivers.append(subscriber->receiver);
 
-                    if (dis && dis != subscriber->dispatcher)
-                        throw "You cannot publish events to subscribers from more than one thread.";
+        // Collect the receivers/dispatcher under the lock, then release it BEFORE
+        // dispatching. Same-thread dispatch runs the handler synchronously, and a
+        // handler may run a nested event loop (e.g. a modal QMessageBox). Holding
+        // _lock across that nested loop would block every other thread's publish()
+        // for as long as the dialog stays open. Snapshot under the lock, dispatch
+        // outside it.
+        {
+            QMutexLocker lock(&_lock);
+            for (auto const& item : _subscribersByEventType) {
+                if (event->type() == item.first) {
+                    EventBusSubscriber *subscriber = item.second;
+                    if (!subscriber->sender || subscriber->sender == event->sender()) {
+                        theReceivers.append(subscriber->receiver);
 
-                    dis = subscriber->dispatcher;
+                        if (dis && dis != subscriber->dispatcher)
+                            throw "You cannot publish events to subscribers from more than one thread.";
+
+                        dis = subscriber->dispatcher;
+                    }
                 }
             }
         }

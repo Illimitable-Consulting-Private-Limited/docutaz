@@ -243,20 +243,21 @@ namespace Robomongo
             std::vector<std::string> fetched = client->getDatabaseNames();
             dbNames = std::set<std::string>{fetched.begin(), fetched.end()};
         } catch (const std::exception &ex) {
-#if defined(__clang__)
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wlogical-op-parentheses"
-#endif
+            // Only surface the "Manually specify visible databases" hint to the
+            // user when it is actionable: a primary connection that actually has
+            // credentials and is not already relying on a populated manual list.
+            // Without the parentheses this expression parsed as
+            // (A && B && C && !D) || E, where E (manuallyVisibleDbs().empty()) is
+            // true for nearly every connection — so EVERY failed connection (wrong
+            // host/port, no auth at all) popped a modal Warning on top of the error
+            // dialog and froze the UI.
             bool const informUser{
                 event != nullptr &&
                 event->connectionType == ConnectionType::ConnectionPrimary &&
                 _connSettings->credentialCount() > 0 &&
-                !primaryCredential->useManuallyVisibleDbs() ||
-                primaryCredential->manuallyVisibleDbs().empty()
+                (!primaryCredential->useManuallyVisibleDbs() ||
+                 primaryCredential->manuallyVisibleDbs().empty())
             };
-#if defined(__clang__)
-#pragma clang diagnostic pop
-#endif
             std::string const hint{
                 "\n\nHint: If this user has access to a specific database, "
                 "please use \"Manually specify visible databases\" option in "
