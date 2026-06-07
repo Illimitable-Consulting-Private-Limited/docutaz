@@ -4,7 +4,12 @@ project(Docutaz)
 # Find mongocxx/bsoncxx BEFORE adding our custom cmake/ module path.
 # Our cmake/FindOpenSSL.cmake conflicts with the system finder that
 # mongocxx uses internally via find_dependency(OpenSSL).
-list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib64/cmake")
+#
+# When a vcpkg toolchain is active it manages CMAKE_PREFIX_PATH itself.
+# Otherwise fall back to the default local-install path (/usr/local/lib64).
+if(NOT CMAKE_TOOLCHAIN_FILE)
+    list(APPEND CMAKE_PREFIX_PATH "/usr/local/lib64/cmake")
+endif()
 find_package(mongocxx REQUIRED)
 find_package(bsoncxx REQUIRED)
 

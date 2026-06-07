@@ -524,14 +524,38 @@ QString MongoshEngine::findMongosh() {
     const QString fromSettings = AppRegistry::instance().settingsManager()->mongoshPath();
     if (!fromSettings.isEmpty() && QFile::exists(fromSettings)) return fromSettings;
 
-    const QString fromEnv = qgetenv("ROBOMONGO_MONGOSH_PATH");
+    const QString fromEnv = qgetenv("DOCUTAZ_MONGOSH_PATH");
     if (!fromEnv.isEmpty() && QFile::exists(fromEnv)) return fromEnv;
-    const QStringList candidates = {
+
+    QStringList candidates;
+
+#if defined(Q_OS_WIN)
+    const QString localAppData = qgetenv("LOCALAPPDATA");
+    const QString appData      = qgetenv("APPDATA");
+    const QString programFiles = qgetenv("ProgramFiles");
+    candidates = {
+        localAppData + R"(\Programs\mongosh\bin\mongosh.exe)",
+        programFiles + R"(\mongosh\bin\mongosh.exe)",
+        appData      + R"(\npm\mongosh.cmd)",   // npm global install
+        appData      + R"(\npm\mongosh.exe)",
+        QStandardPaths::findExecutable("mongosh"),
+    };
+#elif defined(Q_OS_MACOS)
+    candidates = {
+        "/opt/homebrew/bin/mongosh",   // Homebrew Apple Silicon
+        "/usr/local/bin/mongosh",      // Homebrew Intel / manual install
+        "/usr/bin/mongosh",
+        QStandardPaths::findExecutable("mongosh"),
+    };
+#else
+    candidates = {
         "/usr/bin/mongosh",
         "/usr/local/bin/mongosh",
         "/opt/mongosh/bin/mongosh",
         QStandardPaths::findExecutable("mongosh"),
     };
+#endif
+
     for (const QString& c : candidates)
         if (!c.isEmpty() && QFile::exists(c)) return c;
     return {};

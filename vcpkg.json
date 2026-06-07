@@ -1,0 +1,13 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "docutaz",
+  "version": "2.0.0",
+  "description": "Docutaz — cross-platform MongoDB management tool",
+  "dependencies": [
+    {
+      "name": "mongo-cxx-driver",
+      "version>=": "4.0.0"
+    },
+    "openssl"
+  ]
+}

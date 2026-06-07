@@ -7,6 +7,9 @@ branding/
 # External driver build (not part of the source tree)
 mongo-cxx-driver/
 
+# vcpkg local install tree (populated by running vcpkg install locally)
+vcpkg_installed/
+
 CMakeLists.txt.user*
 
 .sconsign.dblite
