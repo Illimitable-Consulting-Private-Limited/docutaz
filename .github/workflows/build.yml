@@ -6,6 +6,19 @@ on:
   pull_request:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      linux:
+        description: "Build Linux"
+        type: boolean
+        default: true
+      windows:
+        description: "Build Windows"
+        type: boolean
+        default: true
+      macos:
+        description: "Build macOS (arm64)"
+        type: boolean
+        default: true
 
 # Driver versions — bump both here when upgrading
 env:
@@ -20,6 +33,7 @@ jobs:
   linux:
     name: Linux (Ubuntu 22.04)
     runs-on: ubuntu-22.04
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.linux }}
 
     steps:
       - uses: actions/checkout@v4
@@ -114,6 +128,7 @@ jobs:
   windows:
     name: Windows (x64)
     runs-on: windows-latest
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.windows }}
 
     steps:
       - uses: actions/checkout@v4
@@ -244,6 +259,7 @@ jobs:
   macos:
     name: macOS (Apple Silicon / arm64)
     runs-on: macos-14   # Apple Silicon (arm64) runner
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.macos }}
 
     env:
       # Qt 5.15 has no native arm64 binary from Qt/aqtinstall — use Homebrew's
