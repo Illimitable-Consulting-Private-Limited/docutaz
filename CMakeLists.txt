@@ -53,7 +53,11 @@ find_package(Qt5Xml REQUIRED)
 find_package(OpenSSL REQUIRED)
 
 if (SYSTEM_MACOSX)
-    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.14)
+    # arm64 (Apple Silicon) requires a minimum deployment target of 11.0.
+    # Allow the value to be overridden from the command line (-D...).
+    if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+        set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
+    endif()
     find_package(Qt5MacExtras REQUIRED)
 endif()
 

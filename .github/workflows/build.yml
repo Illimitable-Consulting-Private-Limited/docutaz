@@ -240,27 +240,29 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   macos:
     name: macOS 13 (Intel)
-    runs-on: macos-13
+    runs-on: macos-14   # Apple Silicon (arm64) runner
+
+    env:
+      # Qt 5.15 has no native arm64 binary from Qt/aqtinstall — use Homebrew's
+      # qt@5, which is compiled natively for arm64 on Apple Silicon.
+      MACOS_ARCH: arm64
+      MACOS_DEPLOYMENT_TARGET: "11.0"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install build tools
-        run: brew install ninja boost
+      - name: Install build tools and native arm64 Qt 5
+        run: brew install ninja boost qt@5
 
-      - name: Install Qt 5
-        uses: jurplel/install-qt-action@v4
-        with:
-          version: "5.15.2"
-          arch: clang_64
-          cache: true
+      - name: Expose Qt 5 prefix
+        run: echo "QT5_PREFIX=$(brew --prefix qt@5)" >> "$GITHUB_ENV"
 
       - name: Cache mongocxx install
         id: cache-mongocxx
         uses: actions/cache@v4
         with:
           path: ${{ github.workspace }}/mongocxx-prefix
-          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-macos13-v1
+          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-macos14-arm64-v1
 
       - name: Build mongo-c-driver (macOS)
         if: steps.cache-mongocxx.outputs.cache-hit != 'true'
@@ -270,6 +272,8 @@ jobs:
           tar xf mongoc.tar.gz
           cmake -S "mongo-c-driver-${{ env.MONGOC_VERSION }}" -B build-mongoc -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="${{ env.MACOS_ARCH }}" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.MACOS_DEPLOYMENT_TARGET }}" \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/mongocxx-prefix" \
             -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
             -DENABLE_TESTS=OFF \
@@ -285,6 +289,8 @@ jobs:
           tar xf mongocxx.tar.gz
           cmake -S "mongo-cxx-driver-r${{ env.MONGOCXX_VERSION }}" -B build-mongocxx -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="${{ env.MACOS_ARCH }}" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.MACOS_DEPLOYMENT_TARGET }}" \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/mongocxx-prefix" \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix"
           cmake --build build-mongocxx
@@ -294,7 +300,9 @@ jobs:
         run: |
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
+            -DCMAKE_OSX_ARCHITECTURES="${{ env.MACOS_ARCH }}" \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.MACOS_DEPLOYMENT_TARGET }}" \
+            -DCMAKE_PREFIX_PATH="$QT5_PREFIX;$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
         run: cmake --build build --target docutaz --parallel
@@ -311,12 +319,12 @@ jobs:
         run: |
           ver="${{ steps.ver.outputs.version }}"
           cd build/src/docutaz
-          macdeployqt Docutaz.app
-          zip -r "../../../docutaz-${ver}-macos-x86_64.zip" Docutaz.app
+          "$QT5_PREFIX/bin/macdeployqt" Docutaz.app
+          zip -r "../../../docutaz-${ver}-macos-arm64.zip" Docutaz.app
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: docutaz-macos
-          path: docutaz-*-macos-x86_64.zip
+          path: docutaz-*-macos-arm64.zip
           if-no-files-found: error
