@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8.0)
-project(Robomongo)
+project(Docutaz)
 
 # Find mongocxx/bsoncxx BEFORE adding our custom cmake/ module path.
 # Our cmake/FindOpenSSL.cmake conflicts with the system finder that
@@ -23,14 +23,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Modules
-include(RobomongoPrintUtils)
-include(RobomongoCMakeDefaults)
-include(RobomongoDefaults)
-include(RobomongoCommon)
-include(RobomongoTrashSymbols)
-include(RobomongoTargetArch)
-include(RobomongoInstallQt)
-include(RobomongoPackage)
+include(DocutazPrintUtils)
+include(DocutazCMakeDefaults)
+include(DocutazDefaults)
+include(DocutazCommon)
+include(DocutazTrashSymbols)
+include(DocutazTargetArch)
+include(DocutazInstallQt)
+include(DocutazPackage)
 
 # Search for dependencies
 find_package(Threading REQUIRED)    # Wrapper arround CMake "Threads" module
@@ -84,4 +84,4 @@ add_subdirectory(src/docutaz-unit-tests)
 add_subdirectory(src/tests EXCLUDE_FROM_ALL)
 
 # Show configuration summary
-include(RobomongoConfigurationSummary)
+include(DocutazConfigurationSummary)

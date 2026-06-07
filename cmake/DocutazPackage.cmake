@@ -105,7 +105,7 @@ elseif(SYSTEM_WINDOWS)
     # URL to a web site providing more information about application
     # This url was noticed at least in "Add or remove programs" control
     # panel.
-    set(CPACK_NSIS_URL_INFO_ABOUT "www.robomongo.org")
+    set(CPACK_NSIS_URL_INFO_ABOUT "docutaz.io")
 
     # Specify an executable to add an option to run on the finish
     # page of the NSIS installer. Without "..\\\\" it dowsn't work for NSIS 2.5
@@ -113,8 +113,8 @@ elseif(SYSTEM_WINDOWS)
 
     # Trying to set for installer and uninstaller, but this is
     # doesn't work and default icons are still used...
-    set(CPACK_NSIS_MUI_ICON "${files_dir}\\\\robomongo.ico")
-    set(CPACK_NSIS_MUI_UNIICON "${files_dir}\\\\robomongo.ico")
+    set(CPACK_NSIS_MUI_ICON "${files_dir}\\\\docutaz.ico")
+    set(CPACK_NSIS_MUI_UNIICON "${files_dir}\\\\docutaz.ico")
 endif()
 
 include(CPack)

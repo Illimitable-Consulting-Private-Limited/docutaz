@@ -83,7 +83,7 @@ endif()
 
 # Install binary
 install(
-    TARGETS robomongo
+    TARGETS docutaz
     RUNTIME DESTINATION ${bin_dir}
     BUNDLE DESTINATION .)
 
@@ -128,7 +128,7 @@ elseif(SYSTEM_MACOSX)
 
     # Install icon
     install(
-        FILES       "${CMAKE_SOURCE_DIR}/install/macosx/robomongo.icns"
+        FILES       "${CMAKE_SOURCE_DIR}/install/macosx/docutaz.icns"
         DESTINATION "${resources_dir}")
 
     # Install styles    

@@ -142,7 +142,7 @@ set(SOURCES
 )
 
 # Robomongo target
-add_executable(robomongo MACOSX_BUNDLE WIN32 app/main.cpp ${SOURCES})
+add_executable(docutaz MACOSX_BUNDLE WIN32 app/main.cpp ${SOURCES})
 
 # Disable WebEngineWidgets for Linux
 SET(WebEngineWidgets "Qt5::WebEngineWidgets") 
@@ -150,7 +150,7 @@ if(SYSTEM_LINUX)
    SET(WebEngineWidgets)  
 endif()
  
-target_link_libraries(robomongo
+target_link_libraries(docutaz
     PRIVATE
         Qt5::Widgets
         Qt5::Network
@@ -170,13 +170,13 @@ if(APPLE)
   find_library(CORE_FOUNDATION NAMES CoreFoundation)
   set(SSL_LIBRARIES ${SECURITY} ${CORE_FOUNDATION})
   
-  target_link_libraries(robomongo
+  target_link_libraries(docutaz
     PRIVATE
         ${SSL_LIBRARIES}
         -lresolv)
 endif(APPLE)
 
-target_include_directories(robomongo
+target_include_directories(docutaz
     PRIVATE
         ${CMAKE_HOME_DIRECTORY}/src
         ${CMAKE_HOME_DIRECTORY}/src/mongo_compat)
@@ -201,7 +201,7 @@ endif()
 
 set(BUILD_NUMBER ${BUILD_NUMBER} CACHE INTERNAL "")
 
-target_compile_definitions(robomongo
+target_compile_definitions(docutaz
     PRIVATE
         BUILDING_ROBO
         PROJECT_NAME="${PROJECT_NAME}"
@@ -227,31 +227,31 @@ target_compile_definitions(robomongo
 
 if(SYSTEM_WINDOWS)
     # Create Windows Resource file
-    set(windows_icon "${CMAKE_SOURCE_DIR}/install/windows/robomongo.ico")
+    set(windows_icon "${CMAKE_SOURCE_DIR}/install/windows/docutaz.ico")
     configure_file(
         "${CMAKE_SOURCE_DIR}/install/windows/winres.rc.in"
         "${CMAKE_BINARY_DIR}/winres.rc")
     unset(windows_icon)
 
     # Add additional source file to "robomongo" target
-    target_sources(robomongo PRIVATE "${CMAKE_BINARY_DIR}/winres.rc")
+    target_sources(docutaz PRIVATE "${CMAKE_BINARY_DIR}/winres.rc")
 
     # Rename output name for Windows
-    set_target_properties(robomongo PROPERTIES OUTPUT_NAME "docutaz")
+    set_target_properties(docutaz PROPERTIES OUTPUT_NAME "docutaz")
 
     # Suppress "warning C4477: 'sprintf'..." from robomongo\shell\db\ptimeutil.cpp
     # Suppress "warning C4291: ...no matching operator delete found" from third_party\mozjs-60
-    set_target_properties(robomongo PROPERTIES COMPILE_FLAGS "/wd4477 /wd4291")
+    set_target_properties(docutaz PROPERTIES COMPILE_FLAGS "/wd4477 /wd4291")
 
     # Start debug program with console
-    set_target_properties(robomongo PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
+    set_target_properties(docutaz PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
 
     # Seems that we do not need to do this with recent versions of Qt
-    target_link_libraries(robomongo PRIVATE Qt5::WinMain)
+    target_link_libraries(docutaz PRIVATE Qt5::WinMain)
 
 elseif(SYSTEM_MACOSX)
     string(TIMESTAMP CURRENT_YEAR "%Y")
-    set_target_properties(robomongo PROPERTIES
+    set_target_properties(docutaz PROPERTIES
         INSTALL_RPATH "@executable_path/../Frameworks"
         OUTPUT_NAME "Docutaz"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/install/macosx/Info.plist.in"
@@ -262,20 +262,20 @@ elseif(SYSTEM_MACOSX)
         MACOSX_BUNDLE_LONG_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_COPYRIGHT "Copyright Docutaz, 2026 - ${CURRENT_YEAR}"
-        MACOSX_BUNDLE_ICON_FILE "robomongo")
+        MACOSX_BUNDLE_ICON_FILE "docutaz")
 
 elseif(SYSTEM_LINUX)
-    set_target_properties(robomongo PROPERTIES
+    set_target_properties(docutaz PROPERTIES
         BUILD_RPATH "/usr/local/lib64"
         INSTALL_RPATH "$ORIGIN/../lib"
         OUTPUT_NAME "docutaz")
     # DT_RPATH (not DT_RUNPATH) propagates to transitive deps so libmongoc2/libbson2
     # are found without LD_LIBRARY_PATH or system ldconfig changes.
-    target_link_options(robomongo PRIVATE "LINKER:--disable-new-dtags")
+    target_link_options(docutaz PRIVATE "LINKER:--disable-new-dtags")
 endif()
 
 # Install
-include(RobomongoInstall)
+include(DocutazInstall)
 
 # Tests and shell targets are excluded from the default build (EXCLUDE_FROM_ALL)
 # and reference old MongoDB driver — kept here as stubs for reference only.
