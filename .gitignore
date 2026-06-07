@@ -105,3 +105,6 @@ Desktop.ini
 $RECYCLE.BIN/
 .vscode/settings.json
 .vs/
+
+# Distribution tarballs
+docutaz-*.tar.gz

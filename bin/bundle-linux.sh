@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# Creates a self-contained tarball of Docutaz for Linux.
+# The tarball bundles the binary + non-standard shared libraries (mongo-cxx-driver)
+# plus the Qt platform and image-format plugins needed to run on a machine that
+# has Qt5, OpenSSL 3, and libssh2 installed but NOT mongo-cxx-driver.
+#
+# Usage:
+#   cd <repo-root>
+#   bash bin/bundle-linux.sh [path/to/build]
+#
+# Output:
+#   docutaz-<version>-linux-x86_64.tar.gz  (in the repo root)
+
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_DIR="${1:-$REPO_ROOT/build}"
+BINARY="$BUILD_DIR/src/docutaz/docutaz"
+
+if [[ ! -x "$BINARY" ]]; then
+    echo "ERROR: binary not found at $BINARY"
+    echo "       Build first: cd build && ninja docutaz -j\$(nproc)"
+    exit 1
+fi
+
+# Read version from CMakeLists.txt
+MAJOR=$(grep 'PROJECT_VERSION_MAJOR' "$REPO_ROOT/CMakeLists.txt" | head -1 | grep -o '"[^"]*"' | tr -d '"')
+MINOR=$(grep 'PROJECT_VERSION_MINOR' "$REPO_ROOT/CMakeLists.txt" | head -1 | grep -o '"[^"]*"' | tr -d '"')
+PATCH=$(grep 'PROJECT_VERSION_PATCH' "$REPO_ROOT/CMakeLists.txt" | head -1 | grep -o '"[^"]*"' | tr -d '"')
+VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+BUNDLE_NAME="docutaz-${VERSION}-linux-x86_64"
+BUNDLE_DIR="$REPO_ROOT/$BUNDLE_NAME"
+TARBALL="$REPO_ROOT/${BUNDLE_NAME}.tar.gz"
+
+echo "==> Bundling Docutaz ${VERSION}"
+echo "    Binary : $BINARY"
+echo "    Output : $TARBALL"
+echo ""
+
+# ── Clean previous bundle ────────────────────────────────────────────────────
+rm -rf "$BUNDLE_DIR"
+mkdir -p "$BUNDLE_DIR/lib" "$BUNDLE_DIR/plugins/platforms" "$BUNDLE_DIR/plugins/imageformats"
+
+# ── Copy binary ──────────────────────────────────────────────────────────────
+cp "$BINARY" "$BUNDLE_DIR/docutaz"
+
+# ── Bundle non-standard shared libraries (mongo-cxx-driver) ──────────────────
+# These are not available in distro package managers and must be bundled.
+MONGO_LIBS=(
+    libmongocxx.so._noabi
+    libbsoncxx.so._noabi
+    libmongoc2.so.2
+    libbson2.so.2
+)
+
+MONGO_LIB_DIRS=(/usr/local/lib64 /usr/local/lib /usr/lib64 /usr/lib)
+
+for lib in "${MONGO_LIBS[@]}"; do
+    found=0
+    for dir in "${MONGO_LIB_DIRS[@]}"; do
+        # Resolve the real file behind the symlink
+        reallib=$(find "$dir" -maxdepth 1 -name "${lib%.*.*}*.so.*.*" 2>/dev/null | head -1)
+        if [[ -n "$reallib" && -f "$reallib" ]]; then
+            echo "    bundling $lib  ->  $(basename "$reallib")"
+            cp "$reallib" "$BUNDLE_DIR/lib/"
+            # Create the soname symlink the binary actually looks for
+            ln -sf "$(basename "$reallib")" "$BUNDLE_DIR/lib/$lib"
+            found=1
+            break
+        fi
+    done
+    if [[ $found -eq 0 ]]; then
+        echo "    WARNING: $lib not found — bundle may not run without it"
+    fi
+done
+
+# ── Bundle Qt platform plugin (xcb for X11/Wayland-XWayland) ─────────────────
+QT_PLUGIN_DIRS=(/usr/lib64/qt5/plugins /usr/lib/qt5/plugins /usr/lib/x86_64-linux-gnu/qt5/plugins)
+for dir in "${QT_PLUGIN_DIRS[@]}"; do
+    if [[ -f "$dir/platforms/libqxcb.so" ]]; then
+        cp "$dir/platforms/libqxcb.so" "$BUNDLE_DIR/plugins/platforms/"
+        # image format plugins (needed for PNG icons)
+        for fmt in libqjpeg.so libqsvg.so libqgif.so libqico.so; do
+            [[ -f "$dir/imageformats/$fmt" ]] && cp "$dir/imageformats/$fmt" "$BUNDLE_DIR/plugins/imageformats/"
+        done
+        echo "    bundled Qt plugins from $dir"
+        break
+    fi
+done
+
+# ── Write qt.conf so Qt finds the bundled plugins ────────────────────────────
+cat > "$BUNDLE_DIR/qt.conf" <<'EOF'
+[Paths]
+Plugins = plugins
+EOF
+
+# ── Write launcher script ─────────────────────────────────────────────────────
+cat > "$BUNDLE_DIR/docutaz.sh" <<'LAUNCHER'
+#!/usr/bin/env bash
+# Launcher for Docutaz — sets LD_LIBRARY_PATH to bundled libs and runs the binary.
+DIR="$(cd "$(dirname "$0")" && pwd)"
+export LD_LIBRARY_PATH="$DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+exec "$DIR/docutaz" "$@"
+LAUNCHER
+chmod +x "$BUNDLE_DIR/docutaz.sh"
+
+# ── Write README ─────────────────────────────────────────────────────────────
+cat > "$BUNDLE_DIR/README.txt" <<EOF
+Docutaz ${VERSION} — Linux x86_64
+==================================
+
+Requirements
+------------
+Install these from your package manager before running:
+
+  Fedora / RHEL:
+    sudo dnf install qt5-qtbase qt5-qtbase-gui libssh2 openssl mongosh
+
+  Debian / Ubuntu:
+    sudo apt install libqt5widgets5 libqt5network5 libqt5xml5 libssh2-1 libssl3 mongosh
+
+  mongosh (all distros):
+    https://www.mongodb.com/try/download/shell
+
+Running
+-------
+  bash docutaz.sh
+
+Or make the launcher executable once:
+  chmod +x docutaz.sh
+  ./docutaz.sh
+
+The bundled lib/ directory contains the mongo-cxx-driver libraries
+(libmongocxx, libbsoncxx, libmongoc2, libbson2) which are not available
+in standard distro repositories.
+
+Source code: https://github.com/Illimitable-Consulting-Private-Limited/docutaz
+License: GNU GPL v3
+EOF
+
+# ── Create tarball ────────────────────────────────────────────────────────────
+cd "$REPO_ROOT"
+tar -czf "$TARBALL" "$BUNDLE_NAME/"
+rm -rf "$BUNDLE_DIR"
+
+SIZE=$(du -sh "$TARBALL" | cut -f1)
+echo ""
+echo "==> Done: $TARBALL  ($SIZE)"
+echo ""
+echo "    Share this file with colleagues."
+echo "    They extract it and run:  bash docutaz.sh"
