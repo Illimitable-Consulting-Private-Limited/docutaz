@@ -19,6 +19,7 @@ does not entangle with ongoing cross-platform bug fixes.
 | 3 | **libssh2 → 1.11.x via package managers** | Stopped vendoring. Linux=system, macOS=Homebrew, Windows=vcpkg (pinned to baseline `2026.06.01` via `ci/vcpkg/vcpkg.json`). Picks up upstream security fixes automatically. |
 | 4 | **Remove orphaned esprima.js** | Dead since the mongosh shell migration (autocomplete is server-side now). ~195 KB resource deleted. |
 | 5 | **GoogleTest 1.8.1 → 1.15.2** | Switched to pinned CMake `FetchContent` (test-only, never fetched in CI). Also fixes the `-Werror` failure that blocked local test builds. |
+| 6 | **Boost — easy half (P2a)** | `scoped_ptr`/`shared_ptr`/`make_shared` → `std::`; `erase_all` → `std::remove`/`erase`; `lexical_cast` → `std::to_string`. Boost build dependency still remains (date_time → see P2b). |
 
 Net effect: ~277k lines of vendored third-party source removed; three stale
 dependencies eliminated, two moved to package managers, one CMake hack gone.
@@ -51,21 +52,27 @@ security work now lands in Qt 6 (current LTS 6.8).
 
 ### 🟡 Medium priority
 
-#### P2 — Remove Boost
-The project is C++17 and uses Boost only header-only and shallowly. Direct
-standard-library replacements:
+#### P2b — Finish Boost removal (boost::date_time → std::chrono)
+The easy, mechanical half of P2 is **done** (see Completed): smart pointers,
+`erase_all`, and `lexical_cast` now use the standard library. What remains is
+the correctness-sensitive half — and it is the only thing still keeping Boost
+on the include path:
 
-| Boost usage | Replace with |
-|-------------|--------------|
-| `boost::scoped_ptr` / `shared_ptr` / `make_shared` | `std::unique_ptr` / `std::shared_ptr` / `std::make_shared` |
-| `boost::filesystem` | `std::filesystem` |
-| `boost::lexical_cast` | `std::to_string` / `std::from_chars` |
-| `boost::algorithm` (`erase_all`, `to_lower`, …) | small helpers / `QString` |
-| `boost::posix_time` / `gregorian` (epoch-millis math in `BsonUtils.cpp`, `Notifier.cpp`) | `<chrono>` |
-
-- **CI impact:** drop boost from apt / brew / the vcpkg CI manifest.
-- **Risk/effort:** Medium, mechanical. Removes a heavyweight dependency for
-  marginal use.
+- **What's left:** `boost::date_time` (`posix_time::ptime` ×40,
+  `time_duration`, `gregorian::date`, `not_a_date_time`, `pos_infin`/`neg_infin`,
+  `second_clock`) in `shell/db/ptimeutil.{h,cpp}` — a live RFC-1123 / ISO-8601
+  date parse-and-format library whose `ptime` type is part of its **public
+  API** — plus its callers `core/utils/BsonUtils.cpp` and
+  `core/domain/Notifier.cpp`. Also a stray (unused) `boost/filesystem` include
+  in the uncompiled `shell/shell/dbshell.cpp`.
+- **Approach:** rewrite ptimeutil to `std::chrono` (+ manual ISO/RFC parsing),
+  change its public signatures off `ptime`, and update the two callers. Pin down
+  timezone offsets, fractional seconds, and the special/infinity values, since
+  this feeds how BSON dates render in the UI — test before/after on real dates.
+- **CI impact (on completion):** drop boost from apt / brew / the vcpkg CI
+  manifest. (Cannot be removed until this is done.)
+- **Risk/effort:** Medium–high; correctness-sensitive. Its own PR with explicit
+  date round-trip tests.
 
 #### P5 — Restore unit tests in CI
 Tests are currently built with `-DDOCUTAZ_BUILD_TESTS=OFF` on every CI job.
@@ -110,10 +117,11 @@ it into P1 rather than doing it standalone.
 
 ## Suggested sequencing
 
-1. **P2 (Boost removal)** and **P3 (runner bump)** — small, self-contained,
-   independently verifiable.
-2. **P5 (restore unit tests)** — test-architecture refactor; do after P2.
-3. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
+1. **P3 (runner bump)** — small, self-contained, independently verifiable.
+2. **P2b (finish Boost removal)** — date_time → chrono; correctness-sensitive,
+   with date round-trip tests.
+3. **P5 (restore unit tests)** — test-architecture refactor.
+4. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
    are cleared.
 
 ---
