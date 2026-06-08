@@ -92,7 +92,6 @@ jobs:
           mkdir build
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DDOCUTAZ_BUILD_TESTS=OFF \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
@@ -218,7 +217,6 @@ jobs:
           cmake -S . -B build -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
-            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" `
             -DDOCUTAZ_BUILD_TESTS=OFF `
             -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-boost\x64-windows"
 
@@ -331,7 +329,6 @@ jobs:
         run: |
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DDOCUTAZ_BUILD_TESTS=OFF \
             -DCMAKE_OSX_ARCHITECTURES="${{ env.MACOS_ARCH }}" \
             -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.MACOS_DEPLOYMENT_TARGET }}" \

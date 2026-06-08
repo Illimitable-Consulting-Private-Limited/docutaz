@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.0)
+cmake_minimum_required(VERSION 3.16)
 project(Docutaz)
 
 # Find mongocxx/bsoncxx BEFORE adding our custom cmake/ module path.
