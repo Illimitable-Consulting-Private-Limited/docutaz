@@ -76,10 +76,12 @@ set(GOOGLE_TEST_COMMIT b514bdc898e2951020cbdca1304b75f5950d1f59)  # v1.15.2
 # from the resolved package and surfaced in the About dialog.
 if(SYSTEM_LINUX OR SYSTEM_MACOSX)
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(LIBSSH2 REQUIRED libssh2)
+    # IMPORTED_TARGET (PkgConfig::LIBSSH2) carries the absolute library path,
+    # link dirs and include dirs. This matters on macOS: Homebrew's libssh2 is
+    # not in the default linker search path, so a bare "-lssh2" fails to link.
+    pkg_check_modules(LIBSSH2 REQUIRED IMPORTED_TARGET libssh2)
     add_library(libssh2 INTERFACE IMPORTED GLOBAL)
-    target_link_libraries(libssh2 INTERFACE ${LIBSSH2_LIBRARIES})
-    target_include_directories(libssh2 INTERFACE ${LIBSSH2_INCLUDE_DIRS})
+    target_link_libraries(libssh2 INTERFACE PkgConfig::LIBSSH2)
 else()
     find_package(Libssh2 CONFIG REQUIRED)
     add_library(libssh2 INTERFACE IMPORTED GLOBAL)

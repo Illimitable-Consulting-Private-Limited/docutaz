@@ -166,10 +166,17 @@ jobs:
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
+          # The pinned builtin-baseline (ci/vcpkg/vcpkg.json) is usually newer
+          # than the commit in the runner's preinstalled vcpkg, so manifest
+          # resolution can't read versions/baseline.json at that commit. Fetch
+          # so the baseline commit and its registry objects are available.
+          git -C "$env:VCPKG_INSTALLATION_ROOT" fetch --quiet origin
           # Manifest-mode install from ci/vcpkg/vcpkg.json (a dedicated manifest,
           # NOT the repo root, so mongo-cxx-driver is not pulled in — we build
           # that separately). The manifest's builtin-baseline pins all versions.
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install `
+            --vcpkg-root="$env:VCPKG_INSTALLATION_ROOT" `
             --x-manifest-root="$env:GITHUB_WORKSPACE\ci\vcpkg" `
             --triplet x64-windows `
             --x-install-root="$env:GITHUB_WORKSPACE\vcpkg-deps"
