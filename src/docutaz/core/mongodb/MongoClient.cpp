@@ -5,8 +5,8 @@
 #include <mongocxx/exception/exception.hpp>
 #include <mongocxx/index_view.hpp>
 #include <mongocxx/options/find.hpp>
-#include <boost/make_shared.hpp>
 #include <mongocxx/options/index.hpp>
+#include <memory>
 #include <mongocxx/options/replace.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/array.hpp>
@@ -403,7 +403,7 @@ std::vector<MongoDocumentPtr> MongoClient::query(const MongoQueryInfo &info)
 
     auto cursor = _client[ns.databaseName()][ns.collectionName()].find(toView(info._query), findOpts);
     for (auto& doc : cursor)
-        docs.push_back(boost::make_shared<MongoDocument>(fromView(doc)));
+        docs.push_back(std::make_shared<MongoDocument>(fromView(doc)));
     return docs;
 }
 

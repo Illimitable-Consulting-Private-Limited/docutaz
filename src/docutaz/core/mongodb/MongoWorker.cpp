@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <exception>
+#include <memory>
 
 #include <QThread>
 
@@ -239,7 +240,7 @@ namespace Docutaz
         auto const primaryCredential{_connSettings->primaryCredential()};
 
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             std::vector<std::string> fetched = client->getDatabaseNames();
             dbNames = std::set<std::string>{fetched.begin(), fetched.end()};
         } catch (const std::exception &ex) {
@@ -307,7 +308,7 @@ namespace Docutaz
 
             init();
 
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             auto connInfo = ConnectionInfo(
                 _connSettings->getFullAddress(), dbNames,
                 client->getVersion(), client->dbVersionStr(),
@@ -376,7 +377,7 @@ namespace Docutaz
     void MongoWorker::handle(LoadCollectionNamesRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             auto const &namespaces = client->getCollectionNamesWithDbname(event->databaseName());
             std::vector<MongoCollectionInfo> const &collInfos = client->runCollStatsCommand(namespaces);
             client->done();
@@ -390,7 +391,7 @@ namespace Docutaz
     void MongoWorker::handle(LoadUsersRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             const std::vector<MongoUser> &users = client->getUsers(event->databaseName());
             client->done();
             reply(event->sender(),
@@ -403,7 +404,7 @@ namespace Docutaz
     void MongoWorker::handle(LoadCollectionIndexesRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             const std::vector<IndexInfo> &ind = client->getIndexes(event->collection());
             client->done();
             reply(event->sender(), new LoadCollectionIndexesResponse(this, ind));
@@ -418,7 +419,7 @@ namespace Docutaz
         const IndexInfo &newIndex = event->newInfo();
         const IndexInfo &oldIndex = event->oldInfo();
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->addEditIndex(oldIndex, newIndex);
             client->done();
             reply(event->sender(), new AddEditIndexResponse(this, oldIndex, newIndex));
@@ -434,7 +435,7 @@ namespace Docutaz
     void MongoWorker::handle(DropCollectionIndexRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->dropIndexFromCollection(event->collection(), event->index());
             client->done();
             reply(event->sender(),
@@ -448,7 +449,7 @@ namespace Docutaz
     void MongoWorker::handle(LoadFunctionsRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             const std::vector<MongoFunction> &funcs = client->getFunctions(event->databaseName());
             client->done();
 
@@ -474,7 +475,7 @@ namespace Docutaz
     void MongoWorker::handle(InsertDocumentRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             if (event->overwrite())
                 client->saveDocument(event->obj(), event->ns());
             else
@@ -490,7 +491,7 @@ namespace Docutaz
     void MongoWorker::handle(RemoveDocumentRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->removeDocuments(event->ns(), event->query(),
                                     event->removeCount() == RemoveDocumentCount::ONE);
             client->done();
@@ -506,7 +507,7 @@ namespace Docutaz
     void MongoWorker::handle(ExecuteQueryRequest *event)
     {
         auto const executeQuery = [&]() {
-            boost::scoped_ptr<MongoClient> client{getClient()};
+            std::unique_ptr<MongoClient> client{getClient()};
             std::vector<MongoDocumentPtr> docs = client->query(event->queryInfo());
             client->done();
             reply(event->sender(),
@@ -604,7 +605,7 @@ namespace Docutaz
     {
         std::string dbname = event->database();
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->createDatabase(dbname);
             _createdDbs.insert(dbname);
             reply(event->sender(), new CreateDatabaseResponse(this, dbname));
@@ -617,7 +618,7 @@ namespace Docutaz
     void MongoWorker::handle(DropDatabaseRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->dropDatabase(event->database);
             _createdDbs.erase(event->database);
             reply(event->sender(), new DropDatabaseResponse(this, event->database));
@@ -631,7 +632,7 @@ namespace Docutaz
     {
         std::string const &collection = event->ns().collectionName();
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->createCollection(event->ns().toString(), event->getSize(), event->getCapped(),
                                      event->getMaxDocNum(), event->getExtraOptions());
             client->done();
@@ -646,7 +647,7 @@ namespace Docutaz
     {
         std::string const &collection = event->ns().collectionName();
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->dropCollection(event->ns());
             client->done();
             reply(event->sender(), new DropCollectionResponse(this, collection));
@@ -659,7 +660,7 @@ namespace Docutaz
     void MongoWorker::handle(RenameCollectionRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->renameCollection(event->ns(), event->newCollection());
             client->done();
             reply(event->sender(),
@@ -674,7 +675,7 @@ namespace Docutaz
     {
         std::string const &sourceCollection = event->ns().collectionName();
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->duplicateCollection(event->ns(), event->newCollection());
             client->done();
             reply(event->sender(),
@@ -688,7 +689,7 @@ namespace Docutaz
     void MongoWorker::handle(CopyCollectionToDiffServerRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             MongoWorker *cl = event->worker();
             client->copyCollectionToDiffServer(cl->mongoClient(), event->from(), event->to());
             client->done();
@@ -703,7 +704,7 @@ namespace Docutaz
     void MongoWorker::handle(CreateUserRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->createUser(event->database(), event->user());
             client->done();
             reply(event->sender(), new CreateUserResponse(this, event->user().name()));
@@ -716,7 +717,7 @@ namespace Docutaz
     void MongoWorker::handle(DropUserRequest *event)
     {
         try {
-            boost::scoped_ptr<MongoClient> client(getClient());
+            std::unique_ptr<MongoClient> client(getClient());
             client->dropUser(event->database(), event->username());
             client->done();
             reply(event->sender(), new DropUserResponse(this, event->username()));
@@ -737,7 +738,7 @@ namespace Docutaz
                 if (result.error())
                     throw std::runtime_error(result.errorMessage());
             } else {
-                boost::scoped_ptr<MongoClient> client(getClient());
+                std::unique_ptr<MongoClient> client(getClient());
                 client->createFunction(event->database(), event->function(),
                                        event->existingFunctionName());
                 client->done();
@@ -759,7 +760,7 @@ namespace Docutaz
                 if (result.error())
                     throw std::runtime_error(result.errorMessage());
             } else {
-                boost::scoped_ptr<MongoClient> client(getClient());
+                std::unique_ptr<MongoClient> client(getClient());
                 client->dropFunction(event->database(), event->functionName());
                 client->done();
             }

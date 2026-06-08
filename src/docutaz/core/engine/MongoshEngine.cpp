@@ -14,7 +14,7 @@
 #include <QRegularExpression>
 #include <QDeadlineTimer>
 
-#include <boost/make_shared.hpp>
+#include <memory>
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/CredentialSettings.h"
 #include "docutaz/core/settings/SslSettings.h"
@@ -376,7 +376,7 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
                 const std::string ejson =
                     QJsonDocument(d.toObject()).toJson(QJsonDocument::Compact).toStdString();
                 try {
-                    docs.push_back(boost::make_shared<MongoDocument>(
+                    docs.push_back(std::make_shared<MongoDocument>(
                         BsonBridge::ejsonToBson(ejson)));
                 } catch (...) {}
             }
@@ -413,7 +413,7 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
             }
             std::vector<MongoDocumentPtr> docs;
             try {
-                docs.push_back(boost::make_shared<MongoDocument>(
+                docs.push_back(std::make_shared<MongoDocument>(
                     BsonBridge::ejsonElementsToBsonArray(elems)));
             } catch (...) {}
             results.emplace_back("array", "", docs, MongoQueryInfo{},
@@ -427,7 +427,7 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
                     QJsonDocument(val.isObject() ? val.toObject()
                                                  : QJsonObject{{"v", val}})
                     .toJson(QJsonDocument::Compact).toStdString();
-                docs.push_back(boost::make_shared<MongoDocument>(
+                docs.push_back(std::make_shared<MongoDocument>(
                     BsonBridge::ejsonToBson(ejson)));
             } catch (...) {}
             results.emplace_back("value", "", docs, MongoQueryInfo{},

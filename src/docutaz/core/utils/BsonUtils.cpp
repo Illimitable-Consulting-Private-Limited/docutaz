@@ -661,7 +661,7 @@ namespace Docutaz
                     if (isSupportedDate)
                         date = miutil::isotimeString(time, false, tz == LocalTime);
                     else
-                        date = boost::lexical_cast<std::string>(ms);
+                        date = std::to_string(ms);
 
                     con.append(date);
                     break;

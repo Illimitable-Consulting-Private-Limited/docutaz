@@ -1,5 +1,7 @@
 #include "docutaz/gui/dialogs/ConnectionsDialog.h"
 
+#include <memory>
+
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QAction>
@@ -295,7 +297,7 @@ namespace Docutaz
             return;
 
         auto connection = currentItem->connection();
-        boost::scoped_ptr<ConnectionSettings> clonedConnection(connection->clone());
+        std::unique_ptr<ConnectionSettings> clonedConnection(connection->clone());
         ConnectionDialog editDialog(clonedConnection.get(), this);
 
         // Do nothing if not accepted
