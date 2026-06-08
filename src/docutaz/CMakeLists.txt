@@ -155,7 +155,6 @@ target_link_libraries(docutaz
         Qt5::Network
         Qt5::Xml
         ${WebEngineWidgets}
-        qjson
         qscintilla
         mongo::mongocxx_shared
         mongo::bsoncxx_shared
@@ -225,7 +224,6 @@ target_compile_definitions(docutaz
         MongoDB_VERSION="8.0"
         OPENSSL_VERSION="${OPENSSL_VERSION}"
         LIBSSH2_VERSION="${LIBSSH2_VERSION}"
-        QJSON_VERSION="${QJSON_VERSION}"
         GOOGLE_TEST_VERSION="${GOOGLE_TEST_VERSION}"
         ESPRIMA_VERSION="${ESPRIMA_VERSION}"
 )

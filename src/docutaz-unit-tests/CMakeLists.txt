@@ -83,7 +83,6 @@ target_link_libraries(robo_unit_tests
     Qt5::Network
     Qt5::Xml
     ${WebEngineWidgets}
-    qjson
     qscintilla
     mongodb
     ssh

@@ -34,7 +34,6 @@ namespace
         "Qt "          PROJECT_QT_VERSION "<br>"
         "OpenSSL "     OPENSSL_VERSION "<br>"
         "libssh2 "     LIBSSH2_VERSION "<br>"
-        "QJson "       QJSON_VERSION "<br>"
         "QScintilla "  QSCINTILLA_VERSION_STR "<br>"
         "Google Test " GOOGLE_TEST_VERSION "<br>"
         "ESPRIMA "     ESPRIMA_VERSION "<br>"

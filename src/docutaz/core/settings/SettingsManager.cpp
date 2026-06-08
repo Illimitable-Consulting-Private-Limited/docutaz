@@ -5,11 +5,11 @@
 #include <QVariantList>
 #include <QUuid>
 #include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
 #include <QXmlStreamReader>
 #include <QDirIterator>
-
-#include <parser.h>
-#include <serializer.h>
 
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/CredentialSettings.h"
@@ -146,10 +146,9 @@ namespace Docutaz
         if (!f.open(QIODevice::ReadOnly))
             return false;
 
-        bool ok;
-        QJson::Parser parser;
-        QVariantMap map = parser.parse(f.readAll(), &ok).toMap();
-        if (!ok)
+        QJsonParseError perr;
+        QVariantMap map = QJsonDocument::fromJson(f.readAll(), &perr).object().toVariantMap();
+        if (perr.error != QJsonParseError::NoError)
             return false;
 
         loadFromMap(map);
@@ -171,10 +170,8 @@ namespace Docutaz
             return false;
         }
 
-        bool ok;
-        QJson::Serializer s;
-        s.setIndentMode(QJson::IndentFull);
-        s.serialize(map, &f, &ok);
+        const QByteArray json = QJsonDocument::fromVariant(map).toJson(QJsonDocument::Indented);
+        const bool ok = f.write(json) == json.size();
 
         LOG_MSG("Settings saved to: " + ConfigFilePath, mongo::logger::LogSeverity::Info());
 
@@ -556,10 +553,9 @@ namespace Docutaz
         if (!oldConfigFile.open(QIODevice::ReadOnly))
             return false;
 
-        bool ok;
-        QJson::Parser parser;
-        QVariantMap vmap = parser.parse(oldConfigFile.readAll(), &ok).toMap();
-        if (!ok)
+        QJsonParseError perr;
+        QVariantMap vmap = QJsonDocument::fromJson(oldConfigFile.readAll(), &perr).object().toVariantMap();
+        if (perr.error != QJsonParseError::NoError)
             return false;
 
         QVariantList vconns = vmap.value("connections").toList();
@@ -668,10 +664,9 @@ namespace Docutaz
         if (!oldConfigFile.open(QIODevice::ReadOnly))
             return false;
 
-        bool ok;
-        QJson::Parser parser;
-        QVariantMap vmap = parser.parse(oldConfigFile.readAll(), &ok).toMap();
-        if (!ok)
+        QJsonParseError perr;
+        QVariantMap vmap = QJsonDocument::fromJson(oldConfigFile.readAll(), &perr).object().toVariantMap();
+        if (perr.error != QJsonParseError::NoError)
             return false;
 
         //// Import keys
@@ -728,10 +723,9 @@ namespace Docutaz
         if (!oldConfigFile.open(QIODevice::ReadOnly))
             return QString("");
 
-        bool ok = false;
-        QJson::Parser parser;
-        QVariantMap const& map = parser.parse(oldConfigFile.readAll(), &ok).toMap();
-        if (!ok)
+        QJsonParseError perr;
+        QVariantMap const map = QJsonDocument::fromJson(oldConfigFile.readAll(), &perr).object().toVariantMap();
+        if (perr.error != QJsonParseError::NoError)
             return QString("");
 
         QString anonymousID;
