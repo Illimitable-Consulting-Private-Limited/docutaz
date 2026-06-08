@@ -62,11 +62,6 @@ if (SYSTEM_MACOSX)
 endif()
 
 # Projects
-set(LIBSSH2_VERSION 1.9.0)
-if(SYSTEM_LINUX)
-    set(LIBSSH2_VERSION 1.7.0)
-endif()
-set(LIBSSH2_DIR src/third-party/libssh2-${LIBSSH2_VERSION})
 set(QSCINTILLA_VERSION 2.8.4)
 set(QSCINTILLA_DIR src/third-party/qscintilla-${QSCINTILLA_VERSION})
 set(ESPRIMA_VERSION 2.7.3)
@@ -74,15 +69,25 @@ set(ESPRIMA_DIR src/third-party/esprima-${ESPRIMA_VERSION})
 # todo: Use equivalent vars from googletest cmake files. Currently they are somehow not working.
 set(GOOGLE_TEST_VERSION 1.8.1)
 set(GOOGLE_TEST_DIR src/third-party/googletest-${GOOGLE_TEST_VERSION})
-if(SYSTEM_LINUX)
-    # Use system libssh2 on Linux (bundled 1.7.0 is incompatible with OpenSSL 3.x)
+# libssh2 is provided by the platform package manager instead of being
+# vendored, so it always tracks upstream security fixes:
+#   Linux   - system libssh2         (apt: libssh2-1-dev,  via pkg-config)
+#   macOS   - Homebrew libssh2       (brew: libssh2,       via pkg-config)
+#   Windows - vcpkg libssh2 (pinned) (CMake config: Libssh2::libssh2)
+# Each path is wrapped in an INTERFACE target named "libssh2" so the rest of
+# the build (src/docutaz/ssh) stays platform-agnostic. LIBSSH2_VERSION is set
+# from the resolved package and surfaced in the About dialog.
+if(SYSTEM_LINUX OR SYSTEM_MACOSX)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(LIBSSH2 REQUIRED libssh2)
     add_library(libssh2 INTERFACE IMPORTED GLOBAL)
     target_link_libraries(libssh2 INTERFACE ${LIBSSH2_LIBRARIES})
     target_include_directories(libssh2 INTERFACE ${LIBSSH2_INCLUDE_DIRS})
 else()
-    add_subdirectory(${LIBSSH2_DIR})
+    find_package(Libssh2 CONFIG REQUIRED)
+    add_library(libssh2 INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(libssh2 INTERFACE Libssh2::libssh2)
+    set(LIBSSH2_VERSION "${Libssh2_VERSION}")
 endif()
 add_subdirectory(src/docutaz/ssh)
 add_subdirectory(${QSCINTILLA_DIR})

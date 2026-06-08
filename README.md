@@ -32,15 +32,14 @@ Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 ### Build dependencies
 | Dependency | Version | Notes |
 |---|---|---|
-| CMake | ≥ 3.8 | |
+| CMake | ≥ 3.16 | |
 | C++ compiler | C++17 | GCC 8+, Clang 7+, MSVC 2019+ |
 | Qt 5 | 5.12+ | Core, Gui, Widgets, Network, Xml, PrintSupport |
 | mongo-cxx-driver | 4.x | `mongocxx` + `bsoncxx` |
 | OpenSSL | 3.x | |
-| libssh2 | system (Linux) / 1.9.0 (bundled) | |
+| libssh2 | system (Linux) / Homebrew (macOS) / vcpkg (Windows) | package-managed, 1.11.x |
 
 The following are bundled under `src/third-party/`:
-- QJson 0.8.1
 - QScintilla 2.8.4
 - Esprima 2.7.3
 - GoogleTest 1.8.1
