@@ -41,7 +41,6 @@ Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 
 The following are bundled under `src/third-party/`:
 - QScintilla 2.8.4
-- Esprima 2.7.3
 - GoogleTest 1.8.1
 
 ---

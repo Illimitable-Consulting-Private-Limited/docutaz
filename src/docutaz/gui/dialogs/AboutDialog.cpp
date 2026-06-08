@@ -36,7 +36,6 @@ namespace
         "libssh2 "     LIBSSH2_VERSION "<br>"
         "QScintilla "  QSCINTILLA_VERSION_STR "<br>"
         "Google Test " GOOGLE_TEST_VERSION "<br>"
-        "ESPRIMA "     ESPRIMA_VERSION "<br>"
         "<br>"
         "<b>Credits:<br/></b>"
         "Some icons are designed by Freepik "
