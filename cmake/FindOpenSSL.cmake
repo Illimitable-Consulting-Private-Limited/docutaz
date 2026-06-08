@@ -139,4 +139,25 @@ else()
   )
 endif()
 
+# Honor the standard find_package(OpenSSL) contract so third-party package
+# configs that do find_dependency(OpenSSL) are satisfied by this custom finder.
+# vcpkg's libssh2-config.cmake (used on Windows) otherwise fails with "OpenSSL
+# could not be found" even though ssl/crypto were located here. We also expose
+# the canonical OpenSSL::SSL / OpenSSL::Crypto targets such configs link against.
+if(_OPENSSL_SSL_LIB AND _OPENSSL_CRYPTO_LIB)
+    set(OPENSSL_FOUND TRUE)
+    set(OpenSSL_FOUND TRUE)
+    set(OPENSSL_INCLUDE_DIR    "${OpenSSL_DIR}/include")
+    set(OPENSSL_SSL_LIBRARY    "${_OPENSSL_SSL_LIB}")
+    set(OPENSSL_CRYPTO_LIBRARY "${_OPENSSL_CRYPTO_LIB}")
+    set(OPENSSL_LIBRARIES      "${_OPENSSL_SSL_LIB};${_OPENSSL_CRYPTO_LIB}")
+
+    if(NOT TARGET OpenSSL::Crypto)
+        add_library(OpenSSL::Crypto ALIAS crypto)
+    endif()
+    if(NOT TARGET OpenSSL::SSL)
+        add_library(OpenSSL::SSL ALIAS ssl)
+    endif()
+endif()
+
 # End of file
