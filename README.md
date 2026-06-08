@@ -41,7 +41,9 @@ Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 
 The following are bundled under `src/third-party/`:
 - QScintilla 2.8.4
-- GoogleTest 1.8.1
+
+GoogleTest 1.15.2 is fetched on demand (pinned via CMake `FetchContent`) only
+when `-DDOCUTAZ_BUILD_TESTS=ON`; it is not vendored.
 
 ---
 

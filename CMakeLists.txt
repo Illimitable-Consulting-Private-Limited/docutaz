@@ -64,9 +64,8 @@ endif()
 # Projects
 set(QSCINTILLA_VERSION 2.8.4)
 set(QSCINTILLA_DIR src/third-party/qscintilla-${QSCINTILLA_VERSION})
-# todo: Use equivalent vars from googletest cmake files. Currently they are somehow not working.
-set(GOOGLE_TEST_VERSION 1.8.1)
-set(GOOGLE_TEST_DIR src/third-party/googletest-${GOOGLE_TEST_VERSION})
+set(GOOGLE_TEST_VERSION 1.15.2)
+set(GOOGLE_TEST_COMMIT b514bdc898e2951020cbdca1304b75f5950d1f59)  # v1.15.2
 # libssh2 is provided by the platform package manager instead of being
 # vendored, so it always tracks upstream security fixes:
 #   Linux   - system libssh2         (apt: libssh2-1-dev,  via pkg-config)
@@ -95,7 +94,17 @@ add_subdirectory(src/docutaz)
 # not part of release builds; CI configures with -DDOCUTAZ_BUILD_TESTS=OFF.
 option(DOCUTAZ_BUILD_TESTS "Build unit tests" ON)
 if(DOCUTAZ_BUILD_TESTS)
-    add_subdirectory(${GOOGLE_TEST_DIR})
+    # GoogleTest is fetched (pinned to the v${GOOGLE_TEST_VERSION} commit) only
+    # when tests are enabled; CI sets -DDOCUTAZ_BUILD_TESTS=OFF and never
+    # downloads it. No vendored googletest tree is kept in the repo.
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        ${GOOGLE_TEST_COMMIT}
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # MSVC: link the dynamic CRT
+    FetchContent_MakeAvailable(googletest)
     add_subdirectory(src/docutaz-unit-tests)
     add_subdirectory(src/tests EXCLUDE_FROM_ALL)
 endif()

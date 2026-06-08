@@ -24,7 +24,7 @@ message("|   MongoDB Objects:    ${MongoDB_VERSION}    ${MongoDB_OBJECTS_DIR}/${
 message("|   OpenSSL:            ${OPENSSL_VERSION}    ${OpenSSL_DIR}")
 message("|   libssh2:            ${LIBSSH2_VERSION}     (package manager)")
 message("|   QScintilla:         ${QSCINTILLA_VERSION}     ${QSCINTILLA_DIR}")
-message("|   Google Test:        ${GOOGLE_TEST_VERSION}     ${GOOGLE_TEST_DIR}")
+message("|   Google Test:        ${GOOGLE_TEST_VERSION}     (FetchContent)")
 message("|")
 message("|-- Summary:")
 message("|")
