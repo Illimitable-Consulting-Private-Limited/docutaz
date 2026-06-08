@@ -67,6 +67,28 @@ standard-library replacements:
 - **Risk/effort:** Medium, mechanical. Removes a heavyweight dependency for
   marginal use.
 
+#### P5 — Restore unit tests in CI
+Tests are currently built with `-DDOCUTAZ_BUILD_TESTS=OFF` on every CI job.
+GoogleTest itself is now healthy (1.15.2 builds cleanly), but enabling the flag
+as-is would add little and likely break CI. Fix the test architecture first,
+then turn it on.
+
+- **Blockers to fix first:**
+  - Linux is hard-disabled in `src/docutaz-unit-tests/CMakeLists.txt`
+    (`if (SYSTEM_LINUX) return()` — "MongoDB linking problems"), so the cheapest
+    test platform runs nothing.
+  - The Windows/macOS test target links the app by **scraping hardcoded object
+    files**, including CMake AUTOGEN hash dirs
+    (`docutaz_autogen/YHP5W5E6RA/qrc_gui.cpp.o`, …) that drift and break.
+  - Coverage is minimal (3 files: `RoboCrypt_test`, `StringOperations_test`,
+    `HexUtils_test`).
+- **Approach:** extract the app's core logic into a **library target** that both
+  `docutaz` and `robo_unit_tests` link (removing the object-file harvesting and
+  the autogen-hash fragility); resolve the Linux MongoDB linking issue; then set
+  `DOCUTAZ_BUILD_TESTS=ON` in CI and add a `ctest` step.
+- **Risk/effort:** Medium. Do after P2; should not ride along with dependency
+  cleanups or block bug fixing.
+
 ### 🟢 Low priority
 
 #### P3 — Ubuntu CI runner 22.04 → 24.04
@@ -90,8 +112,9 @@ it into P1 rather than doing it standalone.
 
 1. **P2 (Boost removal)** and **P3 (runner bump)** — small, self-contained,
    independently verifiable.
-2. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the small items are
-   cleared.
+2. **P5 (restore unit tests)** — test-architecture refactor; do after P2.
+3. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
+   are cleared.
 
 ---
 
