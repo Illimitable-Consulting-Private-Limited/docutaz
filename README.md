@@ -1,6 +1,6 @@
 # Docutaz
 
-A cross-platform MongoDB management tool for developers who work with documents.  
+A cross-platform MongoDB management tool for developers.  
 Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 
 > **Pronounced:** dok · you · taz  
