@@ -30,97 +30,34 @@
 #define __RFC1123DATE_H__
 
 #include <string>
-#include <boost/date_time/posix_time/posix_time.hpp>
 
 namespace miutil {
 
+    // Inclusive bounds (in milliseconds since the Unix epoch) of the dates that
+    // can be rendered as a calendar string. Roughly 1677-11-10 .. 2262-02-20,
+    // matching the range BSON dates are validated against before formatting.
     extern const long long minDate;
     extern const long long maxDate;
-   /**
-    * Takes an ptime and convert it to a time string coded in
-    * the RFC 1123 format. This is the date format used by 
-    * the HTTP protocol.
-    * 
-    * \b Ex. on RFC 1123 coded string
-    *     
-    *   Fri, 16 Mar 2007 08:13:37 GMT  
-    * 
-    * @param t the time to convert to a RFC 1123 coded string representation.
-    * @return On success a string coded in the RFC 1123 format. On error an 
-    * empty string is returned.
-    */
-   
-   std::string rfc1123date(const boost::posix_time::ptime &t);
-   
-   
-   /**
-    * Takes an RFC 1123 coded date string and return an boost::posix_time.
-    * 
-    * \b Ex. on RFC 1123 coded string
-    *     
-    *   Fri, 16 Mar 2007 08:13:37 GMT  
-    * 
-    * @param rfc1123 coded data string.
-    * @return An valid ptime on success and not_a_date_time on failure.
-    */
-   boost::posix_time::ptime rfc1123date(const std::string &rfc1123);
-   
-   
-   /**
-    * Takes an RFC 1123 coded date string and return an boost::posix_time.
-    * 
-    * \b Ex. on RFC 1123 coded string
-    *     
-    *   Fri, 16 Mar 2007 08:13:37 GMT  
-    * 
-    * @param rfc1123 coded data string.
-    * @return An valid ptime on success and not_a_date_time on failure.
-    */
-   boost::posix_time::ptime rfc1123date(const char *rfc1123);
-   
-   /**
-    * isotimeString generates a timeformatted string in one of two
-    * iso compatible formats.
-    * 
-    *  - YYYY-MM-DD hh:mm:ss
-    *  - YYYY-MM-DDThh:mm:ss
-    * 
-    * The second form separates the date part from the timepart with a T.
-    * 
-    * If markAsZulu is true an Z is added to the end of the timestring.
-    * 
-    * ex. 2008-02-15T18:00:00Z
-    * 
-    * An empty string is returned if the \em time is not a valid
-    * ptime, ie. the call to is_special return true.
-    * 
-    * @param t the time to return as a string.
-    * @param useTseparator is true if we want the datepart and timepart separated with a T.
-    * @param markAsZulu Add an Z to the end of the timestring 
-    * @return An iso compatible string on success or an empty string if \em t is invalid.
-    */
-   std::string  isotimeString(const boost::posix_time::ptime &t, bool useTseparator=false, bool isLocalFormat=false);
-   
-   
-   /**
-    * ptimeFromIsoString decodes a time string on the followwing formates to a ptime.
-    *
-    * - YYYY-MM-DDThh:mm:ssZ
-    * - YYYY-MM-DDThh:mm:ssSHHMM 
-    * - YYYYMMDDThhmmssSHHMM
-    * - Sun, 01 Apr 2007 09:51:04 GMT
-    *  
-    * Z is optional and means ZULU time (GMT).
-    * S in front of HHMM stands for - or +. HHMM is an offset to UTC.
-    * T is an optional separator it my bee an space.
-    * 
-    * If the timestring is invallid an logic_error exception is thrown.
-    * 
-    * @param isoTime A timestring.
-    * @return An ptime.
-    */
-   boost::posix_time::ptime ptimeFromIsoString( const std::string &isoTime);
-   boost::posix_time::ptime ptimeFromIsoString( const std::string &isoTime, bool &isSuccessfull);
-   
+
+    /**
+     * Formats a count of milliseconds since the Unix epoch
+     * (1970-01-01T00:00:00Z) as an ISO-8601 compatible string:
+     *
+     *  - YYYY-MM-DD hh:mm:ss.fff
+     *  - YYYY-MM-DDThh:mm:ss.fff   (when useTseparator is true)
+     *
+     * When isLocalFormat is false the time is rendered in UTC and a trailing
+     * 'Z' is appended. When it is true the time is shifted by the machine's
+     * current UTC offset and that offset is appended as +HH:MM / -HH:MM.
+     *
+     * @param millisecondsSinceEpoch milliseconds since 1970-01-01T00:00:00Z.
+     * @param useTseparator separate the date and time parts with 'T'.
+     * @param isLocalFormat render in local time with a numeric offset suffix.
+     * @return the formatted string.
+     */
+    std::string isotimeString(long long millisecondsSinceEpoch,
+                              bool useTseparator = false,
+                              bool isLocalFormat = false);
+
 }
-#endif 
+#endif

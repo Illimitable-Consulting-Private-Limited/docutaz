@@ -21,9 +21,11 @@ does not entangle with ongoing cross-platform bug fixes.
 | 5 | **GoogleTest 1.8.1 → 1.15.2** | Switched to pinned CMake `FetchContent` (test-only, never fetched in CI). Also fixes the `-Werror` failure that blocked local test builds. |
 | 6 | **Boost — easy half (P2a)** | `scoped_ptr`/`shared_ptr`/`make_shared` → `std::`; `erase_all` → `std::remove`/`erase`; `lexical_cast` → `std::to_string`. Boost build dependency still remains (date_time → see P2b). |
 | 7 | **Ubuntu CI runner 22.04 → 24.04 (P3)** | `runs-on: ubuntu-24.04`; mongocxx cache key bumped to `ubuntu24.04` so the prefix rebuilds against the newer glibc/toolchain instead of restoring a 22.04 build. |
+| 8 | **Boost — finish removal (P2b)** | `boost::date_time` in `ptimeutil` rewritten to `std::chrono`. The dead, unused parse functions (`ptimeFromIsoString`, `rfc1123date`) were trimmed; only `isotimeString` (the lone caller-used function, now taking ms-since-epoch) and `minDate`/`maxDate` remain. Verified byte-identical to the Boost output for the UTC path and all whole-hour timezones (incidentally fixes a latent mixed-sign `time_duration` bug for fractional-hour zones in local-time display). **Boost fully removed** — dropped from CMake, apt, brew, the vcpkg manifest, and the Windows `BOOST_ALL_NO_LIB` flag. |
 
 Net effect: ~277k lines of vendored third-party source removed; three stale
 dependencies eliminated, two moved to package managers, one CMake hack gone.
+Boost is no longer a build dependency on any platform.
 
 > ⚠️ The macOS/Windows libssh2 paths can only be validated on CI (a Linux host
 > builds against the system lib). Run the workflow on `modernization` —
@@ -52,28 +54,6 @@ security work now lands in Qt 6 (current LTS 6.8).
 - **Risk/effort:** High. Treat as a dedicated milestone, not a quick PR.
 
 ### 🟡 Medium priority
-
-#### P2b — Finish Boost removal (boost::date_time → std::chrono)
-The easy, mechanical half of P2 is **done** (see Completed): smart pointers,
-`erase_all`, and `lexical_cast` now use the standard library. What remains is
-the correctness-sensitive half — and it is the only thing still keeping Boost
-on the include path:
-
-- **What's left:** `boost::date_time` (`posix_time::ptime` ×40,
-  `time_duration`, `gregorian::date`, `not_a_date_time`, `pos_infin`/`neg_infin`,
-  `second_clock`) in `shell/db/ptimeutil.{h,cpp}` — a live RFC-1123 / ISO-8601
-  date parse-and-format library whose `ptime` type is part of its **public
-  API** — plus its callers `core/utils/BsonUtils.cpp` and
-  `core/domain/Notifier.cpp`. Also a stray (unused) `boost/filesystem` include
-  in the uncompiled `shell/shell/dbshell.cpp`.
-- **Approach:** rewrite ptimeutil to `std::chrono` (+ manual ISO/RFC parsing),
-  change its public signatures off `ptime`, and update the two callers. Pin down
-  timezone offsets, fractional seconds, and the special/infinity values, since
-  this feeds how BSON dates render in the UI — test before/after on real dates.
-- **CI impact (on completion):** drop boost from apt / brew / the vcpkg CI
-  manifest. (Cannot be removed until this is done.)
-- **Risk/effort:** Medium–high; correctness-sensitive. Its own PR with explicit
-  date round-trip tests.
 
 #### P5 — Restore unit tests in CI
 Tests are currently built with `-DDOCUTAZ_BUILD_TESTS=OFF` on every CI job.
@@ -114,10 +94,8 @@ it into P1 rather than doing it standalone.
 
 ## Suggested sequencing
 
-1. **P2b (finish Boost removal)** — date_time → chrono; correctness-sensitive,
-   with date round-trip tests.
-2. **P5 (restore unit tests)** — test-architecture refactor.
-3. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
+1. **P5 (restore unit tests)** — test-architecture refactor.
+2. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
    are cleared.
 
 ---

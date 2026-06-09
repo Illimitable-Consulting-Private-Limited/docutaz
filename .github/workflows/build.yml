@@ -47,7 +47,6 @@ jobs:
             libqt5svg5-dev \
             libssl-dev \
             libssh2-1-dev \
-            libboost-dev \
             pkg-config
 
       # ── mongo-cxx-driver ──────────────────────────────────────────────────
@@ -149,12 +148,11 @@ jobs:
         with:
           arch: x64
 
-      # vcpkg provides Boost (header-only here), OpenSSL, and libssh2 — all
-      # pinned via the builtin-baseline in ci/vcpkg/vcpkg.json. find_package(Boost),
-      # find_package(Libssh2) and our cmake/FindOpenSSL.cmake locate them via
-      # CMAKE_PREFIX_PATH (set in Configure). mongo-c-driver uses Windows
-      # SChannel, not OpenSSL, so OpenSSL here is only for the libssh2 / ssh /
-      # docutaz link.
+      # vcpkg provides OpenSSL and libssh2 — both pinned via the
+      # builtin-baseline in ci/vcpkg/vcpkg.json. find_package(Libssh2) and our
+      # cmake/FindOpenSSL.cmake locate them via CMAKE_PREFIX_PATH (set in
+      # Configure). mongo-c-driver uses Windows SChannel, not OpenSSL, so
+      # OpenSSL here is only for the libssh2 / ssh / docutaz link.
       - name: Cache vcpkg deps
         id: cache-vcpkg
         uses: actions/cache@v4
@@ -162,7 +160,7 @@ jobs:
           path: ${{ github.workspace }}\vcpkg-deps
           key: vcpkg-deps-x64-windows-${{ hashFiles('ci/vcpkg/vcpkg.json') }}-v1
 
-      - name: Install Boost + OpenSSL + libssh2 (vcpkg, pinned)
+      - name: Install OpenSSL + libssh2 (vcpkg, pinned)
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
@@ -291,7 +289,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install build tools and native arm64 Qt 5
-        run: brew install ninja boost qt@5 libssh2 pkg-config
+        run: brew install ninja qt@5 libssh2 pkg-config
 
       - name: Expose Qt 5 prefix
         run: echo "QT5_PREFIX=$(brew --prefix qt@5)" >> "$GITHUB_ENV"

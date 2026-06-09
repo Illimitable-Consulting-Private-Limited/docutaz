@@ -1,5 +1,7 @@
 #include "docutaz/core/utils/BsonUtils.h"
 
+#include <cmath>
+
 #include <mongo/client/dbclient_base.h>
 //#include <mongo/bson/bsonobjiterator.h>
 #include "mongo/util/base64.h"
@@ -285,10 +287,7 @@ namespace Docutaz
                     }
 
                     if ( pretty && isSupportedDate) {
-                        boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-                        boost::posix_time::time_duration diff = boost::posix_time::millisec(ms);
-                        boost::posix_time::ptime time = epoch + diff;
-                        std::string timestr = miutil::isotimeString(time, true, timeFormat == LocalTime);
+                        std::string timestr = miutil::isotimeString(ms, true, timeFormat == LocalTime);
                         s << '"' << timestr << '"';
                     }
                     else
@@ -653,13 +652,9 @@ namespace Docutaz
                     long long ms = (long long) elem.date().toMillisSinceEpoch();
                     bool isSupportedDate = miutil::minDate < ms && ms < miutil::maxDate;
 
-                    boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-                    boost::posix_time::time_duration diff = boost::posix_time::millisec(ms);
-                    boost::posix_time::ptime time = epoch + diff;
-
                     std::string date;
                     if (isSupportedDate)
-                        date = miutil::isotimeString(time, false, tz == LocalTime);
+                        date = miutil::isotimeString(ms, false, tz == LocalTime);
                     else
                         date = std::to_string(ms);
 
