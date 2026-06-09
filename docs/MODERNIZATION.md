@@ -20,6 +20,7 @@ does not entangle with ongoing cross-platform bug fixes.
 | 4 | **Remove orphaned esprima.js** | Dead since the mongosh shell migration (autocomplete is server-side now). ~195 KB resource deleted. |
 | 5 | **GoogleTest 1.8.1 → 1.15.2** | Switched to pinned CMake `FetchContent` (test-only, never fetched in CI). Also fixes the `-Werror` failure that blocked local test builds. |
 | 6 | **Boost — easy half (P2a)** | `scoped_ptr`/`shared_ptr`/`make_shared` → `std::`; `erase_all` → `std::remove`/`erase`; `lexical_cast` → `std::to_string`. Boost build dependency still remains (date_time → see P2b). |
+| 7 | **Ubuntu CI runner 22.04 → 24.04 (P3)** | `runs-on: ubuntu-24.04`; mongocxx cache key bumped to `ubuntu24.04` so the prefix rebuilds against the newer glibc/toolchain instead of restoring a 22.04 build. |
 
 Net effect: ~277k lines of vendored third-party source removed; three stale
 dependencies eliminated, two moved to package managers, one CMake hack gone.
@@ -98,10 +99,6 @@ then turn it on.
 
 ### 🟢 Low priority
 
-#### P3 — Ubuntu CI runner 22.04 → 24.04
-22.04 ends standard support in 2027; 24.04 ships newer Qt 5 / toolchains.
-Trivial change to `runs-on:` in `.github/workflows/build.yml`.
-
 #### P4 — QScintilla 2.8.4 → current (≈2.14.x)
 The bundled code editor component (2014). Functional today; the upgrade mostly
 matters for HiDPI/rendering fixes and is **required** by the Qt 6 move, so fold
@@ -117,13 +114,12 @@ it into P1 rather than doing it standalone.
 
 ## Suggested sequencing
 
-1. **P3 (runner bump)** — small, self-contained, independently verifiable.
-2. **P2b (finish Boost removal)** — date_time → chrono; correctness-sensitive,
+1. **P2b (finish Boost removal)** — date_time → chrono; correctness-sensitive,
    with date round-trip tests.
-3. **P5 (restore unit tests)** — test-architecture refactor.
-4. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
+2. **P5 (restore unit tests)** — test-architecture refactor.
+3. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
    are cleared.
 
 ---
 
-*Last updated: 2026-06-08.*
+*Last updated: 2026-06-09.*
