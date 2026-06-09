@@ -22,6 +22,8 @@ does not entangle with ongoing cross-platform bug fixes.
 | 6 | **Boost — easy half (P2a)** | `scoped_ptr`/`shared_ptr`/`make_shared` → `std::`; `erase_all` → `std::remove`/`erase`; `lexical_cast` → `std::to_string`. Boost build dependency still remains (date_time → see P2b). |
 | 7 | **Ubuntu CI runner 22.04 → 24.04 (P3)** | `runs-on: ubuntu-24.04`; mongocxx cache key bumped to `ubuntu24.04` so the prefix rebuilds against the newer glibc/toolchain instead of restoring a 22.04 build. |
 | 8 | **Boost — finish removal (P2b)** | `boost::date_time` in `ptimeutil` rewritten to `std::chrono`. The dead, unused parse functions (`ptimeFromIsoString`, `rfc1123date`) were trimmed; only `isotimeString` (the lone caller-used function, now taking ms-since-epoch) and `minDate`/`maxDate` remain. Verified byte-identical to the Boost output for the UTC path and all whole-hour timezones (incidentally fixes a latent mixed-sign `time_duration` bug for fractional-hour zones in local-time display). **Boost fully removed** — dropped from CMake, apt, brew, the vcpkg manifest, and the Windows `BOOST_ALL_NO_LIB` flag. |
+| 9 | **Node.js 20 → 24 GitHub Actions** | Bumped `checkout` v4→v6, `cache` v4→v5, `upload-artifact` v4→v7 (all `runs.using: node24`) ahead of GitHub's 2026-06-16 forced cutover. |
+| 10 | **Restore unit tests — architecture + Linux CI (P5)** | App sources extracted into a shared `docutaz_core` OBJECT library that both `docutaz` and `robo_unit_tests` link. Removed the brittle object-file harvesting (hardcoded AUTOGEN hash dirs), the dead `mongodb`/`RoboCrypt_test` references, and the Linux hard-disable. Tests now build and run on Linux via `ctest`; Linux CI configures `-DDOCUTAZ_BUILD_TESTS=ON` and runs them. See P5-follow-up for Windows/macOS. |
 
 Net effect: ~277k lines of vendored third-party source removed; three stale
 dependencies eliminated, two moved to package managers, one CMake hack gone.
@@ -55,27 +57,18 @@ security work now lands in Qt 6 (current LTS 6.8).
 
 ### 🟡 Medium priority
 
-#### P5 — Restore unit tests in CI
-Tests are currently built with `-DDOCUTAZ_BUILD_TESTS=OFF` on every CI job.
-GoogleTest itself is now healthy (1.15.2 builds cleanly), but enabling the flag
-as-is would add little and likely break CI. Fix the test architecture first,
-then turn it on.
+#### P5-follow-up — Enable unit tests on Windows/macOS CI
+The test architecture is fixed and Linux CI runs the suite (see Completed P5).
+What remains is turning the tests on for the other two CI jobs:
 
-- **Blockers to fix first:**
-  - Linux is hard-disabled in `src/docutaz-unit-tests/CMakeLists.txt`
-    (`if (SYSTEM_LINUX) return()` — "MongoDB linking problems"), so the cheapest
-    test platform runs nothing.
-  - The Windows/macOS test target links the app by **scraping hardcoded object
-    files**, including CMake AUTOGEN hash dirs
-    (`docutaz_autogen/YHP5W5E6RA/qrc_gui.cpp.o`, …) that drift and break.
-  - Coverage is minimal (3 files: `RoboCrypt_test`, `StringOperations_test`,
-    `HexUtils_test`).
-- **Approach:** extract the app's core logic into a **library target** that both
-  `docutaz` and `robo_unit_tests` link (removing the object-file harvesting and
-  the autogen-hash fragility); resolve the Linux MongoDB linking issue; then set
-  `DOCUTAZ_BUILD_TESTS=ON` in CI and add a `ctest` step.
-- **Risk/effort:** Medium. Do after P2; should not ride along with dependency
-  cleanups or block bug fixing.
+- **What's left:** flip `-DDOCUTAZ_BUILD_TESTS=OFF → ON` in the Windows and
+  macOS jobs, build `robo_unit_tests`, and add a `ctest` step. The target
+  already builds via `docutaz_core`; the open question is purely **runtime
+  library discovery** for the test binary — Qt DLLs on Windows, the mongocxx /
+  Qt dylibs on macOS — which can only be ironed out on real runners.
+- **Optional:** expand coverage beyond the current three suites
+  (`DocutazCrypt`, `StringOperations`, `HexUtils`).
+- **Risk/effort:** Low–medium; isolated to CI YAML and needs runner iteration.
 
 ### 🟢 Low priority
 
@@ -94,7 +87,7 @@ it into P1 rather than doing it standalone.
 
 ## Suggested sequencing
 
-1. **P5 (restore unit tests)** — test-architecture refactor.
+1. **P5-follow-up (tests on Windows/macOS CI)** — small, needs runner iteration.
 2. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
    are cleared.
 

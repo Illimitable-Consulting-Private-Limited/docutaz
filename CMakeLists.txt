@@ -91,6 +91,9 @@ add_subdirectory(src/docutaz)
 # not part of release builds; CI configures with -DDOCUTAZ_BUILD_TESTS=OFF.
 option(DOCUTAZ_BUILD_TESTS "Build unit tests" ON)
 if(DOCUTAZ_BUILD_TESTS)
+    # enable_testing() must run in the top-level scope so `ctest` from the build
+    # root discovers tests that add_test() registers in the subdirectories below.
+    enable_testing()
     # GoogleTest is fetched (pinned to the v${GOOGLE_TEST_VERSION} commit) only
     # when tests are enabled; CI sets -DDOCUTAZ_BUILD_TESTS=OFF and never
     # downloads it. No vendored googletest tree is kept in the repo.

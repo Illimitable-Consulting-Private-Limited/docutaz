@@ -91,20 +91,24 @@ jobs:
           mkdir build
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DDOCUTAZ_BUILD_TESTS=OFF \
+            -DDOCUTAZ_BUILD_TESTS=ON \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz --parallel
+        run: cmake --build build --target docutaz robo_unit_tests --parallel
 
       - name: Expose mongocxx libs for bundler
         # bin/bundle-linux.sh scans /usr/local/lib64; copy the CI-built shared
-        # libs there so the bundler's glob finds them.
+        # libs there so the bundler's glob finds them. This also satisfies the
+        # robo_unit_tests rpath (/usr/local/lib64) before ctest runs.
         run: |
           sudo mkdir -p /usr/local/lib64
           sudo find "${{ github.workspace }}/mongocxx-prefix" \
             \( -name "*.so" -o -name "*.so.*" \) \
             -exec cp -Pf {} /usr/local/lib64/ \;
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
 
       - name: Create tarball
         run: bash bin/bundle-linux.sh
