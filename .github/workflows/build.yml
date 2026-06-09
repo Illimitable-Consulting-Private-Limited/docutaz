@@ -36,7 +36,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.linux }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Qt5 and system deps
         run: |
@@ -55,7 +55,7 @@ jobs:
 
       - name: Cache mongocxx install
         id: cache-mongocxx
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/mongocxx-prefix
           key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-ubuntu24.04-v1
@@ -110,7 +110,7 @@ jobs:
         run: bash bin/bundle-linux.sh
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docutaz-linux
           path: docutaz-*-linux-x86_64.tar.gz
@@ -131,7 +131,7 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.windows }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install Qt 5
         uses: jurplel/install-qt-action@v4
@@ -155,7 +155,7 @@ jobs:
       # OpenSSL here is only for the libssh2 / ssh / docutaz link.
       - name: Cache vcpkg deps
         id: cache-vcpkg
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}\vcpkg-deps
           key: vcpkg-deps-x64-windows-${{ hashFiles('ci/vcpkg/vcpkg.json') }}-v1
@@ -181,7 +181,7 @@ jobs:
 
       - name: Cache mongocxx install
         id: cache-mongocxx
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}\mongocxx-prefix
           key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-windows-msvc-v2
@@ -264,7 +264,7 @@ jobs:
           Compress-Archive -Path $outDir -DestinationPath "docutaz-$ver-windows-x86_64.zip"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docutaz-windows
           path: docutaz-*-windows-x86_64.zip
@@ -286,7 +286,7 @@ jobs:
       MACOS_DEPLOYMENT_TARGET: "11.0"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Install build tools and native arm64 Qt 5
         run: brew install ninja qt@5 libssh2 pkg-config
@@ -296,7 +296,7 @@ jobs:
 
       - name: Cache mongocxx install
         id: cache-mongocxx
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/mongocxx-prefix
           key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-macos14-arm64-v1
@@ -364,7 +364,7 @@ jobs:
           zip -r "../../../docutaz-${ver}-macos-arm64.zip" Docutaz.app
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docutaz-macos
           path: docutaz-*-macos-arm64.zip
