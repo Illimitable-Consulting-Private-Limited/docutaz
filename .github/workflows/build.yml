@@ -134,6 +134,13 @@ jobs:
     runs-on: windows-latest
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.windows }}
 
+    # ilammy/msvc-dev-cmd has no Node 24 release yet (latest v1.13.0 still
+    # declares node20). Opt this job into Node 24 so the action runs on the
+    # supported runtime ahead of GitHub's 2026-06-16 forced cutover. The other
+    # actions in this job are already node24, so this only affects msvc-dev-cmd.
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
     steps:
       - uses: actions/checkout@v6
 
