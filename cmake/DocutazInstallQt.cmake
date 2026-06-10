@@ -80,6 +80,16 @@ function(install_qt_plugins)
     foreach(name ${ARGV})
         set(target_name Qt6::${name})
 
+        # Qt6 does not always export an imported target for every plugin (e.g.
+        # Ubuntu's qt6-base-dev has the qgif/qico plugins on disk but no
+        # Qt6::QGifPlugin CMake target). Skip plugins we cannot resolve as a
+        # target rather than erroring at configure time; the runtime plugins
+        # are still present in the system Qt and picked up by the platform
+        # bundler (bin/bundle-*.sh) / macdeployqt / windeployqt.
+        if(NOT TARGET ${target_name})
+            continue()
+        endif()
+
         # We are trying to get 'plugins' folder of Qt installation.
 
         # Get full path to plugin library (i.e. /path/to/plugins/imageformats/libqgif.so)
