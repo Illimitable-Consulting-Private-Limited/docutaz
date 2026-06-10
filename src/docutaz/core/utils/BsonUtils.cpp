@@ -182,12 +182,18 @@ namespace Docutaz
                 }
                 break;
             case mongo::Array: {
-                if ( elem.embeddedObject().isEmpty() ) {
+                // Bind the embedded array to a named local. BSONObj now owns its
+                // bytes (shared_ptr), so a temporary embeddedObject() would be
+                // freed at the end of the full expression — leaving the iterator
+                // (which holds raw pointers into those bytes) dangling and reading
+                // freed memory. Keep it alive for the whole iteration.
+                BSONObj arrObj = elem.embeddedObject();
+                if ( arrObj.isEmpty() ) {
                     s << "[]";
                     break;
                 }
                 s << "[ ";
-                BSONObjIterator i( elem.embeddedObject() );
+                BSONObjIterator i( arrObj );
                 BSONElement e = i.next();
                 if ( !e.eoo() ) {
                     int count = 0;
