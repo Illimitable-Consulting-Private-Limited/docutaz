@@ -373,11 +373,12 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
 
             std::vector<MongoDocumentPtr> docs;
             for (const QJsonValue& d : obj["docs"].toArray()) {
-                const std::string ejson =
-                    QJsonDocument(d.toObject()).toJson(QJsonDocument::Compact).toStdString();
+                // Each doc is a pre-serialized EJSON string from the preamble.
+                // Hand it straight to bsoncxx so field order is preserved (a Qt
+                // QJsonObject round-trip would re-sort the keys).
                 try {
                     docs.push_back(std::make_shared<MongoDocument>(
-                        BsonBridge::ejsonToBson(ejson)));
+                        BsonBridge::ejsonToBson(d.toString().toStdString())));
                 } catch (...) {}
             }
 
@@ -403,13 +404,10 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
             // original Robomongo.
             std::vector<std::string> elems;
             for (const QJsonValue& d : obj["docs"].toArray()) {
-                // Serialise each element to JSON, including primitives, by
-                // wrapping in a one-element array and stripping the brackets.
-                QByteArray a = QJsonDocument(QJsonArray{d})
-                    .toJson(QJsonDocument::Compact).trimmed();
-                if (a.startsWith('[') && a.endsWith(']'))
-                    a = a.mid(1, a.size() - 2);
-                elems.push_back(a.toStdString());
+                // Each element is already an EJSON value string (object,
+                // number, string, …) from the preamble; pass it through
+                // verbatim so object elements keep their field order.
+                elems.push_back(d.toString().toStdString());
             }
             std::vector<MongoDocumentPtr> docs;
             try {
@@ -420,15 +418,13 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
                                  originalScript, elapsedMs);
 
         } else if (type == "value") {
-            const QJsonValue val = obj["value"];
+            // value is a pre-serialized EJSON object string from the preamble
+            // (__robo_emit only routes objects here). Parse it directly so its
+            // field order survives.
             std::vector<MongoDocumentPtr> docs;
             try {
-                const std::string ejson =
-                    QJsonDocument(val.isObject() ? val.toObject()
-                                                 : QJsonObject{{"v", val}})
-                    .toJson(QJsonDocument::Compact).toStdString();
                 docs.push_back(std::make_shared<MongoDocument>(
-                    BsonBridge::ejsonToBson(ejson)));
+                    BsonBridge::ejsonToBson(obj["value"].toString("{}").toStdString())));
             } catch (...) {}
             results.emplace_back("value", "", docs, MongoQueryInfo{},
                                  originalScript, elapsedMs);
