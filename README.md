@@ -34,16 +34,15 @@ Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 |---|---|---|
 | CMake | ≥ 3.16 | |
 | C++ compiler | C++17 | GCC 8+, Clang 7+, MSVC 2019+ |
-| Qt 5 | 5.12+ | Core, Gui, Widgets, Network, Xml, PrintSupport |
+| Qt 6 | 6.5+ | Core, Gui, Widgets, Network, Xml, PrintSupport |
+| QScintilla | 2.14.x (Qt6) | system (Linux) / Homebrew (macOS) / from source (Windows) |
 | mongo-cxx-driver | 4.x | `mongocxx` + `bsoncxx` |
 | OpenSSL | 3.x | |
 | libssh2 | system (Linux) / Homebrew (macOS) / vcpkg (Windows) | package-managed, 1.11.x |
 
-The following are bundled under `src/third-party/`:
-- QScintilla 2.8.4
-
-GoogleTest 1.15.2 is fetched on demand (pinned via CMake `FetchContent`) only
-when `-DDOCUTAZ_BUILD_TESTS=ON`; it is not vendored.
+Nothing is vendored under `src/third-party/` any more. GoogleTest 1.15.2 is
+fetched on demand (pinned via CMake `FetchContent`) only when
+`-DDOCUTAZ_BUILD_TESTS=ON`.
 
 ---
 
@@ -69,14 +68,14 @@ ninja docutaz -j$(nproc)
 
 ### Linux — additional packages (Fedora/RHEL)
 ```bash
-sudo dnf install cmake ninja-build gcc-c++ qt5-qtbase-devel \
-    qt5-qtnetwork-devel qt5-qtxml-devel qt5-qtsvg-devel \
-    openssl-devel libssh2-devel
+sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel \
+    qscintilla-qt6-devel openssl-devel libssh2-devel
 ```
 
 ### Linux — additional packages (Debian/Ubuntu)
 ```bash
-sudo apt install cmake ninja-build g++ qtbase5-dev libssl-dev libssh2-1-dev
+sudo apt install cmake ninja-build g++ qt6-base-dev \
+    libqscintilla2-qt6-dev libssl-dev libssh2-1-dev
 ```
 
 ### mongo-cxx-driver

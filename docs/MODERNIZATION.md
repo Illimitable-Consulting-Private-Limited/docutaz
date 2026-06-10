@@ -24,10 +24,13 @@ does not entangle with ongoing cross-platform bug fixes.
 | 8 | **Boost — finish removal (P2b)** | `boost::date_time` in `ptimeutil` rewritten to `std::chrono`. The dead, unused parse functions (`ptimeFromIsoString`, `rfc1123date`) were trimmed; only `isotimeString` (the lone caller-used function, now taking ms-since-epoch) and `minDate`/`maxDate` remain. Verified byte-identical to the Boost output for the UTC path and all whole-hour timezones (incidentally fixes a latent mixed-sign `time_duration` bug for fractional-hour zones in local-time display). **Boost fully removed** — dropped from CMake, apt, brew, the vcpkg manifest, and the Windows `BOOST_ALL_NO_LIB` flag. |
 | 9 | **Node.js 20 → 24 GitHub Actions** | Bumped `checkout` v4→v6, `cache` v4→v5, `upload-artifact` v4→v7 (all `runs.using: node24`) ahead of GitHub's 2026-06-16 forced cutover. |
 | 10 | **Restore unit tests — architecture + Linux CI (P5)** | App sources extracted into a shared `docutaz_core` OBJECT library that both `docutaz` and `robo_unit_tests` link. Removed the brittle object-file harvesting (hardcoded AUTOGEN hash dirs), the dead `mongodb`/`RoboCrypt_test` references, and the Linux hard-disable. Tests now build and run on Linux via `ctest`; Linux CI configures `-DDOCUTAZ_BUILD_TESTS=ON` and runs them. See P5-follow-up for Windows/macOS. |
+| 11 | **Qt 5 → Qt 6 (P1)** | `find_package(Qt5*)` → `Qt6`; `Qt5::WinMain` → `Qt6::EntryPoint`; `Qt5MacExtras` dropped (removed in Qt6). Source migration: `QRegExp`/`QRegExpValidator` → `QRegularExpression`; `QMutex::Recursive` → `QRecursiveMutex`; `qsrand`/`qrand` → `QRandomGenerator`; `qChecksum(ptr,len)` → `qChecksum(view)`; implicit `QString`→`QUuid` made explicit; `QStringList::toSet`/`QSet::toList` → range ctor/`values()`; `QDesktopWidget`/`QApplication::desktop()` → `QScreen`/`primaryScreen()`; `QFontMetrics::width` → `horizontalAdvance`; `QLayout::setMargin` → `setContentsMargins`; `Qt::MidButton` → `MiddleButton`; `Qt::CTRL + Qt::Key_*` → `\|`; `Qt::TextColorRole` → `ForegroundRole`. Builds against Qt 6.10.3 locally; CI uses 6.8.x (Win) / distro+brew (Linux/macOS). |
+| 12 | **QScintilla 2.8.4 → 2.14.x, de-vendored (P4)** | Bundled Qt4/Qt5-only tree (~9 MB, 519 files) removed. Resolved per platform via `find_path`/`find_library` into an INTERFACE `qscintilla` target: Linux system (`libqscintilla2-qt6-dev`), macOS Homebrew (`qscintilla2`), Windows built from source against the aqtinstall Qt6. The About dialog reads `QSCINTILLA_VERSION_STR` from the headers. |
 
-Net effect: ~277k lines of vendored third-party source removed; three stale
-dependencies eliminated, two moved to package managers, one CMake hack gone.
-Boost is no longer a build dependency on any platform.
+Net effect: ~555k lines of vendored third-party source removed (qjson,
+esprima, googletest, libssh2, **QScintilla**); four stale dependencies
+eliminated, three moved to package managers, one CMake hack gone. Boost is no
+longer a build dependency, and the app now targets Qt 6.
 
 > ⚠️ The macOS/Windows libssh2 paths can only be validated on CI (a Linux host
 > builds against the system lib). Run the workflow on `modernization` —
@@ -40,20 +43,11 @@ Boost is no longer a build dependency on any platform.
 
 Ordered roughly by value vs. effort. Each is intended as its own focused PR.
 
-### 🔴 High priority
-
-#### P1 — Qt 5 → Qt 6
-The single largest item. Qt 5.15.2 (Dec 2020) is the last free Qt 5 release and
-is effectively end-of-life; all platform, OpenSSL 3.x, Wayland, HiDPI and
-security work now lands in Qt 6 (current LTS 6.8).
-
-- **Scope:** `find_package(Qt5* )` → `Qt6`; `QRegExp` → `QRegularExpression`;
-  `QtMacExtras` removed in Qt 6 (replace the macOS-specific calls); review
-  `QString`/container API changes; bundled QScintilla must move to a
-  Qt6-compatible version (see P4 — couple these).
-- **CI impact:** Windows (aqtinstall version), macOS (`brew qt@5` → `qt`),
-  Linux (`qtbase5-dev` → `qt6-base-dev`).
-- **Risk/effort:** High. Treat as a dedicated milestone, not a quick PR.
+> ⚠️ The macOS/Windows **Qt 6 + QScintilla** paths (like libssh2) can only be
+> validated on CI — a Linux host builds against the distro packages. The
+> Windows job builds QScintilla from source against the aqtinstall Qt6; the
+> macOS job uses Homebrew `qt`/`qscintilla2`. Run the workflow on
+> `modernization` before relying on those artifacts.
 
 ### 🟡 Medium priority
 
@@ -70,27 +64,21 @@ What remains is turning the tests on for the other two CI jobs:
   (`DocutazCrypt`, `StringOperations`, `HexUtils`).
 - **Risk/effort:** Low–medium; isolated to CI YAML and needs runner iteration.
 
-### 🟢 Low priority
-
-#### P4 — QScintilla 2.8.4 → current (≈2.14.x)
-The bundled code editor component (2014). Functional today; the upgrade mostly
-matters for HiDPI/rendering fixes and is **required** by the Qt 6 move, so fold
-it into P1 rather than doing it standalone.
-
 ### Optional / nice-to-have
-- **C++17 → C++20** once Qt 6 is in (Qt 6 already requires C++17). Enables
+- **C++17 → C++20** now that Qt 6 is in (Qt 6 already requires C++17). Enables
   `std::span`, concepts, etc. Low urgency.
-- **README dependency table:** revisit the stated `Qt 5 5.12+` minimum — CI uses
-  5.15.2; after P1 this becomes Qt 6.
 
 ---
 
 ## Suggested sequencing
 
-1. **P5-follow-up (tests on Windows/macOS CI)** — small, needs runner iteration.
-2. **P1 + P4 (Qt 6 + QScintilla)** — the big milestone, once the smaller items
-   are cleared.
+1. **P5-follow-up (tests on Windows/macOS CI)** — small, needs runner iteration;
+   now also covers QScintilla runtime discovery for the test binary.
+
+With P1+P4 done, the dependency/build modernization is essentially complete.
+The `modernization` branch can be merged to `main` once CI is green on all
+three platforms.
 
 ---
 
-*Last updated: 2026-06-09.*
+*Last updated: 2026-06-11.*
