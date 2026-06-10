@@ -33,7 +33,7 @@ Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 | Dependency | Version | Notes |
 |---|---|---|
 | CMake | ≥ 3.16 | |
-| C++ compiler | C++17 | GCC 8+, Clang 7+, MSVC 2019+ |
+| C++ compiler | C++17 | GCC 9+, Clang 10+, MSVC 2019+ (Qt 6 floor) |
 | Qt 6 | 6.5+ | Core, Gui, Widgets, Network, Xml, PrintSupport |
 | QScintilla | 2.14.x (Qt6) | system (Linux) / Homebrew (macOS) / from source (Windows) |
 | mongo-cxx-driver | 4.x | `mongocxx` + `bsoncxx` |
@@ -79,9 +79,12 @@ sudo apt install cmake ninja-build g++ qt6-base-dev \
 ```
 
 ### mongo-cxx-driver
-Docutaz links against `libmongocxx` and `libbsoncxx`. Build and install them first:
+Docutaz links against `libmongocxx` and `libbsoncxx` (mongo-cxx-driver **4.x**,
+which builds on mongo-c-driver 2.x). Build and install both first:
 ```bash
-# See https://mongocxx.org/mongocxx-v3/installation/
+# See https://github.com/mongodb/mongo-cxx-driver (build mongo-c-driver, then
+# mongo-cxx-driver). The CI workflow (.github/workflows/build.yml) has exact,
+# working build steps for all three platforms.
 cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
 sudo cmake --install .
 ```
