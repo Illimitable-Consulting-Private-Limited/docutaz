@@ -37,7 +37,7 @@ namespace Docutaz
 
         setLayout(vlaout);
 
-        QMovie *movie = new QMovie(":robomongo/icons/loading.gif", QByteArray(), this);
+        QMovie *movie = new QMovie(":/docutaz/icons/loading.gif", QByteArray(), this);
         _progressLabel = new QLabel(this);
         _progressLabel->setMovie(movie);
         _progressLabel->hide();

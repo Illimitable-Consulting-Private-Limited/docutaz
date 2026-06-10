@@ -12,7 +12,7 @@ namespace Docutaz
     {
         setStyleSheet("QFrame {background-color: #e1e1e1; border: 0px solid #c7c5c4; border-radius: 6px;}");
 
-        QMovie *movie = new QMovie(":robomongo/icons/progress_bar.gif", QByteArray(), this);
+        QMovie *movie = new QMovie(":/docutaz/icons/progress_bar.gif", QByteArray(), this);
         _progressLabel = new QLabel();
         _progressLabel->setMovie(movie);
         _progressLabel->setFixedWidth(widthProgress);

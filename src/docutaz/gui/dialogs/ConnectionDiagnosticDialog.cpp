@@ -56,7 +56,7 @@ namespace Docutaz
         _viewErrorLink = new QLabel("<a href='error' style='color: #777777;'>Show error details</a>");
         VERIFY(connect(_viewErrorLink, SIGNAL(linkActivated(QString)), this, SLOT(errorLinkActivated(QString))));
 
-        _loadingMovie = new QMovie(":robomongo/icons/loading_ticks_40x40.gif", QByteArray(), this);
+        _loadingMovie = new QMovie(":/docutaz/icons/loading_ticks_40x40.gif", QByteArray(), this);
         _loadingMovie->setScaledSize(QSize(20, 20));
         _loadingMovie->start();
 
