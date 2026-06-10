@@ -79,7 +79,7 @@ namespace Docutaz
         BsonTreeView *_bsonTreeview;
         BsonTableView *_bsonTable;
         BsonTreeModel *_mod;
-        CollectionStatsTreeWidget *_collectionStats;
+        CollectionStatsTreeWidget *_collectionStats = nullptr;
 
         QString _text;
         QString _type; // type of request

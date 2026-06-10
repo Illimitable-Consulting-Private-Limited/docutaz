@@ -422,11 +422,19 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
             // (__robo_emit only routes objects here). Parse it directly so its
             // field order survives.
             std::vector<MongoDocumentPtr> docs;
+            std::string resultType = "value";
             try {
-                docs.push_back(std::make_shared<MongoDocument>(
-                    BsonBridge::ejsonToBson(obj["value"].toString("{}").toStdString())));
+                const mongo::BSONObj v =
+                    BsonBridge::ejsonToBson(obj["value"].toString("{}").toStdString());
+                docs.push_back(std::make_shared<MongoDocument>(v));
+                // db.collection.stats() output is routed to the dedicated stats
+                // panel (custom UI). Recognise it by its characteristic top-level
+                // fields so the Statistics action renders the formatted view.
+                if (!v.getField("ns").eoo() && !v.getField("count").eoo() &&
+                    !v.getField("storageSize").eoo())
+                    resultType = "collectionStats";
             } catch (...) {}
-            results.emplace_back("value", "", docs, MongoQueryInfo{},
+            results.emplace_back(resultType, "", docs, MongoQueryInfo{},
                                  originalScript, elapsedMs);
 
         } else {
