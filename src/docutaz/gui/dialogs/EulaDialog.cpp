@@ -11,7 +11,7 @@
 #include <QTextBrowser>
 #include <QLineEdit>
 #include <QRadioButton>
-#include <QDesktopWidget>
+#include <QScreen>
 
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
@@ -134,8 +134,7 @@ namespace Docutaz
             restoreWindowSettings();
         }
         else {
-            auto const desktop = QApplication::desktop();
-            auto const& mainScreenSize = desktop->availableGeometry(desktop->primaryScreen()).size();
+            const auto mainScreenSize = QGuiApplication::primaryScreen()->availableGeometry().size();
             resize(mainScreenSize.width()*0.5, mainScreenSize.height()*0.6);
         }
     }

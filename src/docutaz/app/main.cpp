@@ -1,5 +1,4 @@
 #include <QApplication>
-#include <QDesktopWidget>
 
 #include <locale.h>
 

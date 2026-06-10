@@ -21,12 +21,12 @@ namespace Docutaz
         _newShellAction = new QAction("&New Shell", _menu);
         _newShellAction->setShortcut(QKeySequence(QKeySequence::AddTab));
         _reloadShellAction = new QAction("&Re-execute Query", _menu);
-        _reloadShellAction->setShortcut(Qt::CTRL + Qt::Key_R);
+        _reloadShellAction->setShortcut(Qt::CTRL | Qt::Key_R);
         _duplicateShellAction = new QAction("&Duplicate Query In New Tab", _menu);
-        _duplicateShellAction->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_T);
+        _duplicateShellAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_T);
         _pinShellAction = new QAction("&Pin Shell", _menu);
         _closeShellAction = new QAction("&Close Shell", _menu);
-        _closeShellAction->setShortcut(Qt::CTRL + Qt::Key_W);
+        _closeShellAction->setShortcut(Qt::CTRL | Qt::Key_W);
         _closeOtherShellsAction = new QAction("Close &Other Shells", _menu);
         _closeShellsToTheRightAction = new QAction("Close Shells to the R&ight", _menu);
 
@@ -46,7 +46,7 @@ namespace Docutaz
      */
     void WorkAreaTabBar::mouseReleaseEvent(QMouseEvent *event)
     {
-        if (event->button() == Qt::MidButton)
+        if (event->button() == Qt::MiddleButton)
             middleMouseReleaseEvent(event);
         else if (event->button() == Qt::RightButton)
             rightMouseReleaseEvent(event);

@@ -84,7 +84,7 @@ namespace Docutaz
         databaselayout->addWidget(_databaseComboBox);        
         VERIFY(connect(_serverComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(updateDatabaseComboBox(int))));
 
-        _serverComboBox->addItems(uniqueConnectionsNames.toList());
+        _serverComboBox->addItems(uniqueConnectionsNames.values());
         QVBoxLayout *layout = new QVBoxLayout();
         layout->addLayout(vlayout);
         layout->addWidget(hline);

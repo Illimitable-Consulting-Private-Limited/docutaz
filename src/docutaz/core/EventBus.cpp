@@ -43,9 +43,9 @@ namespace
 
 namespace Docutaz
 {
-    EventBus::EventBus() : QObject(),
-        _lock(QMutex::Recursive)
+    EventBus::EventBus() : QObject()
     {
+        // _lock is a QRecursiveMutex (Qt6 split recursion out of QMutex).
     }
 
     EventBus::~EventBus()

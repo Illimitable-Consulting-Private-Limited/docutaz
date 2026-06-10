@@ -3,7 +3,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QGridLayout>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
+#include <QRegularExpression>
 #include <QCheckBox>
 #include <QPushButton>
 #include <QFileDialog>
@@ -13,7 +14,6 @@
 #include <QMessageBox>
 #include <QDialogButtonBox>
 #include <QApplication>
-#include <QDesktopWidget>
 
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/settings/ConnectionSettings.h"
@@ -48,8 +48,8 @@ namespace Docutaz
         _colon = new QLabel(":");
         _serverPort = new QLineEdit(QString::number(_settings->serverPort()));
         _serverPort->setFixedWidth(80);
-        QRegExp rx("\\d+"); //(0-65554)
-        _serverPort->setValidator(new QRegExpValidator(rx, this)); 
+        QRegularExpression rx("\\d+"); //(0-65554)
+        _serverPort->setValidator(new QRegularExpressionValidator(rx, this)); 
         _addInfoLabel = new QLabel("Specify host and port of MongoDB server. Host can be either IPv4, IPv6 or domain name.");
         _addInfoLabel->setWordWrap(true);
 
@@ -319,7 +319,7 @@ namespace Docutaz
         if (hostAndPort.size() >= 2) {
             auto const& hostName = hostAndPort[0];
             auto portStr = hostAndPort[1];
-            portStr.remove(QRegExp("[^\\d]"));
+            portStr.remove(QRegularExpression("[^\\d]"));
             str = hostName + ':' + QString::number(portStr.toInt());
         }
         else 

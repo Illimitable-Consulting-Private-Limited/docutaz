@@ -153,9 +153,10 @@ add_library(docutaz_core OBJECT ${SOURCES})
 
 target_link_libraries(docutaz_core
     PUBLIC
-        Qt5::Widgets
-        Qt5::Network
-        Qt5::Xml
+        Qt6::Widgets
+        Qt6::Network
+        Qt6::Xml
+        Qt6::PrintSupport
         qscintilla
         mongo::mongocxx_shared
         mongo::bsoncxx_shared
@@ -223,7 +224,7 @@ target_compile_definitions(docutaz_core
         PROJECT_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
         BUILD_NUMBER="${BUILD_NUMBER}"
         PROJECT_NAME_LOWERCASE="${PROJECT_NAME_LOWERCASE}"
-        PROJECT_QT_VERSION="${Qt5Core_VERSION}"        
+        PROJECT_QT_VERSION="${Qt6_VERSION}"
         MongoDB_VERSION="8.0"
         OPENSSL_VERSION="${OPENSSL_VERSION}"
         LIBSSH2_VERSION="${LIBSSH2_VERSION}"
@@ -252,8 +253,8 @@ if(SYSTEM_WINDOWS)
     # Start debug program with console
     set_target_properties(docutaz PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
 
-    # Seems that we do not need to do this with recent versions of Qt
-    target_link_libraries(docutaz PRIVATE Qt5::WinMain)
+    # Qt6 renamed the WinMain helper to EntryPoint.
+    target_link_libraries(docutaz PRIVATE Qt6::EntryPoint)
 
 elseif(SYSTEM_MACOSX)
     string(TIMESTAMP CURRENT_YEAR "%Y")

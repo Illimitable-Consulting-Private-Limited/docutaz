@@ -10,7 +10,8 @@
 #include <QToolBar>
 #include <QToolTip>
 #include <QDockWidget>
-#include <QDesktopWidget>
+#include <QScreen>
+#include <QActionGroup>
 #include <QTimer>
 #include <QPushButton>
 #include <QLabel>
@@ -472,14 +473,14 @@ namespace Docutaz
     #if !defined(Q_OS_MAC)
         fullScreenAction->setShortcut(Qt::Key_F11);
     #else
-        fullScreenAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F11));
+        fullScreenAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11));
     #endif
         fullScreenAction->setVisible(true);
         VERIFY(connect(fullScreenAction, SIGNAL(triggered()), this, SLOT(toggleFullScreen2())));
 
         // Minimize window
         QAction *minimizeAction = new QAction("&Minimize", this);
-        minimizeAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
+        minimizeAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_M));
         minimizeAction->setVisible(true);
         VERIFY(connect(minimizeAction, SIGNAL(triggered()), this, SLOT(showMinimized())));
 
@@ -497,13 +498,13 @@ namespace Docutaz
 
         // Reload action (currently a re-execute, as does not "reload" files per issue #447)
         QAction *reloadAction = new QAction("Re-execute Query in Current Tab", this);
-        reloadAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
+        reloadAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
         reloadAction->setVisible(true);
         VERIFY(connect(reloadAction, SIGNAL(triggered()), SLOT(executeScript())));
 
         // Duplicate tab action
         QAction *duplicateAction = new QAction("Duplicate Query in New Tab", this);
-        duplicateAction->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_T);
+        duplicateAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_T);
         duplicateAction->setVisible(true);
         VERIFY(connect(duplicateAction, SIGNAL(triggered()), SLOT(duplicateTab())));
 
@@ -524,7 +525,7 @@ namespace Docutaz
         if (!settings->disableHttpsFeatures()) {
             // Open welcome tab action
             auto openWelcomeTabAction = new QAction("Open/Refresh Welcome Tab", this);
-            openWelcomeTabAction->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_W);
+            openWelcomeTabAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_W);
             openWelcomeTabAction->setVisible(true);
             VERIFY(connect(openWelcomeTabAction, SIGNAL(triggered()), SLOT(openWelcomeTab())));
             windowMenu->addAction(openWelcomeTabAction);
@@ -578,7 +579,7 @@ namespace Docutaz
         _updateLabel->setWordWrap(true);
         _updateLabel->setOpenExternalLinks(true);
         _updateLabel->setTextFormat(Qt::TextFormat::RichText);
-        _updateLabel->setIndent(_updateLabel->fontMetrics().width("T"));
+        _updateLabel->setIndent(_updateLabel->fontMetrics().horizontalAdvance("T"));
 
         _closeButton = new QPushButton;
         _closeButton->setIcon(QIcon(":/docutaz/icons/close_hover_16x16.png"));
@@ -592,7 +593,7 @@ namespace Docutaz
         updateBarLay->addWidget(_updateLabel);
         updateBarLay->addWidget(_closeButton, Qt::AlignRight);
         updateBarLay->setSpacing(0);
-        updateBarLay->setMargin(0);
+        updateBarLay->setContentsMargins(0, 0, 0, 0);
 
         auto updateBarWid = new QWidget;
         updateBarWid->setLayout(updateBarLay);
@@ -722,7 +723,7 @@ namespace Docutaz
         else
         {
             // Resize main window. We are trying to keep it "almost" maximized.
-            QRect screenGeometry = QApplication::desktop()->availableGeometry();
+            QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
             int horizontalMargin = static_cast<int>(screenGeometry.width() * 0.1);
             int verticalMargin = static_cast<int>(screenGeometry.height() * 0.1);
             int _width = screenGeometry.width() - horizontalMargin;
@@ -749,7 +750,7 @@ namespace Docutaz
 
         QTextDocument doc;
         doc.setHtml(_updateLabel->text());
-        int const strWidth = _updateLabel->fontMetrics().width(doc.toPlainText());
+        int const strWidth = _updateLabel->fontMetrics().horizontalAdvance(doc.toPlainText());
         int const lineHeight = _updateLabel->fontMetrics().height();
         int const widthForUpdateStr = width() - _closeButton->width();
 
@@ -1265,7 +1266,7 @@ namespace Docutaz
         QAction *actionExp = explorerDock->toggleViewAction();
         // Adjust any parameter you want.  
         actionExp->setText(QString("&Explorer"));
-        actionExp->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_E));  
+        actionExp->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_E));  
         actionExp->setStatusTip(QString("Press to show/hide Database Explorer panel."));
         actionExp->setChecked(explorerDock->isVisible());
         VERIFY(connect(actionExp, SIGNAL(triggered(bool)), this, SLOT(onExplorerVisibilityChanged(bool))));
@@ -1285,7 +1286,7 @@ namespace Docutaz
 
         QAction *action = _logDock->toggleViewAction();
         action->setText(QString("&Logs"));
-        action->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));  
+        action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_L));  
         //action->setStatusTip(QString("Press to show/hide Logs panel."));  //commented for now because this message hides Logs button in status bar :)
         action->setChecked(_logDock->isVisible());
         // Install action in the menu.

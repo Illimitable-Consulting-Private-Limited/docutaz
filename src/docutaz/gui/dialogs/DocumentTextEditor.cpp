@@ -5,7 +5,7 @@
 #include <QPushButton>
 #include <QMessageBox>
 #include <QDialogButtonBox>
-#include <QDesktopWidget>
+#include <QScreen>
 #include <QSettings>
 #include <Qsci/qscilexerjavascript.h>
 
@@ -30,7 +30,7 @@ namespace Docutaz
         _info(info),
         _readonly(readonly)
     {
-        QRect screenGeometry = QApplication::desktop()->availableGeometry();
+        QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
         int horizontalMargin = (int)(screenGeometry.width() * 0.35);
         int verticalMargin = (int)(screenGeometry.height() * 0.20);
         QSize size(screenGeometry.width() - horizontalMargin,

@@ -169,7 +169,7 @@ namespace Docutaz
             return getIcon(node);
         }
 
-        if (role == Qt::TextColorRole && col == BsonTreeItem::eType) {
+        if (role == Qt::ForegroundRole && col == BsonTreeItem::eType) {
             return QColor(Qt::gray);
         }
 
@@ -198,7 +198,7 @@ namespace Docutaz
 
     Qt::ItemFlags BsonTreeModel::flags(const QModelIndex &index) const
     {
-        Qt::ItemFlags result = 0;
+        Qt::ItemFlags result = Qt::NoItemFlags;
         if (index.isValid()) {
             result = Qt::ItemIsSelectable | Qt::ItemIsEnabled;
         }

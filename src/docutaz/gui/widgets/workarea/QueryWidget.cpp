@@ -1,6 +1,7 @@
 #include "docutaz/gui/widgets/workarea/QueryWidget.h"
 
 #include <QObject>
+#include <QRegularExpression>
 #include <QPushButton>
 #include <QApplication>
 #include <QLabel>
@@ -395,7 +396,7 @@ namespace Docutaz
         else {
 
             if (tabTitle.isEmpty()) {
-                tabTitle = shellQuery.left(41).replace(QRegExp("[\n\r\t]"), " ");
+                tabTitle = shellQuery.left(41).replace(QRegularExpression("[\n\r\t]"), " ");
                 toolTipText = QString("<pre>%1</pre>").arg(toolTipQuery);
             }
             else {

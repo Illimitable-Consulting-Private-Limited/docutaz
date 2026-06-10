@@ -239,7 +239,7 @@ namespace Docutaz
 
     void OutputWidget::mouseReleaseEvent(QMouseEvent * event)
     {
-        if (event->button() != Qt::MidButton)
+        if (event->button() != Qt::MiddleButton)
             return;
 
         int const tabIndex = tabBar()->tabAt(event->pos());

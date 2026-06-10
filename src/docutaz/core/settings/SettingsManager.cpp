@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QVariantList>
 #include <QUuid>
+#include <QSet>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -239,10 +240,10 @@ namespace Docutaz
         _disableConnectionShortcuts = map.value("disableConnectionShortcuts").toBool();
         
         if (map.contains("acceptedEulaVersions")) 
-            _acceptedEulaVersions = map.value("acceptedEulaVersions").toStringList().toSet();
+            { const QStringList _l = map.value("acceptedEulaVersions").toStringList(); _acceptedEulaVersions = QSet<QString>(_l.begin(), _l.end()); }
         
         if (map.contains("dbVersionsConnected"))
-            _dbVersionsConnected = map.value("dbVersionsConnected").toStringList().toSet();
+            { const QStringList _l = map.value("dbVersionsConnected").toStringList(); _dbVersionsConnected = QSet<QString>(_l.begin(), _l.end()); }
         
         // Load anonymousID
         _anonymousID = getOrCreateAnonymousID(map);
@@ -403,7 +404,7 @@ namespace Docutaz
 
         // If anonymousID has never been created or is empty, create a new one. Otherwise load the existing.
         if (map.contains("anonymousID")) {
-            QUuid id = map.value("anonymousID").toString();
+            QUuid id(map.value("anonymousID").toString());
             if (!id.isNull())
                 anonymousID = id.toString();
         }
@@ -413,7 +414,7 @@ namespace Docutaz
             if (!anonymousID.isEmpty())
                 break;
 
-            QUuid const& id = extractAnonymousIDFromZip(zipFileAndConfigFile.first, zipFileAndConfigFile.second);
+            QUuid const id(extractAnonymousIDFromZip(zipFileAndConfigFile.first, zipFileAndConfigFile.second));
             if (!id.isNull())
                 anonymousID = id.toString();
         }
@@ -730,7 +731,7 @@ namespace Docutaz
 
         QString anonymousID;
         if (map.contains("anonymousID")) {
-            QUuid const& id = map.value("anonymousID").toString();
+            QUuid const id(map.value("anonymousID").toString());
             if (!id.isNull())
                 anonymousID = id.toString();
         }
