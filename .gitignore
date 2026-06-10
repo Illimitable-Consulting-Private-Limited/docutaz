@@ -24,8 +24,8 @@ target-debug/
 target-release/
 libs/
 
-/build
-/build2
+# CMake build directories (build, build2, build-qt6, build-release, …)
+/build*
 
 /src/robomongo/robomongo.pro.user.1.3
 
