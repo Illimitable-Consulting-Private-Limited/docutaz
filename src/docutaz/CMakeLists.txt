@@ -253,7 +253,11 @@ if(SYSTEM_WINDOWS)
     # Start debug program with console
     set_target_properties(docutaz PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
 
-    # Qt6 renamed the WinMain helper to EntryPoint.
+    # Qt6 renamed the WinMain helper to EntryPoint. On Windows it is a real,
+    # separately-findable component (provides WinMain for the WIN32 GUI
+    # subsystem); request it here rather than in the top-level find_package,
+    # because on Linux EntryPoint is folded into Core and has no own package.
+    find_package(Qt6 REQUIRED COMPONENTS EntryPoint)
     target_link_libraries(docutaz PRIVATE Qt6::EntryPoint)
 
 elseif(SYSTEM_MACOSX)
