@@ -20,6 +20,9 @@ set(SOURCES_TEST
     ${ROBO_SRC_DIR}/utils/DocutazCrypt_test.cpp
     ${ROBO_SRC_DIR}/utils/StringOperations_test.cpp
     ${ROBO_SRC_DIR}/core/HexUtils_test.cpp
+    ${ROBO_SRC_DIR}/core/utils/BsonUtils_test.cpp
+    ${ROBO_SRC_DIR}/core/utils/BsonBridge_test.cpp
+    ${ROBO_SRC_DIR}/gui/GuiResources_test.cpp
 )
 
 add_executable(robo_unit_tests ${SOURCES_TEST})
