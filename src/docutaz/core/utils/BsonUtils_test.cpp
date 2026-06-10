@@ -69,3 +69,48 @@ TEST(bson_utils_json, build_json_string_array_renders_values)
     EXPECT_NE(out.find("22.6333446"), std::string::npos) << out;
     EXPECT_EQ(out.find("ObjectId"), std::string::npos) << out;
 }
+
+// Type predicates that gate which context-menu actions appear (Notifier):
+// Copy Value is offered for simple types, Copy JSON for documents/arrays, etc.
+TEST(bson_utils_types, simple_document_and_array_classification)
+{
+    using namespace mongo;
+    // Simple (scalar) types -> eligible for "Copy Value".
+    EXPECT_TRUE(BsonUtils::isSimpleType(String));
+    EXPECT_TRUE(BsonUtils::isSimpleType(NumberDouble));
+    EXPECT_TRUE(BsonUtils::isSimpleType(NumberInt));
+    EXPECT_TRUE(BsonUtils::isSimpleType(jstOID));
+    EXPECT_TRUE(BsonUtils::isSimpleType(Date));
+    EXPECT_TRUE(BsonUtils::isSimpleType(Bool));
+
+    // Containers are not "simple".
+    EXPECT_FALSE(BsonUtils::isSimpleType(Object));
+    EXPECT_FALSE(BsonUtils::isSimpleType(Array));
+
+    // isDocument covers both embedded documents and arrays (both expandable
+    // and both offer "Copy JSON"); isArray is the narrower check.
+    EXPECT_TRUE(BsonUtils::isDocument(Object));
+    EXPECT_TRUE(BsonUtils::isDocument(Array));
+    EXPECT_FALSE(BsonUtils::isDocument(String));
+
+    EXPECT_TRUE(BsonUtils::isArray(Array));
+    EXPECT_FALSE(BsonUtils::isArray(Object));
+    EXPECT_FALSE(BsonUtils::isArray(String));
+}
+
+// Regression test for the custom-UI / collection-stats routing. db.coll.stats()
+// output is recognised by its ns + count + storageSize fields and sent to the
+// dedicated stats panel; ordinary documents must not be misrouted there.
+TEST(bson_utils_types, collection_stats_detection)
+{
+    // Minimal stats-shaped document.
+    EXPECT_TRUE(BsonUtils::isCollectionStats(BsonBridge::ejsonToBson(
+        R"({"ns":"db.c","count":42,"size":100,"storageSize":200,"nindexes":1})")));
+
+    // Ordinary documents are not stats, even if they share one or two fields.
+    EXPECT_FALSE(BsonUtils::isCollectionStats(
+        BsonBridge::ejsonToBson(R"({"_id":"x","name":"y"})")));
+    EXPECT_FALSE(BsonUtils::isCollectionStats(
+        BsonBridge::ejsonToBson(R"({"ns":"db.c","count":42})")));  // no storageSize
+    EXPECT_FALSE(BsonUtils::isCollectionStats(BsonBridge::ejsonToBson("{}")));
+}

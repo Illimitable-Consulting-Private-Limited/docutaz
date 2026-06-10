@@ -22,6 +22,7 @@
 #include "docutaz/core/domain/MongoQueryInfo.h"
 #include "docutaz/core/domain/MongoDocument.h"
 #include "docutaz/core/utils/BsonBridge.h"
+#include "docutaz/core/utils/BsonUtils.h"
 #include "docutaz/core/utils/Logger.h"
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
@@ -428,10 +429,8 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
                     BsonBridge::ejsonToBson(obj["value"].toString("{}").toStdString());
                 docs.push_back(std::make_shared<MongoDocument>(v));
                 // db.collection.stats() output is routed to the dedicated stats
-                // panel (custom UI). Recognise it by its characteristic top-level
-                // fields so the Statistics action renders the formatted view.
-                if (!v.getField("ns").eoo() && !v.getField("count").eoo() &&
-                    !v.getField("storageSize").eoo())
+                // panel (custom UI). See BsonUtils::isCollectionStats.
+                if (BsonUtils::isCollectionStats(v))
                     resultType = "collectionStats";
             } catch (...) {}
             results.emplace_back(resultType, "", docs, MongoQueryInfo{},

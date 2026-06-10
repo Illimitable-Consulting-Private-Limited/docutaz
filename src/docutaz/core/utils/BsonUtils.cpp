@@ -414,6 +414,16 @@ namespace Docutaz
             return (binDataType == mongo::newUUID || binDataType == mongo::bdtUUID);
         }
 
+        bool isCollectionStats(const mongo::BSONObj &doc)
+        {
+            // db.collection.stats() output is recognised by these characteristic
+            // top-level fields. Requiring all three keeps ordinary documents from
+            // being misrouted to the stats panel.
+            return !doc.getField("ns").eoo()
+                && !doc.getField("count").eoo()
+                && !doc.getField("storageSize").eoo();
+        }
+
         bool isSimpleType(const mongo::BSONElement &elem) 
         {
             return isSimpleType(elem.type()); 

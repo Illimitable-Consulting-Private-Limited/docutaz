@@ -100,6 +100,11 @@ namespace Docutaz
         bool isSimpleType(const mongo::BSONElement &elem);
         bool isUuidType(const mongo::BSONElement &elem);
 
+        // True when a document looks like db.collection.stats() output, by its
+        // characteristic top-level fields. Used to route stats results to the
+        // dedicated custom-UI panel (CollectionStatsTreeWidget).
+        bool isCollectionStats(const mongo::BSONObj &doc);
+
         const char* BSONTypeToString(mongo::BSONType type, mongo::BinDataType binDataType, UUIDEncoding uuidEncoding);
 
         void buildJsonString(const mongo::BSONObj &obj, std::string &con, UUIDEncoding uuid, SupportedTimes tz);
