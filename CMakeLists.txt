@@ -77,32 +77,26 @@ else()
     target_link_libraries(libssh2 INTERFACE Libssh2::libssh2)
     set(LIBSSH2_VERSION "${Libssh2_VERSION}")
 endif()
-# QScintilla (Qt6 editor component) is provided by the platform package
-# manager instead of being vendored, mirroring the libssh2 approach so it
-# tracks upstream fixes:
-#   Linux   - system   (dnf: qscintilla-qt6-devel / apt: libqscintilla2-qt6-dev)
-#   macOS   - Homebrew  (brew: qscintilla2)
-#   Windows - vcpkg     (qscintilla)
-# Wrapped in an INTERFACE target named "qscintilla" so src/docutaz stays
-# platform-agnostic. The QScintilla version shown in the About dialog comes
-# from QSCINTILLA_VERSION_STR in <Qsci/qsciglobal.h>; QSCINTILLA_VERSION here is
-# parsed from the same header purely for the configuration summary.
-if(SYSTEM_LINUX OR SYSTEM_MACOSX)
-    find_path(QSCINTILLA_INCLUDE_DIR
-        NAMES Qsci/qsciscintilla.h
-        PATH_SUFFIXES qt6
-        REQUIRED)
-    find_library(QSCINTILLA_LIBRARY NAMES qscintilla2_qt6 REQUIRED)
-    add_library(qscintilla INTERFACE IMPORTED GLOBAL)
-    target_include_directories(qscintilla INTERFACE ${QSCINTILLA_INCLUDE_DIR})
-    target_link_libraries(qscintilla INTERFACE
-        ${QSCINTILLA_LIBRARY} Qt6::Widgets Qt6::PrintSupport)
-else()
-    find_package(QScintilla CONFIG REQUIRED)
-    add_library(qscintilla INTERFACE IMPORTED GLOBAL)
-    target_link_libraries(qscintilla INTERFACE QScintilla::qscintilla)
-    set(QSCINTILLA_INCLUDE_DIR "${QScintilla_INCLUDE_DIRS}")
-endif()
+# QScintilla (Qt6 editor component) is provided per platform instead of being
+# vendored, mirroring the libssh2 approach so it tracks upstream fixes:
+#   Linux   - system          (apt: libqscintilla2-qt6-dev / dnf: qscintilla-qt6-devel)
+#   macOS   - Homebrew         (brew: qscintilla2)
+#   Windows - built from source against the aqtinstall Qt6 (see CI), installed
+#             into the Qt prefix so the same find_path/find_library locate it.
+# Resolved uniformly via find_path/find_library and wrapped in an INTERFACE
+# target named "qscintilla" so src/docutaz stays platform-agnostic. The version
+# shown in the About dialog comes from QSCINTILLA_VERSION_STR in
+# <Qsci/qsciglobal.h>; QSCINTILLA_VERSION here is parsed from the same header
+# purely for the configuration summary.
+find_path(QSCINTILLA_INCLUDE_DIR
+    NAMES Qsci/qsciscintilla.h
+    PATH_SUFFIXES qt6
+    REQUIRED)
+find_library(QSCINTILLA_LIBRARY NAMES qscintilla2_qt6 REQUIRED)
+add_library(qscintilla INTERFACE IMPORTED GLOBAL)
+target_include_directories(qscintilla INTERFACE ${QSCINTILLA_INCLUDE_DIR})
+target_link_libraries(qscintilla INTERFACE
+    ${QSCINTILLA_LIBRARY} Qt6::Widgets Qt6::PrintSupport)
 if(QSCINTILLA_INCLUDE_DIR AND EXISTS "${QSCINTILLA_INCLUDE_DIR}/Qsci/qsciglobal.h")
     file(STRINGS "${QSCINTILLA_INCLUDE_DIR}/Qsci/qsciglobal.h" _qsci_ver
          REGEX "QSCINTILLA_VERSION_STR")

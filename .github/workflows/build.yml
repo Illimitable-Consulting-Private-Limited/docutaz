@@ -38,13 +38,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install Qt5 and system deps
+      - name: Install Qt6 and system deps
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
             ninja-build \
-            qtbase5-dev \
-            libqt5svg5-dev \
+            qt6-base-dev \
+            libqscintilla2-qt6-dev \
             libssl-dev \
             libssh2-1-dev \
             pkg-config
@@ -127,7 +127,7 @@ jobs:
   # per run even with binary caching on first miss.  aqtinstall downloads the
   # same pre-built Qt binaries that Qt's installer uses — ~2 minutes.
   # To switch to full vcpkg, delete the install-qt-action step and add
-  # qt5-base + qt5-svg to vcpkg.json.
+  # qtbase + qtsvg to vcpkg.json (note: that also drags QScintilla's Qt build).
   # ──────────────────────────────────────────────────────────────────────────
   windows:
     name: Windows (x64)
@@ -144,11 +144,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install Qt 5
+      - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: "5.15.2"
-          arch: win64_msvc2019_64
+          version: "6.8.1"
+          arch: win64_msvc2022_64
           cache: true
 
       # Activate the MSVC toolchain so Ninja compiles with cl.exe (matching the
@@ -158,6 +158,23 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+
+      # QScintilla isn't shipped by aqtinstall and the vcpkg port would pull a
+      # full vcpkg Qt build (defeating aqtinstall). Build it from source against
+      # the aqtinstall Qt6 with qmake/nmake and install into the Qt prefix, so
+      # the build's find_path/find_library locate Qsci headers + qscintilla2_qt6.
+      - name: Build QScintilla (Qt6, from source)
+        shell: pwsh
+        env:
+          QSCI_VERSION: "2.14.1"
+        run: |
+          $url = "https://www.riverbankcomputing.com/static/Downloads/QScintilla/$env:QSCI_VERSION/QScintilla_src-$env:QSCI_VERSION.tar.gz"
+          curl.exe -L -o qscintilla.tar.gz $url
+          tar -xf qscintilla.tar.gz
+          cd "QScintilla_src-$env:QSCI_VERSION/src"
+          qmake qscintilla.pro
+          nmake
+          nmake install
 
       # vcpkg provides OpenSSL and libssh2 — both pinned via the
       # builtin-baseline in ci/vcpkg/vcpkg.json. find_package(Libssh2) and our
@@ -236,7 +253,7 @@ jobs:
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
             -DDOCUTAZ_BUILD_TESTS=OFF `
-            -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows"
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows"
 
       - name: Build
         run: cmake --build build --target docutaz --parallel
@@ -260,6 +277,9 @@ jobs:
           # Deploy Qt DLLs alongside the binary
           windeployqt --dir $outDir build\src\docutaz\docutaz.exe
           Copy-Item build\src\docutaz\docutaz.exe $outDir\
+          # QScintilla DLL (built from source into the Qt prefix; not a Qt
+          # module, so windeployqt does not pick it up)
+          Get-ChildItem "$env:QT_ROOT_DIR\bin" -Filter "qscintilla2_qt6*.dll" | Copy-Item -Destination $outDir
           # mongocxx runtime DLLs
           $mongoBin = "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin"
           if (Test-Path $mongoBin) {
@@ -282,8 +302,8 @@ jobs:
           if-no-files-found: error
 
   # ──────────────────────────────────────────────────────────────────────────
-  # macOS (Apple Silicon / arm64) — native Qt via Homebrew qt@5, mongocxx
-  # built from source. Qt 5.15 has no native arm64 binary via aqtinstall.
+  # macOS (Apple Silicon / arm64) — native Qt6 via Homebrew qt, mongocxx
+  # built from source. Homebrew qt/qscintilla2 are native arm64 on Apple Silicon.
   # ──────────────────────────────────────────────────────────────────────────
   macos:
     name: macOS (Apple Silicon / arm64)
@@ -291,19 +311,19 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.macos }}
 
     env:
-      # Qt 5.15 has no native arm64 binary from Qt/aqtinstall — use Homebrew's
-      # qt@5, which is compiled natively for arm64 on Apple Silicon.
+      # Homebrew's qt (Qt 6) and qscintilla2 are compiled natively for arm64 on
+      # Apple Silicon.
       MACOS_ARCH: arm64
       MACOS_DEPLOYMENT_TARGET: "11.0"
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install build tools and native arm64 Qt 5
-        run: brew install ninja qt@5 libssh2 pkg-config
+      - name: Install build tools and native arm64 Qt 6
+        run: brew install ninja qt qscintilla2 libssh2 pkg-config
 
-      - name: Expose Qt 5 prefix
-        run: echo "QT5_PREFIX=$(brew --prefix qt@5)" >> "$GITHUB_ENV"
+      - name: Expose Qt prefix
+        run: echo "QT_PREFIX=$(brew --prefix qt)" >> "$GITHUB_ENV"
 
       - name: Cache mongocxx install
         id: cache-mongocxx
@@ -354,7 +374,7 @@ jobs:
             -DDOCUTAZ_BUILD_TESTS=OFF \
             -DCMAKE_OSX_ARCHITECTURES="${{ env.MACOS_ARCH }}" \
             -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.MACOS_DEPLOYMENT_TARGET }}" \
-            -DCMAKE_PREFIX_PATH="$QT5_PREFIX;$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
+            -DCMAKE_PREFIX_PATH="$QT_PREFIX;$(brew --prefix qscintilla2);$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
         run: cmake --build build --target docutaz --parallel
@@ -371,7 +391,7 @@ jobs:
         run: |
           ver="${{ steps.ver.outputs.version }}"
           cd build/src/docutaz
-          "$QT5_PREFIX/bin/macdeployqt" Docutaz.app
+          "$QT_PREFIX/bin/macdeployqt" Docutaz.app
           zip -r "../../../docutaz-${ver}-macos-arm64.zip" Docutaz.app
 
       - name: Upload artifact
