@@ -175,6 +175,16 @@ jobs:
           qmake qscintilla.pro
           nmake
           nmake install
+          # qmake's install location for the runtime DLL varies across versions
+          # (the import .lib reliably lands in the Qt lib dir, but the DLL may be
+          # left in the build tree or placed in lib). Copy it deterministically
+          # into the Qt bin dir, which is on the build's CMAKE_PREFIX_PATH, the
+          # ctest PATH, and where windeployqt/packaging look. Fail loudly if the
+          # DLL was never produced rather than shipping a broken artifact.
+          $dll = Get-ChildItem -Path ".","$env:QT_ROOT_DIR" -Recurse -Filter "qscintilla2_qt6.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $dll) { throw "qscintilla2_qt6.dll not found after build/install" }
+          Copy-Item $dll.FullName -Destination "$env:QT_ROOT_DIR\bin" -Force
+          Write-Host "Placed qscintilla2_qt6.dll (from $($dll.FullName)) into $env:QT_ROOT_DIR\bin"
 
       # vcpkg provides OpenSSL and libssh2 — both pinned via the
       # builtin-baseline in ci/vcpkg/vcpkg.json. find_package(Libssh2) and our
@@ -289,13 +299,13 @@ jobs:
           $ver = "${{ steps.ver.outputs.version }}"
           $outDir = "docutaz-$ver-windows-x86_64"
           New-Item -ItemType Directory -Path $outDir | Out-Null
-          # Deploy Qt DLLs alongside the binary
-          windeployqt --dir $outDir build\src\docutaz\docutaz.exe
           Copy-Item build\src\docutaz\docutaz.exe $outDir\
-          # QScintilla DLL (built from source into the Qt prefix; not a Qt
-          # module, so windeployqt does not pick it up). qmake installs it into
-          # the Qt lib dir (target.path = QT_INSTALL_LIBS), not bin; check both.
-          Get-ChildItem "$env:QT_ROOT_DIR\lib","$env:QT_ROOT_DIR\bin" -Filter "qscintilla2_qt6*.dll" -ErrorAction SilentlyContinue | Copy-Item -Destination $outDir
+          # QScintilla is built from source (not a Qt module), so windeployqt
+          # will not copy it on its own. Place it next to the exe first, then
+          # hand it to windeployqt alongside docutaz.exe so QScintilla's own Qt
+          # dependencies (e.g. Qt6PrintSupport) are deployed too.
+          Copy-Item "$env:QT_ROOT_DIR\bin\qscintilla2_qt6.dll" $outDir\
+          windeployqt --dir $outDir $outDir\docutaz.exe $outDir\qscintilla2_qt6.dll
           # mongocxx runtime DLLs
           $mongoBin = "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin"
           if (Test-Path $mongoBin) {
