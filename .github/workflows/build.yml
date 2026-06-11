@@ -252,11 +252,23 @@ jobs:
           cmake -S . -B build -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
-            -DDOCUTAZ_BUILD_TESTS=OFF `
+            -DDOCUTAZ_BUILD_TESTS=ON `
             -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows"
 
       - name: Build
-        run: cmake --build build --target docutaz --parallel
+        run: cmake --build build --target docutaz robo_unit_tests --parallel
+
+      - name: Run unit tests
+        shell: pwsh
+        run: |
+          # The test binary loads Qt, QScintilla, mongocxx and the vcpkg
+          # OpenSSL/libssh2 DLLs at runtime. Windows has no rpath, so put every
+          # runtime DLL directory on PATH before invoking ctest.
+          $env:PATH = "$env:QT_ROOT_DIR\bin;" +
+            "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin;" +
+            "$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows\bin;" +
+            $env:PATH
+          ctest --test-dir build --output-on-failure
 
       - name: Read version
         id: ver
@@ -371,13 +383,21 @@ jobs:
           export PKG_CONFIG_PATH="$(brew --prefix libssh2)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DDOCUTAZ_BUILD_TESTS=OFF \
+            -DDOCUTAZ_BUILD_TESTS=ON \
             -DCMAKE_OSX_ARCHITECTURES="${{ env.MACOS_ARCH }}" \
             -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.MACOS_DEPLOYMENT_TARGET }}" \
             -DCMAKE_PREFIX_PATH="$QT_PREFIX;$(brew --prefix qscintilla2);$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz --parallel
+        run: cmake --build build --target docutaz robo_unit_tests --parallel
+
+      - name: Run unit tests
+        run: |
+          # The test binary links mongocxx from a custom prefix and Qt/QScintilla
+          # from Homebrew. Point the dynamic loader at all of them so ctest can
+          # launch it (the build-tree rpath usually suffices; this makes it robust).
+          export DYLD_FALLBACK_LIBRARY_PATH="${{ github.workspace }}/mongocxx-prefix/lib:$QT_PREFIX/lib:$(brew --prefix qscintilla2)/lib:$(brew --prefix)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+          ctest --test-dir build --output-on-failure
 
       - name: Read version
         id: ver
