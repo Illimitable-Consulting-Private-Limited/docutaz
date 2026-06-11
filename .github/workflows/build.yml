@@ -263,8 +263,11 @@ jobs:
         run: |
           # The test binary loads Qt, QScintilla, mongocxx and the vcpkg
           # OpenSSL/libssh2 DLLs at runtime. Windows has no rpath, so put every
-          # runtime DLL directory on PATH before invoking ctest.
+          # runtime DLL directory on PATH before invoking ctest. Note QScintilla
+          # installs its DLL into the Qt lib dir (qmake target.path =
+          # QT_INSTALL_LIBS), not bin, so both Qt dirs are needed.
           $env:PATH = "$env:QT_ROOT_DIR\bin;" +
+            "$env:QT_ROOT_DIR\lib;" +
             "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin;" +
             "$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows\bin;" +
             $env:PATH
@@ -290,8 +293,9 @@ jobs:
           windeployqt --dir $outDir build\src\docutaz\docutaz.exe
           Copy-Item build\src\docutaz\docutaz.exe $outDir\
           # QScintilla DLL (built from source into the Qt prefix; not a Qt
-          # module, so windeployqt does not pick it up)
-          Get-ChildItem "$env:QT_ROOT_DIR\bin" -Filter "qscintilla2_qt6*.dll" | Copy-Item -Destination $outDir
+          # module, so windeployqt does not pick it up). qmake installs it into
+          # the Qt lib dir (target.path = QT_INSTALL_LIBS), not bin; check both.
+          Get-ChildItem "$env:QT_ROOT_DIR\lib","$env:QT_ROOT_DIR\bin" -Filter "qscintilla2_qt6*.dll" -ErrorAction SilentlyContinue | Copy-Item -Destination $outDir
           # mongocxx runtime DLLs
           $mongoBin = "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin"
           if (Test-Path $mongoBin) {
