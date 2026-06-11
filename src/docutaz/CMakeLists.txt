@@ -253,12 +253,21 @@ if(SYSTEM_WINDOWS)
     # Start debug program with console
     set_target_properties(docutaz PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
 
-    # Qt6 renamed the WinMain helper to EntryPoint. On Windows it is a real,
-    # separately-findable component (provides WinMain for the WIN32 GUI
-    # subsystem); request it here rather than in the top-level find_package,
-    # because on Linux EntryPoint is folded into Core and has no own package.
-    find_package(Qt6 REQUIRED COMPONENTS EntryPoint)
-    target_link_libraries(docutaz PRIVATE Qt6::EntryPoint)
+    # Qt6 renamed the Qt5 "WinMain" helper to the EntryPoint module, which
+    # supplies WinMain() for the /SUBSYSTEM:WINDOWS (GUI) executable and
+    # forwards it to main(). Not every Qt distribution ships EntryPoint's CMake
+    # package config (notably some aqtinstall layouts: the .lib is present but
+    # lib/cmake/Qt6EntryPoint/ is not), so we cannot REQUIRE it. Probe quietly;
+    # link the imported target when available, otherwise fall back to the CRT's
+    # own entry point (mainCRTStartup), which calls main() directly and removes
+    # the need for Qt's WinMain shim entirely.
+    find_package(Qt6 QUIET COMPONENTS EntryPoint)
+    if(TARGET Qt6::EntryPoint)
+        target_link_libraries(docutaz PRIVATE Qt6::EntryPoint)
+    else()
+        message(STATUS "Qt6::EntryPoint not found; using CRT entry point (/ENTRY:mainCRTStartup)")
+        target_link_options(docutaz PRIVATE "/ENTRY:mainCRTStartup")
+    endif()
 
 elseif(SYSTEM_MACOSX)
     string(TIMESTAMP CURRENT_YEAR "%Y")
