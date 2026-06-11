@@ -97,6 +97,14 @@ add_library(qscintilla INTERFACE IMPORTED GLOBAL)
 target_include_directories(qscintilla INTERFACE ${QSCINTILLA_INCLUDE_DIR})
 target_link_libraries(qscintilla INTERFACE
     ${QSCINTILLA_LIBRARY} Qt6::Widgets Qt6::PrintSupport)
+if(WIN32)
+    # The Windows QScintilla is built from source as a DLL (see CI). Its headers
+    # only mark exported symbols __declspec(dllimport) when QSCINTILLA_DLL is
+    # defined; without it, data symbols such as QsciScintilla::staticMetaObject
+    # are treated as local and fail to link (function imports get auto-thunked,
+    # data imports do not). Define it for every consumer of this target.
+    target_compile_definitions(qscintilla INTERFACE QSCINTILLA_DLL)
+endif()
 if(QSCINTILLA_INCLUDE_DIR AND EXISTS "${QSCINTILLA_INCLUDE_DIR}/Qsci/qsciglobal.h")
     file(STRINGS "${QSCINTILLA_INCLUDE_DIR}/Qsci/qsciglobal.h" _qsci_ver
          REGEX "QSCINTILLA_VERSION_STR")
