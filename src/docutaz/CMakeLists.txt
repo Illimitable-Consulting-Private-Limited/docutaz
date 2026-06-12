@@ -15,6 +15,7 @@ set(SOURCES
     core/utils/StdUtils.cpp
     core/utils/Logger.cpp
     core/UpdateChecker.cpp
+    core/QueryHistory.cpp
     core/HexUtils.cpp
     core/utils/BsonUtils.cpp
     core/settings/CredentialSettings.cpp

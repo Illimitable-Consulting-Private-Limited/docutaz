@@ -21,6 +21,7 @@ set(SOURCES_TEST
     ${DOCUTAZ_SRC_DIR}/utils/StringOperations_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/HexUtils_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/UpdateChecker_test.cpp
+    ${DOCUTAZ_SRC_DIR}/core/QueryHistory_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/utils/BsonUtils_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/utils/BsonBridge_test.cpp
     ${DOCUTAZ_SRC_DIR}/gui/GuiResources_test.cpp

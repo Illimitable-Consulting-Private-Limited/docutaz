@@ -140,6 +140,9 @@ namespace Docutaz
         void setCheckForUpdates(bool value) { _checkForUpdates = value; }
         bool checkForUpdates() const { return _checkForUpdates; }
 
+        void setSaveQueryHistory(bool value) { _saveQueryHistory = value; }
+        bool saveQueryHistory() const { return _saveQueryHistory; }
+
         QString currentStyle() const { return _currentStyle; }
         void setCurrentStyle(const QString& style);
 
@@ -210,6 +213,7 @@ namespace Docutaz
         bool _disableConnectionShortcuts;
         bool _disableHttpsFeatures = false;
         bool _checkForUpdates = true;
+        bool _saveQueryHistory = true;
         bool _debugMode = false;
         QSet<QString> _acceptedEulaVersions;
         int _batchSize;
