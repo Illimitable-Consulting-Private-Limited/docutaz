@@ -4,6 +4,17 @@ on:
   push:
     branches: [main]
     tags: ["v*"]            # vX.Y.Z (optionally -rc1 etc.) -> build + draft a release
+    # Skip the 3-platform build for docs/site-only pushes to main (no [skip ci]
+    # needed). Only files that don't affect the binary are listed — never src/,
+    # cmake/, CMakeLists.txt or the bundlers. Release tags still build: the
+    # release ritual bumps PROJECT_VERSION in CMakeLists.txt and tags that
+    # commit, so a non-ignored file always changes.
+    paths-ignore:
+      - "docs/**"
+      - "site/**"
+      - "**/*.md"
+      - "LICENSE"
+      - ".github/workflows/pages.yml"
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
