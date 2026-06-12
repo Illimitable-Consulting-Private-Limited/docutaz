@@ -790,4 +790,4 @@ namespace Docutaz
         AppRegistry::instance().bus()->send(receiver, event);
     }
 
-} // Robomongo
+} // Docutaz

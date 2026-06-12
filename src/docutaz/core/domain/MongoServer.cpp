@@ -439,7 +439,7 @@ namespace Docutaz {
                    "] found in server side. "
                    "Please double check if same host names and ports are used as in server's replica set"
                    " configuration. \nIf same set name is used for different replica sets, this configuration"
-                   " is supported only on different instances of Robomongo. "
+                   " is supported only on different instances of Docutaz. "
                    " Please open a new Docutaz instance for each replica set which has the same set name."
                    "\n\nReason:\n" << event->error().errorMessage();
             }

@@ -239,7 +239,7 @@ if(SYSTEM_WINDOWS)
         "${CMAKE_BINARY_DIR}/winres.rc")
     unset(windows_icon)
 
-    # Add additional source file to "robomongo" target
+    # Add additional source file to "docutaz" target
     target_sources(docutaz PRIVATE "${CMAKE_BINARY_DIR}/winres.rc")
 
     # Rename output name for Windows

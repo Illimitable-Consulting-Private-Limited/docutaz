@@ -71,7 +71,7 @@ namespace Docutaz
     
     /**
      * Creates SettingsManager for config file in default location
-     * ~/.config/robomongo/robomongo.json
+     * ~/.Docutaz/<version>/docutaz.json
      */
     SettingsManager::SettingsManager() :
         _version(SchemaVersion),

@@ -76,4 +76,4 @@ inline mongo::BSONObj ejsonElementsToBsonArray(
 }
 
 } // BsonBridge
-} // Robomongo
+} // Docutaz

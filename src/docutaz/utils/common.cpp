@@ -44,4 +44,4 @@ namespace Docutaz
         QSettings("Docutaz", "Docutaz").setValue(key, value);
     }
 
-}   // end of name space Robomongo
+}   // end of name space Docutaz

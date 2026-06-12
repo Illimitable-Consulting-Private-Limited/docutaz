@@ -425,4 +425,4 @@ std::vector<MongoCollectionInfo> MongoClient::runCollStatsCommand(const std::vec
 
 void MongoClient::done() {}
 
-} // Robomongo
+} // Docutaz

@@ -29,8 +29,8 @@ namespace Docutaz
 
     /**
      * @brief SettingsManager gives you access to all settings, that is used
-     *        by Robomongo. It can load() and save() them. Config file usually
-     *        located here: ~/.config/robomongo/robomongo.json
+     *        by Docutaz. It can load() and save() them. Config file usually
+     *        located here: ~/.Docutaz/<version>/docutaz.json
      *
      *        You can access this manager via:
      *        AppRegistry::instance().settingsManager()
@@ -45,7 +45,7 @@ namespace Docutaz
 
         /**
          * @brief Creates SettingsManager for config file in default location
-         *        (usually ~/.config/robomongo/robomongo.json)
+         *        (usually ~/.Docutaz/<version>/docutaz.json)
          */
         SettingsManager();
 
@@ -80,7 +80,7 @@ namespace Docutaz
 
         /**
         * @brief  Finds and returns original (non-clone) connection settings which is 
-        *         loaded/saved from/into Robomongo config. file.
+        *         loaded/saved from/into Docutaz config. file.
         * @return If uniqueID is valid returns original connection settings, 
         *         nullptr otherwise.
         */

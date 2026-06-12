@@ -564,4 +564,4 @@ QString MongoshEngine::findMongosh() {
     return {};
 }
 
-} // Robomongo
+} // Docutaz

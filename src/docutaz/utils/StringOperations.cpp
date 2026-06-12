@@ -10,4 +10,4 @@ namespace Docutaz
         return str;
     }
 
-}   // end of name space Robomongo
+}   // end of name space Docutaz
