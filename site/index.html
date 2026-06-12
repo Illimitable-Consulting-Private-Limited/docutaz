@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Docutaz — a modern GUI for MongoDB 8+</title>
+  <meta name="description" content="Docutaz is a free, cross-platform desktop GUI for MongoDB 8+, built on a modern mongosh shell. Browse data, run queries, manage indexes and users — on Linux, macOS and Windows.">
+  <link rel="icon" href="tab.png">
+  <link rel="canonical" href="https://illimitable-consulting-private-limited.github.io/docutaz/">
+
+  <!-- Open Graph / link preview — the shared-URL thumbnail is docutaz-branding.png -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Docutaz">
+  <meta property="og:title" content="Docutaz — a modern GUI for MongoDB 8+">
+  <meta property="og:description" content="Free, cross-platform desktop GUI for MongoDB 8+, built on a modern mongosh shell. Linux, macOS and Windows.">
+  <meta property="og:url" content="https://illimitable-consulting-private-limited.github.io/docutaz/">
+  <meta property="og:image" content="https://illimitable-consulting-private-limited.github.io/docutaz/docutaz-branding.png">
+  <meta property="og:image:width" content="1774">
+  <meta property="og:image:height" content="887">
+  <meta property="og:image:alt" content="Docutaz — MongoDB GUI">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Docutaz — a modern GUI for MongoDB 8+">
+  <meta name="twitter:description" content="Free, cross-platform desktop GUI for MongoDB 8+, built on a modern mongosh shell.">
+  <meta name="twitter:image" content="https://illimitable-consulting-private-limited.github.io/docutaz/docutaz-branding.png">
+
+  <style>
+    :root {
+      --ink: #0f172a;
+      --muted: #51607a;
+      --accent: #13a06a;
+      --accent-ink: #0c7a50;
+      --bg: #ffffff;
+      --panel: #f5f7fa;
+      --border: #e3e8ef;
+      --maxw: 960px;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; color: var(--ink); background: var(--bg);
+      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    a { color: var(--accent-ink); }
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
+
+    header.hero {
+      background: linear-gradient(180deg, #f0f5f2 0%, #ffffff 100%);
+      border-bottom: 1px solid var(--border);
+      text-align: center;
+      padding: 56px 0 48px;
+    }
+    .hero img.banner {
+      width: 100%; max-width: 680px; height: auto;
+      border-radius: 12px; box-shadow: 0 8px 30px rgba(15,23,42,.10);
+    }
+    .hero h1 { font-size: 2.1rem; margin: 28px 0 6px; letter-spacing: -.02em; }
+    .hero p.tag { font-size: 1.2rem; color: var(--muted); margin: 0 auto 8px; max-width: 620px; }
+    .hero p.pron { font-size: .95rem; color: var(--muted); margin: 0 0 26px; }
+
+    .btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 8px; }
+    .btn {
+      display: inline-block; padding: 12px 22px; border-radius: 9px;
+      font-weight: 600; text-decoration: none; border: 1px solid transparent;
+    }
+    .btn.primary { background: var(--accent); color: #fff; }
+    .btn.primary:hover { background: var(--accent-ink); }
+    .btn.ghost { background: #fff; color: var(--ink); border-color: var(--border); }
+    .btn.ghost:hover { border-color: #c4ccd8; }
+    .platforms { color: var(--muted); font-size: .92rem; margin-top: 16px; }
+
+    section { padding: 48px 0; }
+    section h2 { font-size: 1.5rem; margin: 0 0 24px; letter-spacing: -.01em; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .card h3 { margin: 0 0 6px; font-size: 1.05rem; }
+    .card p { margin: 0; color: var(--muted); font-size: .96rem; }
+
+    .install { background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .install code, code.inline {
+      background: #eaeef3; padding: 2px 6px; border-radius: 5px;
+      font: .9em/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+    .install ul { padding-left: 20px; }
+    .install li { margin: 8px 0; }
+    .note { color: var(--muted); font-size: .92rem; }
+
+    footer { text-align: center; color: var(--muted); font-size: .9rem; padding: 36px 0 48px; }
+    footer a { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="wrap">
+      <img class="banner" src="docutaz-branding.png" alt="Docutaz — MongoDB GUI">
+      <h1>Docutaz</h1>
+      <p class="tag">A free, cross-platform desktop GUI for <strong>MongoDB&nbsp;8+</strong>, built on a modern <code class="inline">mongosh</code> shell.</p>
+      <p class="pron">dok&middot;you&middot;taz — <em>doc</em> (document) + <em>dotaz</em>, Czech for <em>query</em></p>
+      <div class="btns">
+        <a class="btn primary" href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz/releases/latest">Download</a>
+        <a class="btn ghost" href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz">View on GitHub</a>
+      </div>
+      <p class="platforms">Linux (x86_64 &amp; arm64) · macOS (Apple Silicon) · Windows (x64)</p>
+    </div>
+  </header>
+
+  <section class="wrap">
+    <h2>What it does</h2>
+    <div class="features">
+      <div class="card"><h3>Connect anywhere</h3><p>Standalone, replica set or Atlas — with TLS/SSL and SSH-tunnel support.</p></div>
+      <div class="card"><h3>Explore your data</h3><p>Browse databases, collections and documents in a GUI tree, and page through large result sets.</p></div>
+      <div class="card"><h3>Full mongosh shell</h3><p>Run multi-statement JavaScript in a real <code class="inline">mongosh</code> tab with server-side autocomplete.</p></div>
+      <div class="card"><h3>Edit visually</h3><p>Insert, edit and delete documents with a visual editor — no hand-written JSON required.</p></div>
+      <div class="card"><h3>Manage structure</h3><p>Create and inspect indexes, manage users and collection settings.</p></div>
+      <div class="card"><h3>Private by design</h3><p>No telemetry or analytics. The only network traffic is your own MongoDB and SSH connections.</p></div>
+    </div>
+  </section>
+
+  <section class="install">
+    <div class="wrap">
+      <h2>Getting started</h2>
+      <p>Download the build for your platform from the
+        <a href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz/releases/latest">latest release</a>,
+        then:</p>
+      <ul>
+        <li><strong>All platforms</strong> — install <a href="https://www.mongodb.com/try/download/shell">mongosh</a> (2.x+); it isn't bundled. Keep it on your <code class="inline">PATH</code> or set its path in <em>Options&nbsp;→&nbsp;Preferences</em>.</li>
+        <li><strong>Linux</strong> — install the distro Qt&nbsp;6 / QScintilla runtime packages, extract, run <code class="inline">./docutaz.sh</code>, then <code class="inline">./install-desktop.sh</code> once for the app-menu launcher icon.</li>
+        <li><strong>macOS</strong> (Apple Silicon) — unzip; the app is unsigned, so right-click&nbsp;→&nbsp;<em>Open</em> the first time.</li>
+        <li><strong>Windows</strong> (x64) — extract and run <code class="inline">docutaz.exe</code>; on SmartScreen click <em>More info → Run anyway</em>.</li>
+      </ul>
+      <p class="note">Full step-by-step instructions are in the
+        <a href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz/blob/main/docs/INSTALL.md">installation guide</a>.</p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p>Free &amp; open source under <a href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz/blob/main/LICENSE">GPL&nbsp;v3</a>.
+         Based on <a href="https://github.com/Studio3T/robomongo">Robomongo</a> by Studio&nbsp;3T.</p>
+      <p><a href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz">GitHub</a> ·
+         <a href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz/issues">Report an issue</a></p>
+    </div>
+  </footer>
+</body>
+</html>

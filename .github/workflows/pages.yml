@@ -1,0 +1,48 @@
+name: Pages
+
+# Publishes the landing site (site/index.html + the branding images it uses)
+# to GitHub Pages. Deploys from main only; run manually for a one-off.
+# Requires repo Settings -> Pages -> Source = "GitHub Actions".
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - "branding/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deploy; don't cancel an in-flight publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build & deploy Pages
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp site/index.html _site/
+          # branding assets the page references (single source of truth: branding/)
+          cp branding/docutaz-branding.png _site/   # hero + og:image / link preview
+          cp branding/tab.png _site/                # favicon
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
