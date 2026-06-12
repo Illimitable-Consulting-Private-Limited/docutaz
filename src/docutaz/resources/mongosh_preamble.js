@@ -1,4 +1,4 @@
-// ROBOMONGO MONGOSH PREAMBLE — injected once at shell startup
+// DOCUTAZ MONGOSH PREAMBLE — injected once at shell startup
 // Protocol version: 4
 //
 // ── Execution model ─────────────────────────────────────────────────────────
