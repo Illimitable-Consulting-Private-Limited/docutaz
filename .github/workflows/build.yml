@@ -113,6 +113,20 @@ jobs:
       - name: Create tarball
         run: bash bin/bundle-linux.sh
 
+      - name: Smoke test (packaged binary launches)
+        run: |
+          # Extract the tarball and launch the PACKAGED binary via its launcher,
+          # exactly as a user would. `--version` constructs the QApplication
+          # (loading the platform plugin and every linked library) then exits 0,
+          # so this catches startup/packaging regressions — missing libs, a
+          # broken bundle, or an ABI-incompatible Qt — that building alone won't.
+          # offscreen avoids needing an X server on the runner.
+          tar xzf docutaz-*-linux-x86_64.tar.gz
+          dir=$(echo docutaz-*-linux-x86_64/)
+          out=$(cd "$dir" && QT_QPA_PLATFORM=offscreen ./docutaz.sh --version)
+          echo "$out"
+          echo "$out" | grep -q "Docutaz" || { echo "ERROR: binary did not launch / print version"; exit 1; }
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -320,6 +334,23 @@ jobs:
           }
           Compress-Archive -Path $outDir -DestinationPath "docutaz-$ver-windows-x86_64.zip"
 
+      - name: Smoke test (packaged binary launches)
+        shell: pwsh
+        run: |
+          # Launch the PACKAGED exe with its windeployqt'd DLLs alongside it.
+          # --version constructs the QApplication (loading the platform plugin
+          # and every linked DLL) then exits 0, catching deploy regressions
+          # (a missing DLL such as qscintilla2_qt6.dll or a Qt module) that the
+          # build step alone cannot. offscreen is deployed by windeployqt.
+          $ver = "${{ steps.ver.outputs.version }}"
+          $outDir = "docutaz-$ver-windows-x86_64"
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $out = & "$outDir\docutaz.exe" --version 2>&1
+          $code = $LASTEXITCODE
+          Write-Host $out
+          if ($code -ne 0)        { throw "docutaz.exe --version exited $code (binary failed to launch)" }
+          if ($out -notmatch "Docutaz") { throw "binary launched but did not print version" }
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -427,6 +458,19 @@ jobs:
           cd build/src/docutaz
           "$QT_PREFIX/bin/macdeployqt" Docutaz.app
           zip -r "../../../docutaz-${ver}-macos-arm64.zip" Docutaz.app
+
+      - name: Smoke test (packaged binary launches)
+        run: |
+          # Launch the macdeployqt'd .app's binary. The bundle is self-contained
+          # (Qt + QScintilla + mongocxx dylibs relocated into Contents/Frameworks
+          # with fixed rpaths), so this verifies macdeployqt produced a runnable
+          # app — not just that it built. --version constructs the QApplication
+          # (loading the platform plugin and every framework) then exits 0.
+          # offscreen is deployed by macdeployqt and needs no window server.
+          bin="build/src/docutaz/Docutaz.app/Contents/MacOS/Docutaz"
+          out=$(QT_QPA_PLATFORM=offscreen "$bin" --version)
+          echo "$out"
+          echo "$out" | grep -q "Docutaz" || { echo "ERROR: app did not launch / print version"; exit 1; }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7

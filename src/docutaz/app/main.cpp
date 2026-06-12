@@ -1,5 +1,6 @@
 #include <QApplication>
 
+#include <cstdio>
 #include <locale.h>
 
 #include <mongocxx/instance.hpp>
@@ -40,6 +41,18 @@ int main(int argc, char *argv[])
     // On Unix/Linux Qt uses the system locale by default, which can break
     // POSIX float/string conversions. Reset to "C" locale.
     setlocale(LC_NUMERIC, "C");
+
+    // --version: print the version and exit cleanly. Placed after the
+    // QApplication ctor (so it exercises platform-plugin loading and every
+    // linked runtime library) but before the EULA dialog (which would block on
+    // a machine with no accepted EULA). CI uses this as a smoke test that the
+    // packaged binary actually launches.
+    if (app.arguments().contains(QStringLiteral("--version")) ||
+        app.arguments().contains(QStringLiteral("-v"))) {
+        std::printf("Docutaz %s\n", PROJECT_VERSION);
+        rbm_ssh_cleanup();
+        return 0;
+    }
 
 #ifdef Q_OS_MAC
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
