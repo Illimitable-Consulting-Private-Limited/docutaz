@@ -112,10 +112,14 @@ namespace Docutaz
 
         // Update notifier (GitHub Releases; sends no user data)
         void toggleCheckUpdates();
+        void toggleSaveQueryHistory();
         void checkForUpdatesNow();                    // manual: Help -> Check for Updates
         void onUpdateAvailable(const QString &latestVersion, const QString &releaseUrl);
         void onUpToDate();                            // manual-check feedback
         void onUpdateCheckFailed(const QString &reason);
+
+        // Re-open a query chosen in the Query History panel
+        void openHistoryQuery(const QString &query);
 
     private:
         void updateConnectionsMenu();
@@ -127,6 +131,7 @@ namespace Docutaz
         void saveWindowSettings() const;
 
         QDockWidget *_logDock;
+        QDockWidget *_historyDock = nullptr;
 
         WorkAreaTabWidget *_workArea;
 

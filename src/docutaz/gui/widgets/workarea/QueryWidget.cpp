@@ -156,9 +156,16 @@ namespace Docutaz
         if (_shell) {
             MongoServer *server = _shell->server();
             QString query = _scriptWidget->selectedText();
-            AppRegistry::instance().app()->openShell(server, query, _currentResult.currentDatabase(), 
+            AppRegistry::instance().app()->openShell(server, query, _currentResult.currentDatabase(),
                 AppRegistry::instance().settingsManager()->autoExec());
         }
+    }
+
+    void QueryWidget::openWithQuery(const QString &query)
+    {
+        if (_shell)
+            AppRegistry::instance().app()->openShell(
+                _shell->server(), query, _currentResult.currentDatabase(), false);
     }
 
     void QueryWidget::saveToFile()

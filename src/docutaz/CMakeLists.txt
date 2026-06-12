@@ -130,6 +130,7 @@ set(SOURCES
 
     # Final scope
     gui/widgets/LogWidget.cpp
+    gui/widgets/QueryHistoryWidget.cpp
     gui/MainWindow.cpp
 
     gui/dialogs/SSHTunnelTab.cpp
