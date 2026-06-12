@@ -325,12 +325,13 @@ jobs:
           if (Test-Path $mongoBin) {
             Get-ChildItem $mongoBin -Filter "*.dll" | Copy-Item -Destination $outDir
           }
-          # libssh2 + its OpenSSL runtime DLLs (linked dynamically)
+          # libssh2 + OpenSSL + their transitive runtime DLLs (e.g. zlib/zstd),
+          # all linked dynamically. Copy the whole vcpkg bin so nothing the
+          # binary loads at startup is missing on a clean machine (a missing
+          # transitive DLL shows up only as STATUS_DLL_NOT_FOUND / 0xC0000135).
           $vcpkgBin = "$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows\bin"
           if (Test-Path $vcpkgBin) {
-            Get-ChildItem $vcpkgBin -Filter "libssh2*.dll"   | Copy-Item -Destination $outDir
-            Get-ChildItem $vcpkgBin -Filter "libssl*.dll"    | Copy-Item -Destination $outDir
-            Get-ChildItem $vcpkgBin -Filter "libcrypto*.dll" | Copy-Item -Destination $outDir
+            Get-ChildItem $vcpkgBin -Filter "*.dll" | Copy-Item -Destination $outDir
           }
           Compress-Archive -Path $outDir -DestinationPath "docutaz-$ver-windows-x86_64.zip"
 
@@ -352,7 +353,11 @@ jobs:
           $out = & "$outDir\docutaz.exe" --version 2>&1 | Out-String
           $code = $LASTEXITCODE
           Write-Host "exit=$code output=$out"
-          if ($out -notmatch "Docutaz") { throw "binary did not launch / print version (exit $code)" }
+          if ($out -notmatch "Docutaz") {
+            Write-Host "=== package contents ($outDir) ==="
+            Get-ChildItem -Recurse $outDir | Select-Object FullName | Out-String | Write-Host
+            throw "binary did not launch / print version (exit $code)"
+          }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -475,9 +480,13 @@ jobs:
           # (needed to launch headless on CI) is not bundled. Drop it in next to
           # libqcocoa — it references @rpath/QtGui etc., resolved via the app's
           # bundled frameworks. (Done post-zip, so the artifact stays unchanged.)
-          off=$(find "$QT_PREFIX" -name libqoffscreen.dylib | head -1)
+          # -L: $QT_PREFIX (brew --prefix qt) is a symlink, so find must follow it.
+          off=$(find -L "$QT_PREFIX" -name libqoffscreen.dylib 2>/dev/null | head -1)
           [ -n "$off" ] || { echo "ERROR: libqoffscreen.dylib not found under $QT_PREFIX"; exit 1; }
           cp "$off" "$app/Contents/PlugIns/platforms/"
+          # Safety net mirroring the unit-test step: only consulted if the bundled
+          # frameworks fail to resolve, so it can't shadow the self-contained app.
+          export DYLD_FALLBACK_LIBRARY_PATH="${{ github.workspace }}/mongocxx-prefix/lib:$QT_PREFIX/lib:$(brew --prefix qscintilla2)/lib:$(brew --prefix)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
           out=$(QT_QPA_PLATFORM=offscreen "$bin" --version)
           echo "$out"
           echo "$out" | grep -q "Docutaz" || { echo "ERROR: app did not launch / print version"; exit 1; }
