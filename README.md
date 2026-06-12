@@ -22,6 +22,19 @@ Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 
 ---
 
+## Install
+
+Grab a prebuilt download (Linux x86_64/arm64, macOS arm64, Windows x64) from the
+[**Releases**](https://github.com/Illimitable-Consulting-Private-Limited/docutaz/releases)
+page and follow the [**installation guide**](docs/INSTALL.md). You'll need
+[`mongosh`](https://www.mongodb.com/try/download/shell) installed separately
+(it isn't bundled). Linux users: run `./install-desktop.sh` once for the app-menu
+launcher icon.
+
+The sections below are for **building from source**.
+
+---
+
 ## Requirements
 
 ### Runtime
