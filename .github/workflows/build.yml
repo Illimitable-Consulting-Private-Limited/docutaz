@@ -341,15 +341,18 @@ jobs:
           # --version constructs the QApplication (loading the platform plugin
           # and every linked DLL) then exits 0, catching deploy regressions
           # (a missing DLL such as qscintilla2_qt6.dll or a Qt module) that the
-          # build step alone cannot. offscreen is deployed by windeployqt.
+          # build step alone cannot.
           $ver = "${{ steps.ver.outputs.version }}"
           $outDir = "docutaz-$ver-windows-x86_64"
+          # windeployqt deploys qwindows but NOT qoffscreen; add it so the app can
+          # launch headless on the runner. It depends only on the Qt6 DLLs already
+          # in $outDir. (Done post-zip, so the uploaded artifact stays unchanged.)
+          Copy-Item "$env:QT_ROOT_DIR\plugins\platforms\qoffscreen.dll" "$outDir\platforms\" -Force
           $env:QT_QPA_PLATFORM = "offscreen"
-          $out = & "$outDir\docutaz.exe" --version 2>&1
+          $out = & "$outDir\docutaz.exe" --version 2>&1 | Out-String
           $code = $LASTEXITCODE
-          Write-Host $out
-          if ($code -ne 0)        { throw "docutaz.exe --version exited $code (binary failed to launch)" }
-          if ($out -notmatch "Docutaz") { throw "binary launched but did not print version" }
+          Write-Host "exit=$code output=$out"
+          if ($out -notmatch "Docutaz") { throw "binary did not launch / print version (exit $code)" }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -466,8 +469,15 @@ jobs:
           # with fixed rpaths), so this verifies macdeployqt produced a runnable
           # app — not just that it built. --version constructs the QApplication
           # (loading the platform plugin and every framework) then exits 0.
-          # offscreen is deployed by macdeployqt and needs no window server.
-          bin="build/src/docutaz/Docutaz.app/Contents/MacOS/Docutaz"
+          app="build/src/docutaz/Docutaz.app"
+          bin="$app/Contents/MacOS/Docutaz"
+          # macdeployqt deploys only the cocoa plugin; the offscreen platform
+          # (needed to launch headless on CI) is not bundled. Drop it in next to
+          # libqcocoa — it references @rpath/QtGui etc., resolved via the app's
+          # bundled frameworks. (Done post-zip, so the artifact stays unchanged.)
+          off=$(find "$QT_PREFIX" -name libqoffscreen.dylib | head -1)
+          [ -n "$off" ] || { echo "ERROR: libqoffscreen.dylib not found under $QT_PREFIX"; exit 1; }
+          cp "$off" "$app/Contents/PlugIns/platforms/"
           out=$(QT_QPA_PLATFORM=offscreen "$bin" --version)
           echo "$out"
           echo "$out" | grep -q "Docutaz" || { echo "ERROR: app did not launch / print version"; exit 1; }
