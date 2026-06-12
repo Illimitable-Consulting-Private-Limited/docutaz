@@ -3,6 +3,8 @@
 #include <QHBoxLayout>
 #include <QLineEdit>
 #include <QPushButton>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/AppRegistry.h"
@@ -35,9 +37,9 @@ namespace Docutaz
 
         QFontMetrics metrics = _skipEdit->fontMetrics();
         int width = metrics.boundingRect("00000000").width();
-        QRegExp rx("\\d+");
-        _skipEdit->setValidator(new QRegExpValidator(rx, this));
-        _batchSizeEdit->setValidator(new QRegExpValidator(rx, this));
+        QRegularExpression rx("\\d+");
+        _skipEdit->setValidator(new QRegularExpressionValidator(rx, this));
+        _batchSizeEdit->setValidator(new QRegularExpressionValidator(rx, this));
         _skipEdit->setFixedWidth(width);
         _batchSizeEdit->setFixedWidth(width);
 

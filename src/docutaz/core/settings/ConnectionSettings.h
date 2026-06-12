@@ -169,7 +169,7 @@ namespace Docutaz
 
         // Flag to check if this is a clone(copy) or original ConnectionSettings
         // Note: If this is not a clone connection settings, this object is original connection 
-        //       ConnectionSettings object which is loaded/saved into Robomongo config. file.
+        //       ConnectionSettings object which is loaded/saved into Docutaz config. file.
         bool _clone = false;
 
         // If this is a clone connection settings, unique ID will be used to identify from which 

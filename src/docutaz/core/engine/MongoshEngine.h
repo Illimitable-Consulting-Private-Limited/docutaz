@@ -83,4 +83,4 @@ private:
     std::string _currentDb;
 };
 
-} // Robomongo
+} // Docutaz

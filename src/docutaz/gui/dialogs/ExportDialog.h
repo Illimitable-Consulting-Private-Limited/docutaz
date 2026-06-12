@@ -29,7 +29,7 @@ namespace Docutaz
     *        on multiple export dialogs without blocking each other or main window. 
     *        So user can still work while multiple export dialogs are doing export. 
     *        This achieved by the assumption that there will be usable export executable for 
-    *        Robomongo to use. Currently, this location is hard coded as 
+    *        Docutaz to use. Currently, this location is hard coded as 
     *        "D:\\mongo_export\\bin\\mongoexport.exe". One of the next actions will be 
     *        to design the location of mongoexport which should be cross-platform, 
     *        generic and not hard coded.

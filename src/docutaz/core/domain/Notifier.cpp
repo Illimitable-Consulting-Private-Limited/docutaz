@@ -481,13 +481,9 @@ namespace Docutaz
 
         bool isSupportedDate = (miutil::minDate < milliTimestamp) && (milliTimestamp < miutil::maxDate);
 
-        boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-        boost::posix_time::time_duration diff = boost::posix_time::millisec(milliTimestamp);
-        boost::posix_time::ptime time = epoch + diff;
-
         if (isSupportedDate)
         {
-            std::string date = miutil::isotimeString(time, false, false);
+            std::string date = miutil::isotimeString(milliTimestamp, false, false);
             clipboard->setText("ISODate(\""+QString::fromStdString(date)+"\")");
         }
         else {

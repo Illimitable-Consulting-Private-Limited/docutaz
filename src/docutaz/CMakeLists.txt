@@ -141,21 +141,22 @@ set(SOURCES
     gui/resources/gui.qrc
 )
 
-# Robomongo target
-add_executable(docutaz MACOSX_BUNDLE WIN32 app/main.cpp ${SOURCES})
+# Core sources are compiled once into an OBJECT library shared by the
+# application executable and the unit-test target. Building them here (rather
+# than harvesting docutaz's object files in src/docutaz-unit-tests) removes the
+# fragile, platform-specific object-file scraping and lets the tests link on
+# every platform, Linux included. An OBJECT library (not STATIC) is used so the
+# AUTORCC-generated Qt resource initializers are linked directly into each
+# consumer instead of being dropped by the linker as unreferenced archive
+# members. Usage requirements are PUBLIC so both consumers inherit them.
+add_library(docutaz_core OBJECT ${SOURCES})
 
-# WebEngineWidgets is no longer used by any source — keep the variable empty
-# so the link line stays clean and CI need not install the heavy qtwebengine
-# module on Windows/macOS.
-SET(WebEngineWidgets)
-
-target_link_libraries(docutaz
-    PRIVATE
-        Qt5::Widgets
-        Qt5::Network
-        Qt5::Xml
-        ${WebEngineWidgets}
-        qjson
+target_link_libraries(docutaz_core
+    PUBLIC
+        Qt6::Widgets
+        Qt6::Network
+        Qt6::Xml
+        Qt6::PrintSupport
         qscintilla
         mongo::mongocxx_shared
         mongo::bsoncxx_shared
@@ -172,19 +173,21 @@ target_link_libraries(docutaz
 if(APPLE)
   find_library(SECURITY NAMES Security)
   find_library(CORE_FOUNDATION NAMES CoreFoundation)
-  set(SSL_LIBRARIES ${SECURITY} ${CORE_FOUNDATION})
-  
-  target_link_libraries(docutaz
-    PRIVATE
-        ${SSL_LIBRARIES}
+  target_link_libraries(docutaz_core
+    PUBLIC
+        ${SECURITY}
+        ${CORE_FOUNDATION}
         -lresolv)
 endif(APPLE)
 
-target_include_directories(docutaz
-    PRIVATE
+target_include_directories(docutaz_core
+    PUBLIC
         ${CMAKE_HOME_DIRECTORY}/src
-        ${CMAKE_HOME_DIRECTORY}/src/mongo_compat
-        ${Boost_INCLUDE_DIRS})
+        ${CMAKE_HOME_DIRECTORY}/src/mongo_compat)
+
+# Application executable: the entry point plus the shared core objects.
+add_executable(docutaz MACOSX_BUNDLE WIN32 app/main.cpp)
+target_link_libraries(docutaz PRIVATE docutaz_core)
 
 # Get build number
 find_package(Git)
@@ -206,8 +209,8 @@ endif()
 
 set(BUILD_NUMBER ${BUILD_NUMBER} CACHE INTERNAL "")
 
-target_compile_definitions(docutaz
-    PRIVATE
+target_compile_definitions(docutaz_core
+    PUBLIC
         BUILDING_ROBO
         PROJECT_NAME="${PROJECT_NAME}"
         PROJECT_NAME_TITLE="${PROJECT_NAME_TITLE}"
@@ -221,13 +224,11 @@ target_compile_definitions(docutaz
         PROJECT_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
         BUILD_NUMBER="${BUILD_NUMBER}"
         PROJECT_NAME_LOWERCASE="${PROJECT_NAME_LOWERCASE}"
-        PROJECT_QT_VERSION="${Qt5Core_VERSION}"        
+        PROJECT_QT_VERSION="${Qt6_VERSION}"
         MongoDB_VERSION="8.0"
         OPENSSL_VERSION="${OPENSSL_VERSION}"
         LIBSSH2_VERSION="${LIBSSH2_VERSION}"
-        QJSON_VERSION="${QJSON_VERSION}"
         GOOGLE_TEST_VERSION="${GOOGLE_TEST_VERSION}"
-        ESPRIMA_VERSION="${ESPRIMA_VERSION}"
 )
 
 if(SYSTEM_WINDOWS)
@@ -238,21 +239,35 @@ if(SYSTEM_WINDOWS)
         "${CMAKE_BINARY_DIR}/winres.rc")
     unset(windows_icon)
 
-    # Add additional source file to "robomongo" target
+    # Add additional source file to "docutaz" target
     target_sources(docutaz PRIVATE "${CMAKE_BINARY_DIR}/winres.rc")
 
     # Rename output name for Windows
     set_target_properties(docutaz PROPERTIES OUTPUT_NAME "docutaz")
 
-    # Suppress "warning C4477: 'sprintf'..." from robomongo\shell\db\ptimeutil.cpp
-    # Suppress "warning C4291: ...no matching operator delete found" from third_party\mozjs-60
-    set_target_properties(docutaz PROPERTIES COMPILE_FLAGS "/wd4477 /wd4291")
+    # Suppress "warning C4291: ...no matching operator delete found".
+    # (The old C4477 sprintf warning is gone now that ptimeutil uses snprintf.)
+    # These warnings come from the core sources, which now live in docutaz_core.
+    set_target_properties(docutaz_core PROPERTIES COMPILE_FLAGS "/wd4477 /wd4291")
 
     # Start debug program with console
     set_target_properties(docutaz PROPERTIES LINK_FLAGS_DEBUG "/SUBSYSTEM:CONSOLE")
 
-    # Seems that we do not need to do this with recent versions of Qt
-    target_link_libraries(docutaz PRIVATE Qt5::WinMain)
+    # Qt6 renamed the Qt5 "WinMain" helper to the EntryPoint module, which
+    # supplies WinMain() for the /SUBSYSTEM:WINDOWS (GUI) executable and
+    # forwards it to main(). Not every Qt distribution ships EntryPoint's CMake
+    # package config (notably some aqtinstall layouts: the .lib is present but
+    # lib/cmake/Qt6EntryPoint/ is not), so we cannot REQUIRE it. Probe quietly;
+    # link the imported target when available, otherwise fall back to the CRT's
+    # own entry point (mainCRTStartup), which calls main() directly and removes
+    # the need for Qt's WinMain shim entirely.
+    find_package(Qt6 QUIET COMPONENTS EntryPoint)
+    if(TARGET Qt6::EntryPoint)
+        target_link_libraries(docutaz PRIVATE Qt6::EntryPoint)
+    else()
+        message(STATUS "Qt6::EntryPoint not found; using CRT entry point (/ENTRY:mainCRTStartup)")
+        target_link_options(docutaz PRIVATE "/ENTRY:mainCRTStartup")
+    endif()
 
 elseif(SYSTEM_MACOSX)
     string(TIMESTAMP CURRENT_YEAR "%Y")

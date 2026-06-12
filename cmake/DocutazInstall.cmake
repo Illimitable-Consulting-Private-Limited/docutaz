@@ -105,9 +105,9 @@ endif()
 install_qt_lib(${QT_LIBS})
 install_qt_plugins(QGifPlugin QICOPlugin)
 install_icu_libs()
-set(QT_STYLES_DIR ${Qt5Core_DIR}/../../../plugins/styles/)
-set(QT_BIN_DIR ${Qt5Core_DIR}/../../../bin/)
-set(QT_RESOURCES_DIR ${Qt5Core_DIR}/../../../resources/)
+set(QT_STYLES_DIR ${Qt6Core_DIR}/../../../plugins/styles/)
+set(QT_BIN_DIR ${Qt6Core_DIR}/../../../bin/)
+set(QT_RESOURCES_DIR ${Qt6Core_DIR}/../../../resources/)
 
 if(SYSTEM_LINUX)
     install_qt_lib(XcbQpa DBus)
@@ -120,7 +120,7 @@ if(SYSTEM_LINUX)
             "/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.28"              
         DESTINATION ${lib_dir})
 elseif(SYSTEM_MACOSX)
-    install_qt_lib(MacExtras DBus)
+    install_qt_lib(DBus)
     install_qt_plugins(
         QCocoaIntegrationPlugin
         QMinimalIntegrationPlugin

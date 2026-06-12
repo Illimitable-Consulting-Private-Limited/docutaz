@@ -2,6 +2,8 @@
 
 #include <QTabWidget>
 #include <QTabBar>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QDialogButtonBox>
@@ -170,8 +172,8 @@ namespace Docutaz
         QHBoxLayout *expireLayout = new QHBoxLayout;
         _expireAfterLineEdit = new QLineEdit(advanced);
         _expireAfterLineEdit->setMaximumWidth(150);
-        QRegExp rx("\\d+");
-        _expireAfterLineEdit->setValidator(new QRegExpValidator(rx, this));
+        QRegularExpression rx("\\d+");
+        _expireAfterLineEdit->setValidator(new QRegularExpressionValidator(rx, this));
 
         QLabel *secLabel = new QLabel(tr("seconds"), advanced);
         expireLayout->addWidget(_expireAfterLineEdit);

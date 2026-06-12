@@ -10,7 +10,7 @@
 #include "docutaz/core/settings/SslSettings.h"
 #include "docutaz/core/utils/QtUtils.h"
 
-#include <boost/algorithm/string.hpp>
+#include <algorithm>
 
 namespace
 {
@@ -261,8 +261,8 @@ namespace Docutaz
         // If address contains square brackets ("["), remove them:
         std::string hostCopy = _host;
         if (_host.find('[') != std::string::npos) {
-            boost::erase_all(hostCopy, "[");
-            boost::erase_all(hostCopy, "]");
+            hostCopy.erase(std::remove(hostCopy.begin(), hostCopy.end(), '['), hostCopy.end());
+            hostCopy.erase(std::remove(hostCopy.begin(), hostCopy.end(), ']'), hostCopy.end());
         }
 
         return mongo::HostAndPort(hostCopy, _port);

@@ -1,7 +1,9 @@
 #include "docutaz/gui/widgets/workarea/WelcomeTab.h"
 
 #include <QLabel>
+#include <QResizeEvent>
 #include <QScrollArea>
+#include <QShowEvent>
 #include <QVBoxLayout>
 
 namespace Docutaz
@@ -81,12 +83,27 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
     setLayout(layout);
 }
 
+void WelcomeTab::showEvent(QShowEvent* event)
+{
+    QWidget::showEvent(event);
+    resize();
+}
+
+void WelcomeTab::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    resize();
+}
+
 void WelcomeTab::resize()
 {
     if (_logoPx.isNull()) return;
 
-    const int availW = _parent ? _parent->width() - 64 : 480;
-    const int maxW   = qMin(availW, 520);
+    // On the first showEvent the parent scroll area may not be laid out yet, so
+    // its width can be 0/tiny. Clamp to a sane minimum so we never compute a
+    // non-positive target width (which would scale the logo down to nothing).
+    const int availW = (_parent ? _parent->width() - 64 : 480);
+    const int maxW   = qBound(240, availW, 520);
     const int h      = (_logoPx.height() * maxW) / _logoPx.width();
     _logo->setPixmap(_logoPx.scaled(maxW, h, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }

@@ -2,9 +2,9 @@ name: Build
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
     inputs:
       linux:
@@ -31,23 +31,22 @@ jobs:
   # Linux — apt packages; produces tarball via bin/bundle-linux.sh
   # ──────────────────────────────────────────────────────────────────────────
   linux:
-    name: Linux (Ubuntu 22.04)
-    runs-on: ubuntu-22.04
+    name: Linux (Ubuntu 24.04)
+    runs-on: ubuntu-24.04
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.linux }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install Qt5 and system deps
+      - name: Install Qt6 and system deps
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y \
             ninja-build \
-            qtbase5-dev \
-            libqt5svg5-dev \
+            qt6-base-dev \
+            libqscintilla2-qt6-dev \
             libssl-dev \
             libssh2-1-dev \
-            libboost-dev \
             pkg-config
 
       # ── mongo-cxx-driver ──────────────────────────────────────────────────
@@ -56,10 +55,10 @@ jobs:
 
       - name: Cache mongocxx install
         id: cache-mongocxx
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/mongocxx-prefix
-          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-ubuntu22.04-v1
+          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-ubuntu24.04-v1
 
       - name: Build mongo-c-driver
         if: steps.cache-mongocxx.outputs.cache-hit != 'true'
@@ -92,27 +91,44 @@ jobs:
           mkdir build
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DDOCUTAZ_BUILD_TESTS=OFF \
+            -DDOCUTAZ_BUILD_TESTS=ON \
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
 
       - name: Expose mongocxx libs for bundler
         # bin/bundle-linux.sh scans /usr/local/lib64; copy the CI-built shared
-        # libs there so the bundler's glob finds them.
+        # libs there so the bundler's glob finds them. This also satisfies the
+        # docutaz_unit_tests rpath (/usr/local/lib64) before ctest runs.
         run: |
           sudo mkdir -p /usr/local/lib64
           sudo find "${{ github.workspace }}/mongocxx-prefix" \
             \( -name "*.so" -o -name "*.so.*" \) \
             -exec cp -Pf {} /usr/local/lib64/ \;
 
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
       - name: Create tarball
         run: bash bin/bundle-linux.sh
 
+      - name: Smoke test (packaged binary launches)
+        run: |
+          # Extract the tarball and launch the PACKAGED binary via its launcher,
+          # exactly as a user would. `--version` constructs the QApplication
+          # (loading the platform plugin and every linked library) then exits 0,
+          # so this catches startup/packaging regressions — missing libs, a
+          # broken bundle, or an ABI-incompatible Qt — that building alone won't.
+          # offscreen avoids needing an X server on the runner.
+          tar xzf docutaz-*-linux-x86_64.tar.gz
+          dir=$(echo docutaz-*-linux-x86_64/)
+          out=$(cd "$dir" && QT_QPA_PLATFORM=offscreen ./docutaz.sh --version)
+          echo "$out"
+          echo "$out" | grep -q "Docutaz" || { echo "ERROR: binary did not launch / print version"; exit 1; }
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docutaz-linux
           path: docutaz-*-linux-x86_64.tar.gz
@@ -125,21 +141,28 @@ jobs:
   # per run even with binary caching on first miss.  aqtinstall downloads the
   # same pre-built Qt binaries that Qt's installer uses — ~2 minutes.
   # To switch to full vcpkg, delete the install-qt-action step and add
-  # qt5-base + qt5-svg to vcpkg.json.
+  # qtbase + qtsvg to vcpkg.json (note: that also drags QScintilla's Qt build).
   # ──────────────────────────────────────────────────────────────────────────
   windows:
     name: Windows (x64)
     runs-on: windows-latest
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.windows }}
 
-    steps:
-      - uses: actions/checkout@v4
+    # ilammy/msvc-dev-cmd has no Node 24 release yet (latest v1.13.0 still
+    # declares node20). Opt this job into Node 24 so the action runs on the
+    # supported runtime ahead of GitHub's 2026-06-16 forced cutover. The other
+    # actions in this job are already node24, so this only affects msvc-dev-cmd.
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
-      - name: Install Qt 5
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Qt 6
         uses: jurplel/install-qt-action@v4
         with:
-          version: "5.15.2"
-          arch: win64_msvc2019_64
+          version: "6.8.1"
+          arch: win64_msvc2022_64
           cache: true
 
       # Activate the MSVC toolchain so Ninja compiles with cl.exe (matching the
@@ -150,32 +173,67 @@ jobs:
         with:
           arch: x64
 
-      # vcpkg provides Boost (header-only here) and OpenSSL. find_package(Boost)
-      # and our cmake/FindOpenSSL.cmake locate them via CMAKE_PREFIX_PATH
-      # (set in Configure). mongo-c-driver uses Windows SChannel, not OpenSSL,
-      # so OpenSSL here is only for the bundled libssh2 / ssh / docutaz link.
+      # QScintilla isn't shipped by aqtinstall and the vcpkg port would pull a
+      # full vcpkg Qt build (defeating aqtinstall). Build it from source against
+      # the aqtinstall Qt6 with qmake/nmake and install into the Qt prefix, so
+      # the build's find_path/find_library locate Qsci headers + qscintilla2_qt6.
+      - name: Build QScintilla (Qt6, from source)
+        shell: pwsh
+        env:
+          QSCI_VERSION: "2.14.1"
+        run: |
+          $url = "https://www.riverbankcomputing.com/static/Downloads/QScintilla/$env:QSCI_VERSION/QScintilla_src-$env:QSCI_VERSION.tar.gz"
+          curl.exe -L -o qscintilla.tar.gz $url
+          tar -xf qscintilla.tar.gz
+          cd "QScintilla_src-$env:QSCI_VERSION/src"
+          qmake qscintilla.pro
+          nmake
+          nmake install
+          # qmake's install location for the runtime DLL varies across versions
+          # (the import .lib reliably lands in the Qt lib dir, but the DLL may be
+          # left in the build tree or placed in lib). Copy it deterministically
+          # into the Qt bin dir, which is on the build's CMAKE_PREFIX_PATH, the
+          # ctest PATH, and where windeployqt/packaging look. Fail loudly if the
+          # DLL was never produced rather than shipping a broken artifact.
+          $dll = Get-ChildItem -Path ".","$env:QT_ROOT_DIR" -Recurse -Filter "qscintilla2_qt6.dll" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $dll) { throw "qscintilla2_qt6.dll not found after build/install" }
+          Copy-Item $dll.FullName -Destination "$env:QT_ROOT_DIR\bin" -Force
+          Write-Host "Placed qscintilla2_qt6.dll (from $($dll.FullName)) into $env:QT_ROOT_DIR\bin"
+
+      # vcpkg provides OpenSSL and libssh2 — both pinned via the
+      # builtin-baseline in ci/vcpkg/vcpkg.json. find_package(Libssh2) and our
+      # cmake/FindOpenSSL.cmake locate them via CMAKE_PREFIX_PATH (set in
+      # Configure). mongo-c-driver uses Windows SChannel, not OpenSSL, so
+      # OpenSSL here is only for the libssh2 / ssh / docutaz link.
       - name: Cache vcpkg deps
         id: cache-vcpkg
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
-          path: ${{ github.workspace }}\vcpkg-boost
-          key: vcpkg-boost-openssl-x64-windows-v2
+          path: ${{ github.workspace }}\vcpkg-deps
+          key: vcpkg-deps-x64-windows-${{ hashFiles('ci/vcpkg/vcpkg.json') }}-v1
 
-      - name: Install Boost + OpenSSL (vcpkg)
+      - name: Install OpenSSL + libssh2 (vcpkg, pinned)
         if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
-          # --classic is required: the repo-root vcpkg.json would otherwise put
-          # vcpkg in manifest mode (which rejects package args and would try to
-          # build mongo-cxx-driver from the manifest — we build that separately).
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install --classic `
-            boost-filesystem boost-date-time boost-algorithm boost-smart-ptr openssl `
+          $ErrorActionPreference = 'Stop'
+          # The pinned builtin-baseline (ci/vcpkg/vcpkg.json) is usually newer
+          # than the commit in the runner's preinstalled vcpkg, so manifest
+          # resolution can't read versions/baseline.json at that commit. Fetch
+          # so the baseline commit and its registry objects are available.
+          git -C "$env:VCPKG_INSTALLATION_ROOT" fetch --quiet origin
+          # Manifest-mode install from ci/vcpkg/vcpkg.json (a dedicated manifest,
+          # NOT the repo root, so mongo-cxx-driver is not pulled in — we build
+          # that separately). The manifest's builtin-baseline pins all versions.
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install `
+            --vcpkg-root="$env:VCPKG_INSTALLATION_ROOT" `
+            --x-manifest-root="$env:GITHUB_WORKSPACE\ci\vcpkg" `
             --triplet x64-windows `
-            --x-install-root="$env:GITHUB_WORKSPACE\vcpkg-boost"
+            --x-install-root="$env:GITHUB_WORKSPACE\vcpkg-deps"
 
       - name: Cache mongocxx install
         id: cache-mongocxx
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}\mongocxx-prefix
           key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-windows-msvc-v2
@@ -218,12 +276,26 @@ jobs:
           cmake -S . -B build -GNinja `
             -DCMAKE_BUILD_TYPE=Release `
             -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl `
-            "-DCMAKE_POLICY_VERSION_MINIMUM=3.5" `
-            -DDOCUTAZ_BUILD_TESTS=OFF `
-            -DCMAKE_PREFIX_PATH="$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-boost\x64-windows"
+            -DDOCUTAZ_BUILD_TESTS=ON `
+            -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows"
 
       - name: Build
-        run: cmake --build build --target docutaz --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
+
+      - name: Run unit tests
+        shell: pwsh
+        run: |
+          # The test binary loads Qt, QScintilla, mongocxx and the vcpkg
+          # OpenSSL/libssh2 DLLs at runtime. Windows has no rpath, so put every
+          # runtime DLL directory on PATH before invoking ctest. Note QScintilla
+          # installs its DLL into the Qt lib dir (qmake target.path =
+          # QT_INSTALL_LIBS), not bin, so both Qt dirs are needed.
+          $env:PATH = "$env:QT_ROOT_DIR\bin;" +
+            "$env:QT_ROOT_DIR\lib;" +
+            "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin;" +
+            "$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows\bin;" +
+            $env:PATH
+          ctest --test-dir build --output-on-failure
 
       - name: Read version
         id: ver
@@ -241,32 +313,62 @@ jobs:
           $ver = "${{ steps.ver.outputs.version }}"
           $outDir = "docutaz-$ver-windows-x86_64"
           New-Item -ItemType Directory -Path $outDir | Out-Null
-          # Deploy Qt DLLs alongside the binary
-          windeployqt --dir $outDir build\src\docutaz\docutaz.exe
           Copy-Item build\src\docutaz\docutaz.exe $outDir\
+          # QScintilla is built from source (not a Qt module), so windeployqt
+          # will not copy it on its own. Place it next to the exe first, then
+          # hand it to windeployqt alongside docutaz.exe so QScintilla's own Qt
+          # dependencies (e.g. Qt6PrintSupport) are deployed too.
+          Copy-Item "$env:QT_ROOT_DIR\bin\qscintilla2_qt6.dll" $outDir\
+          windeployqt --dir $outDir $outDir\docutaz.exe $outDir\qscintilla2_qt6.dll
           # mongocxx runtime DLLs
           $mongoBin = "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin"
           if (Test-Path $mongoBin) {
             Get-ChildItem $mongoBin -Filter "*.dll" | Copy-Item -Destination $outDir
           }
-          # OpenSSL runtime DLLs (libssh2 links them dynamically)
-          $vcpkgBin = "$env:GITHUB_WORKSPACE\vcpkg-boost\x64-windows\bin"
+          # libssh2 + OpenSSL + their transitive runtime DLLs (e.g. zlib/zstd),
+          # all linked dynamically. Copy the whole vcpkg bin so nothing the
+          # binary loads at startup is missing on a clean machine (a missing
+          # transitive DLL shows up only as STATUS_DLL_NOT_FOUND / 0xC0000135).
+          $vcpkgBin = "$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows\bin"
           if (Test-Path $vcpkgBin) {
-            Get-ChildItem $vcpkgBin -Filter "libssl*.dll"    | Copy-Item -Destination $outDir
-            Get-ChildItem $vcpkgBin -Filter "libcrypto*.dll" | Copy-Item -Destination $outDir
+            Get-ChildItem $vcpkgBin -Filter "*.dll" | Copy-Item -Destination $outDir
           }
           Compress-Archive -Path $outDir -DestinationPath "docutaz-$ver-windows-x86_64.zip"
 
+      - name: Smoke test (packaged binary launches)
+        shell: pwsh
+        run: |
+          # Launch the PACKAGED exe with its windeployqt'd DLLs alongside it.
+          # --version constructs the QApplication (loading the platform plugin
+          # and every linked DLL) then exits 0, catching deploy regressions
+          # (a missing DLL such as qscintilla2_qt6.dll or a Qt module) that the
+          # build step alone cannot.
+          $ver = "${{ steps.ver.outputs.version }}"
+          $outDir = "docutaz-$ver-windows-x86_64"
+          # windeployqt deploys qwindows but NOT qoffscreen; add it so the app can
+          # launch headless on the runner. It depends only on the Qt6 DLLs already
+          # in $outDir. (Done post-zip, so the uploaded artifact stays unchanged.)
+          Copy-Item "$env:QT_ROOT_DIR\plugins\platforms\qoffscreen.dll" "$outDir\platforms\" -Force
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $out = & "$outDir\docutaz.exe" --version 2>&1 | Out-String
+          $code = $LASTEXITCODE
+          Write-Host "exit=$code output=$out"
+          if ($out -notmatch "Docutaz") {
+            Write-Host "=== package contents ($outDir) ==="
+            Get-ChildItem -Recurse $outDir | Select-Object FullName | Out-String | Write-Host
+            throw "binary did not launch / print version (exit $code)"
+          }
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docutaz-windows
           path: docutaz-*-windows-x86_64.zip
           if-no-files-found: error
 
   # ──────────────────────────────────────────────────────────────────────────
-  # macOS (Apple Silicon / arm64) — native Qt via Homebrew qt@5, mongocxx
-  # built from source. Qt 5.15 has no native arm64 binary via aqtinstall.
+  # macOS (Apple Silicon / arm64) — native Qt6 via Homebrew qt, mongocxx
+  # built from source. Homebrew qt/qscintilla2 are native arm64 on Apple Silicon.
   # ──────────────────────────────────────────────────────────────────────────
   macos:
     name: macOS (Apple Silicon / arm64)
@@ -274,23 +376,23 @@ jobs:
     if: ${{ github.event_name != 'workflow_dispatch' || inputs.macos }}
 
     env:
-      # Qt 5.15 has no native arm64 binary from Qt/aqtinstall — use Homebrew's
-      # qt@5, which is compiled natively for arm64 on Apple Silicon.
+      # Homebrew's qt (Qt 6) and qscintilla2 are compiled natively for arm64 on
+      # Apple Silicon.
       MACOS_ARCH: arm64
       MACOS_DEPLOYMENT_TARGET: "11.0"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - name: Install build tools and native arm64 Qt 5
-        run: brew install ninja boost qt@5
+      - name: Install build tools and native arm64 Qt 6
+        run: brew install ninja qt qscintilla2 libssh2 pkg-config
 
-      - name: Expose Qt 5 prefix
-        run: echo "QT5_PREFIX=$(brew --prefix qt@5)" >> "$GITHUB_ENV"
+      - name: Expose Qt prefix
+        run: echo "QT_PREFIX=$(brew --prefix qt)" >> "$GITHUB_ENV"
 
       - name: Cache mongocxx install
         id: cache-mongocxx
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ github.workspace }}/mongocxx-prefix
           key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-macos14-arm64-v1
@@ -329,16 +431,26 @@ jobs:
 
       - name: Configure Docutaz (macOS)
         run: |
+          # Help pkg-config find Homebrew's libssh2.pc (libssh2 is not keg-only,
+          # but set it explicitly so the resolution is robust on the runner).
+          export PKG_CONFIG_PATH="$(brew --prefix libssh2)/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-            -DDOCUTAZ_BUILD_TESTS=OFF \
+            -DDOCUTAZ_BUILD_TESTS=ON \
             -DCMAKE_OSX_ARCHITECTURES="${{ env.MACOS_ARCH }}" \
             -DCMAKE_OSX_DEPLOYMENT_TARGET="${{ env.MACOS_DEPLOYMENT_TARGET }}" \
-            -DCMAKE_PREFIX_PATH="$QT5_PREFIX;$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
+            -DCMAKE_PREFIX_PATH="$QT_PREFIX;$(brew --prefix qscintilla2);$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
+
+      - name: Run unit tests
+        run: |
+          # The test binary links mongocxx from a custom prefix and Qt/QScintilla
+          # from Homebrew. Point the dynamic loader at all of them so ctest can
+          # launch it (the build-tree rpath usually suffices; this makes it robust).
+          export DYLD_FALLBACK_LIBRARY_PATH="${{ github.workspace }}/mongocxx-prefix/lib:$QT_PREFIX/lib:$(brew --prefix qscintilla2)/lib:$(brew --prefix)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+          ctest --test-dir build --output-on-failure
 
       - name: Read version
         id: ver
@@ -352,11 +464,35 @@ jobs:
         run: |
           ver="${{ steps.ver.outputs.version }}"
           cd build/src/docutaz
-          "$QT5_PREFIX/bin/macdeployqt" Docutaz.app
+          "$QT_PREFIX/bin/macdeployqt" Docutaz.app
           zip -r "../../../docutaz-${ver}-macos-arm64.zip" Docutaz.app
 
+      - name: Smoke test (packaged binary launches)
+        run: |
+          # Launch the macdeployqt'd .app's binary. The bundle is self-contained
+          # (Qt + QScintilla + mongocxx dylibs relocated into Contents/Frameworks
+          # with fixed rpaths), so this verifies macdeployqt produced a runnable
+          # app — not just that it built. --version constructs the QApplication
+          # (loading the platform plugin and every framework) then exits 0.
+          app="build/src/docutaz/Docutaz.app"
+          bin="$app/Contents/MacOS/Docutaz"
+          # macdeployqt deploys only the cocoa plugin; the offscreen platform
+          # (needed to launch headless on CI) is not bundled. Drop it in next to
+          # libqcocoa — it references @rpath/QtGui etc., resolved via the app's
+          # bundled frameworks. (Done post-zip, so the artifact stays unchanged.)
+          # -L: $QT_PREFIX (brew --prefix qt) is a symlink, so find must follow it.
+          off=$(find -L "$QT_PREFIX" -name libqoffscreen.dylib 2>/dev/null | head -1)
+          [ -n "$off" ] || { echo "ERROR: libqoffscreen.dylib not found under $QT_PREFIX"; exit 1; }
+          cp "$off" "$app/Contents/PlugIns/platforms/"
+          # Safety net mirroring the unit-test step: only consulted if the bundled
+          # frameworks fail to resolve, so it can't shadow the self-contained app.
+          export DYLD_FALLBACK_LIBRARY_PATH="${{ github.workspace }}/mongocxx-prefix/lib:$QT_PREFIX/lib:$(brew --prefix qscintilla2)/lib:$(brew --prefix)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+          out=$(QT_QPA_PLATFORM=offscreen "$bin" --version)
+          echo "$out"
+          echo "$out" | grep -q "Docutaz" || { echo "ERROR: app did not launch / print version"; exit 1; }
+
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docutaz-macos
           path: docutaz-*-macos-arm64.zip

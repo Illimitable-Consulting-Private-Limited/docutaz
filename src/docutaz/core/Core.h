@@ -1,7 +1,6 @@
 #pragma once
 
-#include <boost/scoped_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace mongo
 {
@@ -14,22 +13,22 @@ namespace mongo
 namespace Docutaz
 {
     class AppRegistry;
-    typedef boost::scoped_ptr<AppRegistry> AppRegistryScopedPtr;
+    typedef std::unique_ptr<AppRegistry> AppRegistryScopedPtr;
 
     class SettingsManager;
-    typedef boost::scoped_ptr<SettingsManager> SettingsManagerScopedPtr;
+    typedef std::unique_ptr<SettingsManager> SettingsManagerScopedPtr;
 
     class App;
-    typedef boost::scoped_ptr<App> AppScopedPtr;
+    typedef std::unique_ptr<App> AppScopedPtr;
 
     class EventBus;
-    typedef boost::scoped_ptr<EventBus> EventBusScopedPtr;
+    typedef std::unique_ptr<EventBus> EventBusScopedPtr;
 
     class MongoCollection;
-    typedef boost::shared_ptr<MongoCollection> MongoCollectionPtr;
+    typedef std::shared_ptr<MongoCollection> MongoCollectionPtr;
 
     class MongoDocument;
-    typedef boost::shared_ptr<MongoDocument> MongoDocumentPtr;
+    typedef std::shared_ptr<MongoDocument> MongoDocumentPtr;
 
     // todo: Use enum class
     enum ConnectionType {

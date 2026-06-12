@@ -66,6 +66,10 @@ namespace Docutaz
                 _prevViewModes.pop_back();
             }
 
+            // Collection stats has a dedicated custom renderer; open it there.
+            if (shellResult.type() == "collectionStats")
+                viewMode = Custom;
+
             bool const firstItem = (0 == i);
             bool const lastItem = (RESULTS_SIZE-1 == i);
 
@@ -235,7 +239,7 @@ namespace Docutaz
 
     void OutputWidget::mouseReleaseEvent(QMouseEvent * event)
     {
-        if (event->button() != Qt::MidButton)
+        if (event->button() != Qt::MiddleButton)
             return;
 
         int const tabIndex = tabBar()->tabAt(event->pos());

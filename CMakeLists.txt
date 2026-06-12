@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.0)
+cmake_minimum_required(VERSION 3.16)
 project(Docutaz)
 
 # Find mongocxx/bsoncxx BEFORE adding our custom cmake/ module path.
@@ -39,17 +39,7 @@ include(DocutazPackage)
 
 # Search for dependencies
 find_package(Threading REQUIRED)    # Wrapper arround CMake "Threads" module
-# Boost is used header-only (filesystem/date_time calls are inline; MSVC
-# auto-linking is disabled via -DBOOST_ALL_NO_LIB). We only need the headers
-# on the include path — explicit discovery makes this work where Boost is not
-# in the compiler's default search path (e.g. MSVC on Windows).
-find_package(Boost REQUIRED)
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5PrintSupport REQUIRED)
-find_package(Qt5Network REQUIRED)
-find_package(Qt5Xml REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets PrintSupport Network Xml)
 find_package(OpenSSL REQUIRED)
 
 if (SYSTEM_MACOSX)
@@ -58,46 +48,92 @@ if (SYSTEM_MACOSX)
     if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
         set(CMAKE_OSX_DEPLOYMENT_TARGET 11.0)
     endif()
-    find_package(Qt5MacExtras REQUIRED)
+    # Qt6 dropped QtMacExtras; the macOS-specific calls it provided are gone
+    # (see the source migration).
 endif()
 
 # Projects
-set(LIBSSH2_VERSION 1.9.0)
-if(SYSTEM_LINUX)
-    set(LIBSSH2_VERSION 1.7.0)
-endif()
-set(LIBSSH2_DIR src/third-party/libssh2-${LIBSSH2_VERSION})
-set(QJSON_VERSION 0.8.1)
-set(QJSON_DIR src/third-party/qjson-${QJSON_VERSION})
-set(QSCINTILLA_VERSION 2.8.4)
-set(QSCINTILLA_DIR src/third-party/qscintilla-${QSCINTILLA_VERSION})
-set(ESPRIMA_VERSION 2.7.3)
-set(ESPRIMA_DIR src/third-party/esprima-${ESPRIMA_VERSION})
-# todo: Use equivalent vars from googletest cmake files. Currently they are somehow not working.
-set(GOOGLE_TEST_VERSION 1.8.1)
-set(GOOGLE_TEST_DIR src/third-party/googletest-${GOOGLE_TEST_VERSION})
-if(SYSTEM_LINUX)
-    # Use system libssh2 on Linux (bundled 1.7.0 is incompatible with OpenSSL 3.x)
+set(GOOGLE_TEST_VERSION 1.15.2)
+set(GOOGLE_TEST_COMMIT b514bdc898e2951020cbdca1304b75f5950d1f59)  # v1.15.2
+# libssh2 is provided by the platform package manager instead of being
+# vendored, so it always tracks upstream security fixes:
+#   Linux   - system libssh2         (apt: libssh2-1-dev,  via pkg-config)
+#   macOS   - Homebrew libssh2       (brew: libssh2,       via pkg-config)
+#   Windows - vcpkg libssh2 (pinned) (CMake config: Libssh2::libssh2)
+# Each path is wrapped in an INTERFACE target named "libssh2" so the rest of
+# the build (src/docutaz/ssh) stays platform-agnostic. LIBSSH2_VERSION is set
+# from the resolved package and surfaced in the About dialog.
+if(SYSTEM_LINUX OR SYSTEM_MACOSX)
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(LIBSSH2 REQUIRED libssh2)
+    # IMPORTED_TARGET (PkgConfig::LIBSSH2) carries the absolute library path,
+    # link dirs and include dirs. This matters on macOS: Homebrew's libssh2 is
+    # not in the default linker search path, so a bare "-lssh2" fails to link.
+    pkg_check_modules(LIBSSH2 REQUIRED IMPORTED_TARGET libssh2)
     add_library(libssh2 INTERFACE IMPORTED GLOBAL)
-    target_link_libraries(libssh2 INTERFACE ${LIBSSH2_LIBRARIES})
-    target_include_directories(libssh2 INTERFACE ${LIBSSH2_INCLUDE_DIRS})
+    target_link_libraries(libssh2 INTERFACE PkgConfig::LIBSSH2)
 else()
-    add_subdirectory(${LIBSSH2_DIR})
+    find_package(Libssh2 CONFIG REQUIRED)
+    add_library(libssh2 INTERFACE IMPORTED GLOBAL)
+    target_link_libraries(libssh2 INTERFACE Libssh2::libssh2)
+    set(LIBSSH2_VERSION "${Libssh2_VERSION}")
 endif()
+# QScintilla (Qt6 editor component) is provided per platform instead of being
+# vendored, mirroring the libssh2 approach so it tracks upstream fixes:
+#   Linux   - system          (apt: libqscintilla2-qt6-dev / dnf: qscintilla-qt6-devel)
+#   macOS   - Homebrew         (brew: qscintilla2)
+#   Windows - built from source against the aqtinstall Qt6 (see CI), installed
+#             into the Qt prefix so the same find_path/find_library locate it.
+# Resolved uniformly via find_path/find_library and wrapped in an INTERFACE
+# target named "qscintilla" so src/docutaz stays platform-agnostic. The version
+# shown in the About dialog comes from QSCINTILLA_VERSION_STR in
+# <Qsci/qsciglobal.h>; QSCINTILLA_VERSION here is parsed from the same header
+# purely for the configuration summary.
+find_path(QSCINTILLA_INCLUDE_DIR
+    NAMES Qsci/qsciscintilla.h
+    PATH_SUFFIXES qt6
+    REQUIRED)
+find_library(QSCINTILLA_LIBRARY NAMES qscintilla2_qt6 REQUIRED)
+add_library(qscintilla INTERFACE IMPORTED GLOBAL)
+target_include_directories(qscintilla INTERFACE ${QSCINTILLA_INCLUDE_DIR})
+target_link_libraries(qscintilla INTERFACE
+    ${QSCINTILLA_LIBRARY} Qt6::Widgets Qt6::PrintSupport)
+if(WIN32)
+    # The Windows QScintilla is built from source as a DLL (see CI). Its headers
+    # only mark exported symbols __declspec(dllimport) when QSCINTILLA_DLL is
+    # defined; without it, data symbols such as QsciScintilla::staticMetaObject
+    # are treated as local and fail to link (function imports get auto-thunked,
+    # data imports do not). Define it for every consumer of this target.
+    target_compile_definitions(qscintilla INTERFACE QSCINTILLA_DLL)
+endif()
+if(QSCINTILLA_INCLUDE_DIR AND EXISTS "${QSCINTILLA_INCLUDE_DIR}/Qsci/qsciglobal.h")
+    file(STRINGS "${QSCINTILLA_INCLUDE_DIR}/Qsci/qsciglobal.h" _qsci_ver
+         REGEX "QSCINTILLA_VERSION_STR")
+    string(REGEX MATCH "\"([0-9.]+)\"" _ "${_qsci_ver}")
+    set(QSCINTILLA_VERSION "${CMAKE_MATCH_1}")
+endif()
+
 add_subdirectory(src/docutaz/ssh)
-add_subdirectory(${QJSON_DIR})
-add_subdirectory(${QSCINTILLA_DIR})
 add_subdirectory(src/docutaz)
 
 # Unit tests (and the GoogleTest dependency they need) are optional. They are
 # not part of release builds; CI configures with -DDOCUTAZ_BUILD_TESTS=OFF.
 option(DOCUTAZ_BUILD_TESTS "Build unit tests" ON)
 if(DOCUTAZ_BUILD_TESTS)
-    add_subdirectory(${GOOGLE_TEST_DIR})
+    # enable_testing() must run in the top-level scope so `ctest` from the build
+    # root discovers tests that add_test() registers in the subdirectories below.
+    enable_testing()
+    # GoogleTest is fetched (pinned to the v${GOOGLE_TEST_VERSION} commit) only
+    # when tests are enabled; CI sets -DDOCUTAZ_BUILD_TESTS=OFF and never
+    # downloads it. No vendored googletest tree is kept in the repo.
+    include(FetchContent)
+    FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG        ${GOOGLE_TEST_COMMIT}
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # MSVC: link the dynamic CRT
+    FetchContent_MakeAvailable(googletest)
     add_subdirectory(src/docutaz-unit-tests)
-    add_subdirectory(src/tests EXCLUDE_FROM_ALL)
 endif()
 
 # Show configuration summary

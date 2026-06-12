@@ -221,16 +221,6 @@ namespace Docutaz {
             if (ConnectionPrimary == event->connectionType)
                 _bus->send(_worker, new RefreshReplicaSetFolderRequest(this, false));
         }
-
-        // Save connected db version if not saved before and if this is primary connection.
-        QString const versionStr = QString::fromStdString(info._dbVersionStr);
-        auto const& settingsManager = AppRegistry::instance().settingsManager();
-        if (ConnectionPrimary == _connectionType &&
-            !settingsManager->dbVersionsConnected().contains(versionStr)) {
-            settingsManager->addDbVersionConnected(versionStr);
-            settingsManager->save();
-        }
-
     }
 
     void MongoServer::handle(RefreshReplicaSetFolderResponse *event)
@@ -439,7 +429,7 @@ namespace Docutaz {
                    "] found in server side. "
                    "Please double check if same host names and ports are used as in server's replica set"
                    " configuration. \nIf same set name is used for different replica sets, this configuration"
-                   " is supported only on different instances of Robomongo. "
+                   " is supported only on different instances of Docutaz. "
                    " Please open a new Docutaz instance for each replica set which has the same set name."
                    "\n\nReason:\n" << event->error().errorMessage();
             }

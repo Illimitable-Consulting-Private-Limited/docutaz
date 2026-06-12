@@ -4,7 +4,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QGridLayout>
-#include <QRegExpValidator>
+#include <QRegularExpressionValidator>
+#include <QRegularExpression>
 #include <QCheckBox>
 #include <QPushButton>
 #include <QFileDialog>
@@ -48,8 +49,8 @@ namespace Docutaz
 
         _sshPort = new QLineEdit(QString::number(info->port()));
         _sshPort->setFixedWidth(40);
-        QRegExp rx("\\d+"); //(0-65554)
-        _sshPort->setValidator(new QRegExpValidator(rx, this));        
+        QRegularExpression rx("\\d+"); //(0-65554)
+        _sshPort->setValidator(new QRegularExpressionValidator(rx, this));        
 
         _security = new QComboBox();
         _security->addItems(QStringList() << "Password" << "Private Key");
@@ -85,12 +86,12 @@ namespace Docutaz
 // https://github.com/paralect/robomongo/issues/391
 
 #ifdef Q_OS_WIN
-        QRegExp pathx("([a-zA-Z]:)?([\\\\/][a-zA-Z0-9_.-]+)+[\\\\/]?");
+        QRegularExpression pathx("([a-zA-Z]:)?([\\\\/][a-zA-Z0-9_.-]+)+[\\\\/]?");
 #else
-        QRegExp pathx("^\\/?([\\d\\w\\.]+)(/([\\d\\w\\.]+))*\\/?$");
+        QRegularExpression pathx("^\\/?([\\d\\w\\.]+)(/([\\d\\w\\.]+))*\\/?$");
 #endif // Q_OS_WIN
-        _publicKeyBox->setValidator(new QRegExpValidator(pathx, this));
-        _privateKeyBox->setValidator(new QRegExpValidator(pathx, this));
+        _publicKeyBox->setValidator(new QRegularExpressionValidator(pathx, this));
+        _privateKeyBox->setValidator(new QRegularExpressionValidator(pathx, this));
 */
 
         QHBoxLayout *hostAndPasswordLayout = new QHBoxLayout;

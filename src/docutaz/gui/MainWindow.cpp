@@ -10,7 +10,8 @@
 #include <QToolBar>
 #include <QToolTip>
 #include <QDockWidget>
-#include <QDesktopWidget>
+#include <QScreen>
+#include <QActionGroup>
 #include <QTimer>
 #include <QPushButton>
 #include <QLabel>
@@ -18,9 +19,6 @@
 #include <QHBoxLayout>
 #include <QSettings>
 #include <QSystemTrayIcon>
-#include <QNetworkAccessManager>
-#include <QNetworkRequest>
-#include <QNetworkReply>
 #include <QUrl>
 #include <QTextDocument>
 
@@ -117,11 +115,6 @@ namespace Docutaz
     };
 
 /* -------------------------------- MainWindow --------------------------------- */
-
-    // In milliseconds
-    constexpr int ONE_HOUR = 3'600'000;     // (3'600'000 msec = 60 * 60 * 1000 msec)
-    constexpr int THIRTY_SECONDS = 30'000;
-    constexpr int ONE_SECOND = 1'000;
 
     MainWindow::MainWindow()
         : BaseClass(),
@@ -445,12 +438,6 @@ namespace Docutaz
         optionsMenu->addAction(minimizeTray);
     #endif
 
-        auto checkUpdates = new QAction(tr("Check For Updates"), this);
-        checkUpdates->setCheckable(true);
-        checkUpdates->setChecked(AppRegistry::instance().settingsManager()->checkForUpdates());
-        VERIFY(connect(checkUpdates, SIGNAL(triggered()), this, SLOT(toggleCheckUpdates())));
-        optionsMenu->addAction(checkUpdates);
-
         auto changeShellTimeout = new QAction(tr("Change Shell Timeout..."), this);
         VERIFY(connect(changeShellTimeout, SIGNAL(triggered()), this, SLOT(openShellTimeoutDialog())));
         optionsMenu->addAction(changeShellTimeout);
@@ -472,14 +459,14 @@ namespace Docutaz
     #if !defined(Q_OS_MAC)
         fullScreenAction->setShortcut(Qt::Key_F11);
     #else
-        fullScreenAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_F11));
+        fullScreenAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_F11));
     #endif
         fullScreenAction->setVisible(true);
         VERIFY(connect(fullScreenAction, SIGNAL(triggered()), this, SLOT(toggleFullScreen2())));
 
         // Minimize window
         QAction *minimizeAction = new QAction("&Minimize", this);
-        minimizeAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_M));
+        minimizeAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_M));
         minimizeAction->setVisible(true);
         VERIFY(connect(minimizeAction, SIGNAL(triggered()), this, SLOT(showMinimized())));
 
@@ -497,13 +484,13 @@ namespace Docutaz
 
         // Reload action (currently a re-execute, as does not "reload" files per issue #447)
         QAction *reloadAction = new QAction("Re-execute Query in Current Tab", this);
-        reloadAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_R));
+        reloadAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_R));
         reloadAction->setVisible(true);
         VERIFY(connect(reloadAction, SIGNAL(triggered()), SLOT(executeScript())));
 
         // Duplicate tab action
         QAction *duplicateAction = new QAction("Duplicate Query in New Tab", this);
-        duplicateAction->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_T);
+        duplicateAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_T);
         duplicateAction->setVisible(true);
         VERIFY(connect(duplicateAction, SIGNAL(triggered()), SLOT(duplicateTab())));
 
@@ -524,7 +511,7 @@ namespace Docutaz
         if (!settings->disableHttpsFeatures()) {
             // Open welcome tab action
             auto openWelcomeTabAction = new QAction("Open/Refresh Welcome Tab", this);
-            openWelcomeTabAction->setShortcut(Qt::CTRL + Qt::SHIFT + Qt::Key_W);
+            openWelcomeTabAction->setShortcut(Qt::CTRL | Qt::SHIFT | Qt::Key_W);
             openWelcomeTabAction->setVisible(true);
             VERIFY(connect(openWelcomeTabAction, SIGNAL(triggered()), SLOT(openWelcomeTab())));
             windowMenu->addAction(openWelcomeTabAction);
@@ -534,12 +521,12 @@ namespace Docutaz
 
     /*** About menu ***/
 
-        QAction *aboutRobomongoAction = new QAction(QString("&About ") + PROJECT_NAME_TITLE + "...", this);
-        VERIFY(connect(aboutRobomongoAction, SIGNAL(triggered()), this, SLOT(aboutRobomongo())));
+        QAction *aboutDocutazAction = new QAction(QString("&About ") + PROJECT_NAME_TITLE + "...", this);
+        VERIFY(connect(aboutDocutazAction, SIGNAL(triggered()), this, SLOT(aboutDocutaz())));
 
         // Options menu
         QMenu *helpMenu = menuBar()->addMenu("Help");
-        helpMenu->addAction(aboutRobomongoAction);
+        helpMenu->addAction(aboutDocutazAction);
 
         // Toolbar
         QToolBar *connectToolBar = new QToolBar(tr("Connections Toolbar"), this);
@@ -574,37 +561,6 @@ namespace Docutaz
         setToolBarIconSize(_execToolBar);
         addToolBar(_execToolBar);
 
-        _updateLabel = new QLabel;
-        _updateLabel->setWordWrap(true);
-        _updateLabel->setOpenExternalLinks(true);
-        _updateLabel->setTextFormat(Qt::TextFormat::RichText);
-        _updateLabel->setIndent(_updateLabel->fontMetrics().width("T"));
-
-        _closeButton = new QPushButton;
-        _closeButton->setIcon(QIcon(":/docutaz/icons/close_hover_16x16.png"));
-        _closeButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
-        _closeButton->setMouseTracking(true);
-        _closeButton->setAttribute(Qt::WA_Hover);
-        _closeButton->installEventFilter(this);
-        VERIFY(connect(_closeButton, SIGNAL(clicked()), this, SLOT(on_closeButton_clicked())));
-
-        auto updateBarLay = new QHBoxLayout;
-        updateBarLay->addWidget(_updateLabel);
-        updateBarLay->addWidget(_closeButton, Qt::AlignRight);
-        updateBarLay->setSpacing(0);
-        updateBarLay->setMargin(0);
-
-        auto updateBarWid = new QWidget;
-        updateBarWid->setLayout(updateBarLay);
-
-        _updateBar = new QToolBar("Updates Toolbar");
-        _updateBar->addWidget(updateBarWid);
-        _updateBar->setStyleSheet("background-color: #b3e0ff; border: none;");  // blue
-        addToolBarBreak();
-        addToolBar(_updateBar);
-        _updateBar->setHidden(true);
-        _updateBar->setMovable(false);
-
         _toolbarsMenu->addAction(_execToolBar->toggleViewAction());
         VERIFY(connect(_execToolBar->toggleViewAction(), SIGNAL(triggered(bool)), 
                        this, SLOT(onExecToolbarVisibilityChanged(bool))));
@@ -628,20 +584,6 @@ namespace Docutaz
 
         // Catch application windows focus changes
         VERIFY(connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(on_focusChanged())));
-
-        _networkAccessManager = new QNetworkAccessManager;
-        VERIFY(connect(_networkAccessManager, SIGNAL(finished(QNetworkReply*)),
-               this, SLOT(on_networkReply(QNetworkReply*))));
-
-        if (!settings->disableHttpsFeatures() && settings->checkForUpdates()) {
-            // First check for updates THIRTY_SECONDS after program start            
-            QTimer::singleShot(THIRTY_SECONDS, this, SLOT(checkUpdates()));
-
-            // Then, check for updates every 1 hour
-            auto const timer { new QTimer(this) };
-            VERIFY(connect(timer, SIGNAL(timeout()), this, SLOT(checkUpdates())));
-            timer->start(ONE_HOUR);
-        }
 
         setUnifiedTitleAndToolBarOnMac(false); // https://bugreports.qt.io/browse/QTBUG-68946
     }
@@ -722,7 +664,7 @@ namespace Docutaz
         else
         {
             // Resize main window. We are trying to keep it "almost" maximized.
-            QRect screenGeometry = QApplication::desktop()->availableGeometry();
+            QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
             int horizontalMargin = static_cast<int>(screenGeometry.width() * 0.1);
             int verticalMargin = static_cast<int>(screenGeometry.height() * 0.1);
             int _width = screenGeometry.width() - horizontalMargin;
@@ -740,27 +682,6 @@ namespace Docutaz
     {
         QSettings settings("Docutaz", "Docutaz");
         settings.setValue("MainWindow/geometry", saveGeometry());
-    }
-
-    void MainWindow::adjustUpdatesBarHeight()
-    {
-        if (!AppRegistry::instance().settingsManager()->checkForUpdates() || !_updateBar->isVisible())
-            return;
-
-        QTextDocument doc;
-        doc.setHtml(_updateLabel->text());
-        int const strWidth = _updateLabel->fontMetrics().width(doc.toPlainText());
-        int const lineHeight = _updateLabel->fontMetrics().height();
-        int const widthForUpdateStr = width() - _closeButton->width();
-
-        if (0 == widthForUpdateStr)
-            return;
-
-#ifdef __APPLE__
-        _updateLabel->setFixedHeight((strWidth / widthForUpdateStr + 1) * lineHeight * 1.3);
-#else
-        _updateLabel->setFixedHeight((strWidth / widthForUpdateStr + 1) * lineHeight);
-#endif
     }
 
     void MainWindow::open()
@@ -952,14 +873,6 @@ namespace Docutaz
         saveAutoExec(send->isChecked());
     }
 
-    void MainWindow::toggleCheckUpdates()
-    {
-        auto action = qobject_cast<QAction*>(sender());
-        AppRegistry::instance().settingsManager()->setCheckForUpdates(action->isChecked());
-        AppRegistry::instance().settingsManager()->save();
-        QTimer::singleShot(ONE_SECOND, this, SLOT(checkUpdates()));
-    }
-
     void MainWindow::openShellTimeoutDialog()
     {
         changeShellTimeoutDialog();
@@ -1022,7 +935,7 @@ namespace Docutaz
         QString("Refresh not working yet... : <br/>  <b>Ctrl+D</b> : push Button"));
     }
 
-    void MainWindow::aboutRobomongo()
+    void MainWindow::aboutDocutaz()
     {
         AboutDialog dlg(this);
         dlg.exec();
@@ -1177,7 +1090,6 @@ namespace Docutaz
 
     void MainWindow::closeEvent(QCloseEvent *event)
     {
-        AppRegistry::instance().settingsManager()->setProgramExitedNormally(true);
         AppRegistry::instance().settingsManager()->save();
         saveWindowSettings();
     #if defined(Q_OS_WIN)
@@ -1214,28 +1126,9 @@ namespace Docutaz
 #endif
     }
 
-    bool MainWindow::eventFilter(QObject *target, QEvent *event)
-    {
-        auto closeUpdatesBarButton = qobject_cast<QPushButton*>(target);
-        if (!closeUpdatesBarButton)
-            return false;
-
-        if (event->type() == QEvent::HoverEnter) {
-            closeUpdatesBarButton->setIcon(QIcon(":/docutaz/icons/close_hover_16x16_original.png"));
-            return true;
-        }
-        else  if (event->type() == QEvent::HoverLeave) {
-            closeUpdatesBarButton->setIcon(QIcon(":/docutaz/icons/close_hover_16x16.png"));
-            return true;
-        }
-
-        return QWidget::eventFilter(target, event);
-    }
-
     void MainWindow::resizeEvent(QResizeEvent* event)
     {
         QMainWindow::resizeEvent(event);
-        adjustUpdatesBarHeight();
     }
 
     void MainWindow::handle(QueryWidgetUpdatedEvent *event)
@@ -1265,7 +1158,7 @@ namespace Docutaz
         QAction *actionExp = explorerDock->toggleViewAction();
         // Adjust any parameter you want.  
         actionExp->setText(QString("&Explorer"));
-        actionExp->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_E));  
+        actionExp->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_E));  
         actionExp->setStatusTip(QString("Press to show/hide Database Explorer panel."));
         actionExp->setChecked(explorerDock->isVisible());
         VERIFY(connect(actionExp, SIGNAL(triggered(bool)), this, SLOT(onExplorerVisibilityChanged(bool))));
@@ -1285,7 +1178,7 @@ namespace Docutaz
 
         QAction *action = _logDock->toggleViewAction();
         action->setText(QString("&Logs"));
-        action->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_L));  
+        action->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_L));  
         //action->setStatusTip(QString("Press to show/hide Logs panel."));  //commented for now because this message hides Logs button in status bar :)
         action->setChecked(_logDock->isVisible());
         // Install action in the menu.
@@ -1397,61 +1290,4 @@ namespace Docutaz
         }
     }
 
-    void MainWindow::on_networkReply(QNetworkReply* reply)
-    {
-        QString str(QUrl::fromPercentEncoding(reply->readAll()));	
-
-        if (str.contains("NO-UPDATES")
-            || reply->error() != QNetworkReply::NoError 
-            || str.isEmpty()
-        ) {
-            _updateLabel->setText("");
-            _updateBar->setVisible(false);
-            return;
-        }
-
-        str.replace('+', ' ');
-        str.remove("Update,");
-
-        _updateLabel->setText(str);
-        _updateBar->setVisible(true);
-        adjustUpdatesBarHeight();
-    }
-
-    void MainWindow::on_closeButton_clicked()
-    {
-        _updateBar->setVisible(false);
-    }
-
-    void MainWindow::checkUpdates()
-    {
-        auto const& settings { AppRegistry::instance().settingsManager() };
-        if (!settings->checkForUpdates() || settings->disableHttpsFeatures())
-            return;
-
-#ifdef _WIN32
-        QString const OS = "win";
-#elif __APPLE__
-        QString const OS = "osx";
-#elif __linux__
-        QString const OS = "linux";
-#else
-        QString const OS = "unknown";
-#endif
-
-        // Build dbVersionsConnected in following format: "3.4.3,2.6.0,..."
-        QString dbVersionsConnected;
-        for (auto const& version : settings->dbVersionsConnected())
-            dbVersionsConnected.append(version + ',');
-        
-        if (dbVersionsConnected.endsWith(','))
-            dbVersionsConnected.chop(1);
-
-        // softwareId=8: Robomongo product ID 
-        QUrl url("https://updates.3t.io/check.php?os=" + OS + "&softwareId=8&softwareVersion=" +
-                  QString(PROJECT_VERSION) + "&licenseInfo=FREE&setup=" + settings->anonymousID() + 
-                  "&dbVersionsConnected=" + dbVersionsConnected + "&notify=true#");
-
-        _networkAccessManager->get(QNetworkRequest(url));
-    }
 }

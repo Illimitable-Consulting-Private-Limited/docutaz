@@ -29,8 +29,8 @@ namespace Docutaz
 
     /**
      * @brief SettingsManager gives you access to all settings, that is used
-     *        by Robomongo. It can load() and save() them. Config file usually
-     *        located here: ~/.config/robomongo/robomongo.json
+     *        by Docutaz. It can load() and save() them. Config file usually
+     *        located here: ~/.Docutaz/<version>/docutaz.json
      *
      *        You can access this manager via:
      *        AppRegistry::instance().settingsManager()
@@ -45,7 +45,7 @@ namespace Docutaz
 
         /**
          * @brief Creates SettingsManager for config file in default location
-         *        (usually ~/.config/robomongo/robomongo.json)
+         *        (usually ~/.Docutaz/<version>/docutaz.json)
          */
         SettingsManager();
 
@@ -80,7 +80,7 @@ namespace Docutaz
 
         /**
         * @brief  Finds and returns original (non-clone) connection settings which is 
-        *         loaded/saved from/into Robomongo config. file.
+        *         loaded/saved from/into Docutaz config. file.
         * @return If uniqueID is valid returns original connection settings, 
         *         nullptr otherwise.
         */
@@ -134,14 +134,6 @@ namespace Docutaz
         void addAcceptedEulaVersion(QString const& version) { _acceptedEulaVersions.insert(version); }
         QSet<QString> const& acceptedEulaVersions() const { return _acceptedEulaVersions; }
 
-        QSet<QString>::iterator addDbVersionConnected(QString const& version) { 
-            return _dbVersionsConnected.insert(version); 
-        }
-        QSet<QString> const& dbVersionsConnected() const { return _dbVersionsConnected; }
-
-        void setCheckForUpdates(bool checkForUpdates) { _checkForUpdates = checkForUpdates; }
-        bool checkForUpdates() const { return _checkForUpdates; }
-
         void setBatchSize(int batchSize) { _batchSize = batchSize; }
         int batchSize() const { return _batchSize; }
 
@@ -163,13 +155,8 @@ namespace Docutaz
         void setImported(bool imported) { _imported = imported; }
         bool imported() const { return _imported; }
 
-        QString anonymousID() const { return _anonymousID; }
-
         void addCacheData(QString const& key, QVariant const& value);
         QVariant cacheData(QString const& key) const;
-
-        void setProgramExitedNormally(bool value) { _programExitedNormally = value; }
-        bool programExitedNormally() const { return _programExitedNormally; }
 
         // Designed to be set only by human users
         bool disableHttpsFeatures() const { return _disableHttpsFeatures; }
@@ -191,10 +178,6 @@ namespace Docutaz
          * Save all settings to map.
          */
         QVariantMap convertToMap() const;
-
-        // Find existing anonymousID from Robomongo and 3T config files, if not found create
-        // a new anonymousID.
-        QString getOrCreateAnonymousID(QVariantMap const& map) const;
 
         /**
          * Load connection settings from previous versions of Robomongo
@@ -222,13 +205,10 @@ namespace Docutaz
         bool _minimizeToTray;
         bool _lineNumbers;
         bool _disableConnectionShortcuts;
-        bool _programExitedNormally = true;
         bool _disableHttpsFeatures = false;
         bool _debugMode = false;
         QSet<QString> _acceptedEulaVersions;
-        QSet<QString> _dbVersionsConnected;
         int _batchSize;
-        bool _checkForUpdates = true;
         QString _currentStyle;
         QString _textFontFamily;
         int _textFontPointSize;
@@ -238,13 +218,6 @@ namespace Docutaz
 
         // True when settings from previous versions of Robomongo are imported
         bool _imported;
-        
-        /**
-        * @brief This is an anonymous string taken from QUuid that is generated when Robomongo 
-        *        is first installed on a user's machine and then launched for the first time  
-        *        It stays the same throughout all upgrades.
-        */
-        QString _anonymousID;
 
         // Various cache data
         QMap<QString, QVariant> _cacheData;

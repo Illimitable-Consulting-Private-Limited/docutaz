@@ -3,6 +3,7 @@
 #include <QObject>
 #include <QEvent>
 #include <QMutex>
+#include <QRecursiveMutex>
 #include <vector>
 
 namespace Docutaz
@@ -63,7 +64,7 @@ namespace Docutaz
         void sendEvent(EventBusDispatcher *dispatcher, EventWrapper *wrapper);
 
     private:
-        QMutex _lock;
+        QRecursiveMutex _lock;
         std::vector<EventTypeAndSubscriber> _subscribersByEventType;
         std::vector<ThreadAndDispatcher> _dispatchersByThread;
     };

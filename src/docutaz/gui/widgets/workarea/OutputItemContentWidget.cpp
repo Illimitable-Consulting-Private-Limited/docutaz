@@ -69,7 +69,12 @@ namespace Docutaz
         _isTextModeSupported(true),
         _isTreeModeSupported(true),
         _isTableModeSupported(true),
-        _isCustomModeSupported(!type.isEmpty()),
+        // Custom UI is only meaningful for results that have a dedicated
+        // renderer. Currently that is collection stats (CollectionStatsTreeWidget).
+        // The mongosh layer stamps every result with a non-empty type
+        // ("query"/"array"/"value"/…), so the old "!type.isEmpty()" test made the
+        // button appear — and do nothing — on every result.
+        _isCustomModeSupported(type == "collectionStats"),
         _isTextModeInitialized(false),
         _isTreeModeInitialized(false),
         _isCustomModeInitialized(false),

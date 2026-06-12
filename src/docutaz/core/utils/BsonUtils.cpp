@@ -1,5 +1,7 @@
 #include "docutaz/core/utils/BsonUtils.h"
 
+#include <cmath>
+
 #include <mongo/client/dbclient_base.h>
 //#include <mongo/bson/bsonobjiterator.h>
 #include "mongo/util/base64.h"
@@ -180,12 +182,18 @@ namespace Docutaz
                 }
                 break;
             case mongo::Array: {
-                if ( elem.embeddedObject().isEmpty() ) {
+                // Bind the embedded array to a named local. BSONObj now owns its
+                // bytes (shared_ptr), so a temporary embeddedObject() would be
+                // freed at the end of the full expression — leaving the iterator
+                // (which holds raw pointers into those bytes) dangling and reading
+                // freed memory. Keep it alive for the whole iteration.
+                BSONObj arrObj = elem.embeddedObject();
+                if ( arrObj.isEmpty() ) {
                     s << "[]";
                     break;
                 }
                 s << "[ ";
-                BSONObjIterator i( elem.embeddedObject() );
+                BSONObjIterator i( arrObj );
                 BSONElement e = i.next();
                 if ( !e.eoo() ) {
                     int count = 0;
@@ -285,10 +293,7 @@ namespace Docutaz
                     }
 
                     if ( pretty && isSupportedDate) {
-                        boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-                        boost::posix_time::time_duration diff = boost::posix_time::millisec(ms);
-                        boost::posix_time::ptime time = epoch + diff;
-                        std::string timestr = miutil::isotimeString(time, true, timeFormat == LocalTime);
+                        std::string timestr = miutil::isotimeString(ms, true, timeFormat == LocalTime);
                         s << '"' << timestr << '"';
                     }
                     else
@@ -407,6 +412,16 @@ namespace Docutaz
                 return false;
 
             return (binDataType == mongo::newUUID || binDataType == mongo::bdtUUID);
+        }
+
+        bool isCollectionStats(const mongo::BSONObj &doc)
+        {
+            // db.collection.stats() output is recognised by these characteristic
+            // top-level fields. Requiring all three keeps ordinary documents from
+            // being misrouted to the stats panel.
+            return !doc.getField("ns").eoo()
+                && !doc.getField("count").eoo()
+                && !doc.getField("storageSize").eoo();
         }
 
         bool isSimpleType(const mongo::BSONElement &elem) 
@@ -653,15 +668,11 @@ namespace Docutaz
                     long long ms = (long long) elem.date().toMillisSinceEpoch();
                     bool isSupportedDate = miutil::minDate < ms && ms < miutil::maxDate;
 
-                    boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-                    boost::posix_time::time_duration diff = boost::posix_time::millisec(ms);
-                    boost::posix_time::ptime time = epoch + diff;
-
                     std::string date;
                     if (isSupportedDate)
-                        date = miutil::isotimeString(time, false, tz == LocalTime);
+                        date = miutil::isotimeString(ms, false, tz == LocalTime);
                     else
-                        date = boost::lexical_cast<std::string>(ms);
+                        date = std::to_string(ms);
 
                     con.append(date);
                     break;
@@ -783,4 +794,4 @@ namespace Docutaz
         }
 
     } // BsonUtils
-} // Robomongo
+} // Docutaz

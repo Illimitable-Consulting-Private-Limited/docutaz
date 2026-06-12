@@ -1,6 +1,6 @@
 This is just a placeholder for `cmake`. 
 
-Test source files are located in the same directory alongside the tested file in `robomongo/src/robomongo/` dir and sub-dirs.
+Test source files are located in the same directory alongside the tested file in `docutaz/src/docutaz/` dir and sub-dirs.
 
 e.g. 
 ```

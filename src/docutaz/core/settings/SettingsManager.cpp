@@ -4,12 +4,13 @@
 #include <QFile>
 #include <QVariantList>
 #include <QUuid>
+#include <QSet>
 #include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
 #include <QXmlStreamReader>
 #include <QDirIterator>
-
-#include <parser.h>
-#include <serializer.h>
 
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/CredentialSettings.h"
@@ -20,39 +21,10 @@
 #include "docutaz/core/utils/StdUtils.h"
 #include "docutaz/gui/AppStyle.h"
 #include "docutaz/utils/common.h"
-#include "docutaz/utils/qzip/qzipreader_p.h"
 #include "docutaz/utils/DocutazCrypt.h"
 
 namespace Docutaz
 {
-    // 3T config files
-    auto const Studio3T_PropertiesDat {
-        QString("%1/.3T/studio-3t/properties.dat").arg(QDir::homePath())
-    };
-    auto const DataMongodb_PropertiesDat { 
-        QString("%1/.3T/data-man-mongodb/properties.dat").arg(QDir::homePath())
-    };
-    auto const MongoChefPro_PropertiesDat {
-        QString("%1/.3T/mongochef-pro/properties.dat").arg(QDir::homePath())
-    };
-    auto const MongoChefEnt_PropertiesDat {
-        QString("%1/.3T/mongochef-enterprise/properties.dat").arg(QDir::homePath())
-    };
-
-    const std::vector<std::pair<QString, QString>> S_3T_ZipFile_And_ConfigFile_List
-    {
-        { Studio3T_PropertiesDat, "Studio3T.properties" },
-        { DataMongodb_PropertiesDat, "3T.data-man-mongodb.properties" },
-        { MongoChefPro_PropertiesDat, "3T.mongochef-pro.properties" },
-        { MongoChefEnt_PropertiesDat, "3T.mongochef-enterprise.properties" }
-    };
-
-    // Extract zipFile and find the value of "anonymousID" field in propFile
-    QString extractAnonymousIDFromZip(QString const& zipFile, QString const& propfile);
-
-    // Extract "anonymousID" from a config file
-    QString extractAnonymousID(QString const& configFile);
-
     /**
         * @brief Version of schema
     */
@@ -96,7 +68,7 @@ namespace Docutaz
     
     /**
      * Creates SettingsManager for config file in default location
-     * ~/.config/robomongo/robomongo.json
+     * ~/.Docutaz/<version>/docutaz.json
      */
     SettingsManager::SettingsManager() :
         _version(SchemaVersion),
@@ -146,10 +118,9 @@ namespace Docutaz
         if (!f.open(QIODevice::ReadOnly))
             return false;
 
-        bool ok;
-        QJson::Parser parser;
-        QVariantMap map = parser.parse(f.readAll(), &ok).toMap();
-        if (!ok)
+        QJsonParseError perr;
+        QVariantMap map = QJsonDocument::fromJson(f.readAll(), &perr).object().toVariantMap();
+        if (perr.error != QJsonParseError::NoError)
             return false;
 
         loadFromMap(map);
@@ -171,10 +142,8 @@ namespace Docutaz
             return false;
         }
 
-        bool ok;
-        QJson::Serializer s;
-        s.setIndentMode(QJson::IndentFull);
-        s.serialize(map, &f, &ok);
+        const QByteArray json = QJsonDocument::fromVariant(map).toJson(QJsonDocument::Indented);
+        const bool ok = f.write(json) == json.size();
 
         LOG_MSG("Settings saved to: " + ConfigFilePath, mongo::logger::LogSeverity::Info());
 
@@ -223,10 +192,7 @@ namespace Docutaz
         _minimizeToTray = map.contains("minimizeToTray") ? map.value("minimizeToTray").toBool() : false;
         _lineNumbers = map.contains("lineNumbers") ? map.value("lineNumbers").toBool() : false;
         _imported = map.contains("imported") ? map.value("imported").toBool() : false;
-        _programExitedNormally = map.contains("programExitedNormally") ? 
-                                 map.value("programExitedNormally").toBool() : true;
-
-        _disableHttpsFeatures = map.contains("disableHttpsFeatures") ? 
+        _disableHttpsFeatures = map.contains("disableHttpsFeatures") ?
                                 map.value("disableHttpsFeatures").toBool() : false;
 
         _debugMode = map.contains("debugMode") ? map.value("debugMode").toBool() : false;
@@ -242,13 +208,8 @@ namespace Docutaz
         _disableConnectionShortcuts = map.value("disableConnectionShortcuts").toBool();
         
         if (map.contains("acceptedEulaVersions")) 
-            _acceptedEulaVersions = map.value("acceptedEulaVersions").toStringList().toSet();
+            { const QStringList _l = map.value("acceptedEulaVersions").toStringList(); _acceptedEulaVersions = QSet<QString>(_l.begin(), _l.end()); }
         
-        if (map.contains("dbVersionsConnected"))
-            _dbVersionsConnected = map.value("dbVersionsConnected").toStringList().toSet();
-        
-        // Load anonymousID
-        _anonymousID = getOrCreateAnonymousID(map);
 
         // Load AutocompletionMode
         if (map.contains("autocompletionMode")) {
@@ -265,9 +226,6 @@ namespace Docutaz
         _batchSize = map.value("batchSize").toInt();
         if (_batchSize == 0)
             _batchSize = 50;
-
-        if (map.contains("checkForUpdates"))
-            _checkForUpdates = map.value("checkForUpdates").toBool();
 
         _currentStyle = map.value("style").toString();
         if (_currentStyle.isEmpty()) {
@@ -361,16 +319,8 @@ namespace Docutaz
 
         map.insert("acceptedEulaVersions", arr.toVariantList());
 
-        // x. Save unique set of db versions connected
-        QJsonArray dbVersionsArr;
-        for (auto const& version : _dbVersionsConnected)
-            dbVersionsArr.push_back(version);
-
-        map.insert("dbVersionsConnected", dbVersionsArr.toVariantList());
-
         // 9. Save batchSize
         map.insert("batchSize", _batchSize);
-        map.insert("checkForUpdates", _checkForUpdates);
         map.insert("mongoTimeoutSec", _mongoTimeoutSec);
         map.insert("shellTimeoutSec", _shellTimeoutSec);
 
@@ -391,83 +341,11 @@ namespace Docutaz
         map.insert("minimizeToTray", _minimizeToTray);
         map.insert("toolbars", _toolbars);
         map.insert("imported", _imported);
-        map.insert("anonymousID", _anonymousID);
         map.insert("cacheData", _cacheData);
-        map.insert("programExitedNormally", _programExitedNormally);
         map.insert("disableHttpsFeatures", _disableHttpsFeatures);
         map.insert("debugMode", _debugMode);
         
         return map;
-    }
-
-    QString SettingsManager::getOrCreateAnonymousID(QVariantMap const& map) const
-    {
-        QString anonymousID = "";
-
-        // If anonymousID has never been created or is empty, create a new one. Otherwise load the existing.
-        if (map.contains("anonymousID")) {
-            QUuid id = map.value("anonymousID").toString();
-            if (!id.isNull())
-                anonymousID = id.toString();
-        }
-
-        // Search and import "anonymousID" from other Studio 3T config files
-        for (auto const& zipFileAndConfigFile : S_3T_ZipFile_And_ConfigFile_List) {
-            if (!anonymousID.isEmpty())
-                break;
-
-            QUuid const& id = extractAnonymousIDFromZip(zipFileAndConfigFile.first, zipFileAndConfigFile.second);
-            if (!id.isNull())
-                anonymousID = id.toString();
-        }
-                 
-        // Search and import "anonymousID" from other Robo 3T old config files starting from latest
-        for (auto const& oldConfigFile : _configFilesOfOldVersions) {         
-            if (!anonymousID.isEmpty())
-                break;
-
-            // Don't import from 1.1-Beta due to a problem where Beta might have redundantly created new UUID 
-            if (oldConfigFile == CONFIG_FILE_1_1_0_BETA)
-                continue;
-
-            // Stop searching in 1_0_RC1 or older versions, "anonymousID" is introduced in version 1.0
-            if (oldConfigFile == CONFIG_FILE_1_0_RC1)
-                break;
-
-            anonymousID = extractAnonymousID(oldConfigFile);
-        }
-
-        // Search and import "anonymousID" from any other (ideally newer version) Robo 3T config files 
-        if (anonymousID.isEmpty()) {
-            auto const dir1 = QString("%1/.3T/robo-3t").arg(QDir::homePath());
-            QDirIterator iter1 { dir1, QStringList() << "robo*.json", QDir::Files, 
-                                 QDirIterator::Subdirectories };
-            while (iter1.hasNext()) {
-                anonymousID = extractAnonymousID(iter1.next());
-                if (!anonymousID.isEmpty())
-                    break;
-            }
-
-            if (anonymousID.isEmpty()) {
-                auto const dir2 = QString("%1/.3T/robomongo").arg(QDir::homePath());
-                QDirIterator iter2 { dir2, QStringList() << "robo*.json", QDir::Files, 
-                                     QDirIterator::Subdirectories };
-                while (iter2.hasNext()) {
-                    anonymousID = extractAnonymousID(iter2.next());
-                    if (!anonymousID.isEmpty())
-                        break;
-                }
-            }
-        }
-
-        // Couldn't find/import any, create a new anonymousID
-        if (anonymousID.isEmpty())
-            anonymousID = QUuid::createUuid().toString();
-
-        anonymousID.remove('{');
-        anonymousID.remove('}');
-
-        return anonymousID;
     }
 
     /**
@@ -556,10 +434,9 @@ namespace Docutaz
         if (!oldConfigFile.open(QIODevice::ReadOnly))
             return false;
 
-        bool ok;
-        QJson::Parser parser;
-        QVariantMap vmap = parser.parse(oldConfigFile.readAll(), &ok).toMap();
-        if (!ok)
+        QJsonParseError perr;
+        QVariantMap vmap = QJsonDocument::fromJson(oldConfigFile.readAll(), &perr).object().toVariantMap();
+        if (perr.error != QJsonParseError::NoError)
             return false;
 
         QVariantList vconns = vmap.value("connections").toList();
@@ -668,10 +545,9 @@ namespace Docutaz
         if (!oldConfigFile.open(QIODevice::ReadOnly))
             return false;
 
-        bool ok;
-        QJson::Parser parser;
-        QVariantMap vmap = parser.parse(oldConfigFile.readAll(), &ok).toMap();
-        if (!ok)
+        QJsonParseError perr;
+        QVariantMap vmap = QJsonDocument::fromJson(oldConfigFile.readAll(), &perr).object().toVariantMap();
+        if (perr.error != QJsonParseError::NoError)
             return false;
 
         //// Import keys
@@ -698,52 +574,4 @@ namespace Docutaz
         ));
     }
 
-    QString extractAnonymousIDFromZip(QString const& zipFile, QString const& propfile)
-    {
-        QZipReader zipReader(zipFile);
-        if (!zipReader.exists() || !zipReader.isReadable()) 
-            return QString("");       
-
-        QXmlStreamReader reader(zipReader.fileData(propfile));
-        while (!reader.atEnd()) {
-            reader.readNext();
-            if (reader.text().toString() == "AnonymousID") {
-                reader.readNext();
-                reader.readNext();
-                reader.readNext();
-                reader.readNext();
-                return reader.text().toString();
-            }
-        }
-
-        return QString("");
-    }
-
-    QString extractAnonymousID(QString const& configFilePath)
-    {
-        if (!QFile::exists(configFilePath))
-            return QString("");
-
-        QFile oldConfigFile(configFilePath);
-        if (!oldConfigFile.open(QIODevice::ReadOnly))
-            return QString("");
-
-        bool ok = false;
-        QJson::Parser parser;
-        QVariantMap const& map = parser.parse(oldConfigFile.readAll(), &ok).toMap();
-        if (!ok)
-            return QString("");
-
-        QString anonymousID;
-        if (map.contains("anonymousID")) {
-            QUuid const& id = map.value("anonymousID").toString();
-            if (!id.isNull())
-                anonymousID = id.toString();
-        }
-
-        anonymousID.remove('{');
-        anonymousID.remove('}');
-
-        return anonymousID;
-    }
 }

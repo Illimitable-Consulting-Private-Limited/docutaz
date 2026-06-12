@@ -10,8 +10,6 @@ class QDockWidget;
 class QToolButton;
 class QPushButton;
 class QTreeWidgetItem;
-class QNetworkReply;
-class QNetworkAccessManager;
 QT_END_NAMESPACE
 
 namespace Docutaz
@@ -57,7 +55,7 @@ namespace Docutaz
         void selectPrevTab();
         void duplicateTab();
         void refreshConnections();
-        void aboutRobomongo();
+        void aboutDocutaz();
         void open();
         void save();
         void saveAs();
@@ -87,7 +85,6 @@ namespace Docutaz
         void closeEvent(QCloseEvent *event) override;
         void hideEvent(QHideEvent *event) override;
         void showEvent(QShowEvent *event) override;
-        bool eventFilter(QObject *target, QEvent *event) override;
         void resizeEvent(QResizeEvent* event) override;
         
     private Q_SLOTS:
@@ -110,11 +107,6 @@ namespace Docutaz
         // On application focus changes
         void on_focusChanged();
 
-        void on_networkReply(QNetworkReply* reply);
-        void on_closeButton_clicked();
-        
-        void checkUpdates();
-        void toggleCheckUpdates();
         void openShellTimeoutDialog();
 
     private:
@@ -125,7 +117,6 @@ namespace Docutaz
         void createStatusBar();
         void restoreWindowSettings();
         void saveWindowSettings() const;
-        void adjustUpdatesBarHeight();
 
         QDockWidget *_logDock;
 
@@ -149,11 +140,6 @@ namespace Docutaz
         QAction *_stopAction;
         QAction *_orientationAction;
         QToolBar *_execToolBar;
-        QToolBar *_updateBar;
-        QLabel *_updateLabel;
-        QPushButton* _closeButton;
-
-        QNetworkAccessManager *_networkAccessManager;
 
 #if defined(Q_OS_WIN)
         QSystemTrayIcon *_trayIcon;

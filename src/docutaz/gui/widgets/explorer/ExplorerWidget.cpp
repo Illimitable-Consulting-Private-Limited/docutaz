@@ -28,7 +28,7 @@ namespace Docutaz
         _treeWidget = new ExplorerTreeWidget(this);
 
         QHBoxLayout *vlaout = new QHBoxLayout();
-        vlaout->setMargin(0);
+        vlaout->setContentsMargins(0, 0, 0, 0);
         vlaout->addWidget(_treeWidget, Qt::AlignJustify);
 
         VERIFY(connect(_treeWidget, SIGNAL(itemExpanded(QTreeWidgetItem *)), this, SLOT(ui_itemExpanded(QTreeWidgetItem *))));
@@ -37,7 +37,7 @@ namespace Docutaz
 
         setLayout(vlaout);
 
-        QMovie *movie = new QMovie(":robomongo/icons/loading.gif", QByteArray(), this);
+        QMovie *movie = new QMovie(":/docutaz/icons/loading.gif", QByteArray(), this);
         _progressLabel = new QLabel(this);
         _progressLabel->setMovie(movie);
         _progressLabel->hide();

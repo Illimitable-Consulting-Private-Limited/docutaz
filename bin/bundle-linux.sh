@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Creates a self-contained tarball of Docutaz for Linux.
-# The tarball bundles the binary + non-standard shared libraries (mongo-cxx-driver)
-# plus the Qt platform and image-format plugins needed to run on a machine that
-# has Qt5, OpenSSL 3, and libssh2 installed but NOT mongo-cxx-driver.
+# The tarball bundles the binary + non-standard shared libraries (mongo-cxx-driver).
+# Everything else — Qt6 (libraries AND plugins), QScintilla (qt6), OpenSSL 3,
+# libssh2 — is provided by the host's package manager (see README requirements);
+# Qt plugins are intentionally not bundled (they must match the host's libQt6Core).
 #
 # Also includes the .desktop file and icons so the launcher icon works correctly
 # on Wayland (where setWindowIcon() is ignored — the icon comes from the icon theme).
@@ -45,8 +46,6 @@ echo ""
 # ── Clean previous bundle ────────────────────────────────────────────────────
 rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR/lib" \
-         "$BUNDLE_DIR/plugins/platforms" \
-         "$BUNDLE_DIR/plugins/imageformats" \
          "$BUNDLE_DIR/icons"
 
 # ── Copy binary ──────────────────────────────────────────────────────────────
@@ -82,25 +81,18 @@ for lib in "${MONGO_LIBS[@]}"; do
     fi
 done
 
-# ── Bundle Qt platform plugin (xcb for X11/Wayland-XWayland) ─────────────────
-QT_PLUGIN_DIRS=(/usr/lib64/qt5/plugins /usr/lib/qt5/plugins /usr/lib/x86_64-linux-gnu/qt5/plugins)
-for dir in "${QT_PLUGIN_DIRS[@]}"; do
-    if [[ -f "$dir/platforms/libqxcb.so" ]]; then
-        cp "$dir/platforms/libqxcb.so" "$BUNDLE_DIR/plugins/platforms/"
-        # image format plugins (needed for PNG icons)
-        for fmt in libqjpeg.so libqsvg.so libqgif.so libqico.so; do
-            [[ -f "$dir/imageformats/$fmt" ]] && cp "$dir/imageformats/$fmt" "$BUNDLE_DIR/plugins/imageformats/"
-        done
-        echo "    bundled Qt plugins from $dir"
-        break
-    fi
-done
-
-# ── Write qt.conf so Qt finds the bundled plugins ────────────────────────────
-cat > "$BUNDLE_DIR/qt.conf" <<'EOF'
-[Paths]
-Plugins = plugins
-EOF
+# ── Qt plugins: deliberately NOT bundled (use the host's) ────────────────────
+# We do not bundle the Qt6 core libraries (libQt6Core/Gui/Widgets/...) — they
+# come from the host's Qt6 install (see README requirements). A Qt plugin must
+# match the exact libQt6Core that is actually loaded (platform plugins reference
+# version-specific private symbols, e.g. Qt_6.x_PRIVATE_API, and libQt6XcbQpa).
+# Bundling a plugin built against one Qt 6.x and loading it against the host's
+# different Qt 6.x breaks startup ("no Qt platform plugin could be initialized").
+#
+# Qt resolves its plugin directory from the loaded libQt6Core (QLibraryInfo), so
+# with no bundled plugins and no qt.conf the host's Qt finds its own matching
+# platform/imageformat plugins automatically. That is why we ship neither a
+# plugins/ tree nor a qt.conf.
 
 # ── Bundle icons ─────────────────────────────────────────────────────────────
 ICON_SRC="$REPO_ROOT/src/docutaz/gui/resources/icons"
@@ -182,10 +174,10 @@ Requirements
 Install these from your package manager before running:
 
   Fedora / RHEL:
-    sudo dnf install qt5-qtbase qt5-qtbase-gui libssh2 openssl mongosh
+    sudo dnf install qt6-qtbase qt6-qtbase-gui qt6-qtsvg qscintilla-qt6 libssh2 openssl mongosh
 
   Debian / Ubuntu:
-    sudo apt install libqt5widgets5 libqt5network5 libqt5xml5 libssh2-1 libssl3 mongosh
+    sudo apt install libqt6widgets6 libqt6network6 libqt6xml6 libqt6printsupport6 libqt6svg6 libqscintilla2-qt6-15 libssh2-1 libssl3 mongosh
 
   mongosh (all distros):
     https://www.mongodb.com/try/download/shell

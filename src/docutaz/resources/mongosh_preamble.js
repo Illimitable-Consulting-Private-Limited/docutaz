@@ -1,4 +1,4 @@
-// ROBOMONGO MONGOSH PREAMBLE — injected once at shell startup
+// DOCUTAZ MONGOSH PREAMBLE — injected once at shell startup
 // Protocol version: 4
 //
 // ── Execution model ─────────────────────────────────────────────────────────
@@ -39,8 +39,14 @@
     // ── Serialisation / type detection ─────────────────────────────────────────
 
     function _serialize(val) {
-        if (val === undefined || val === null) return null;
-        try { return EJSON.serialize(val); } catch (_) { return { __robo_text: String(val) }; }
+        // Return a pre-stringified EJSON *string*, not a JS object. Emitting the
+        // already-serialized text lets the C++ side feed it straight to bsoncxx,
+        // which preserves the document's field order. Round-tripping a JS/JSON
+        // object through Qt's QJsonObject (the old path) re-sorts keys
+        // alphabetically and loses MongoDB's meaningful field order.
+        if (val === undefined || val === null) return 'null';
+        try { return EJSON.stringify(val); }
+        catch (_) { return JSON.stringify({ __robo_text: String(val) }); }
     }
 
     function _isWriteResult(val) {

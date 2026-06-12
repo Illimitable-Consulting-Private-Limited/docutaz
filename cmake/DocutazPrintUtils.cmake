@@ -116,7 +116,7 @@ endfunction()
 # Prints Qt5 module plugins
 #
 function(print_qt_module_plugins module)
-    foreach(plugin ${Qt5${module}_PLUGINS})
+    foreach(plugin ${Qt6${module}_PLUGINS})
         get_target_property(loc ${plugin} LOCATION)
         message("Plugin ${plugin} is at location ${loc}")
     endforeach()

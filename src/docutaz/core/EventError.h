@@ -6,7 +6,7 @@
 namespace Docutaz
 {
     /**
-     * @brief Error object is a part of every Event in Robomongo. Before the
+     * @brief Error object is a part of every Event in Docutaz. Before the
      * use of any event you should check whether error is detected by
      * calling Event::isError() method.
      */

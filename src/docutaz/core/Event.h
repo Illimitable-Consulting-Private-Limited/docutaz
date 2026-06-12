@@ -10,7 +10,7 @@
 namespace Docutaz
 {
     /**
-     * @brief Abstract base class for all events in Robomongo.
+     * @brief Abstract base class for all events in Docutaz.
      */
     class Event
     {
@@ -73,7 +73,7 @@ namespace Docutaz
 
 /**
  * @brief R_EVENT macro declares several event's members that are used by
- * Robomongo event subsystem. It should be used like Q_OBJECT macro:
+ * Docutaz event subsystem. It should be used like Q_OBJECT macro:
  *
  *  class SampleEvent : public Event
  *  {
@@ -99,7 +99,7 @@ namespace Docutaz
 
 /**
  * @brief R_REGISTER_EVENT macro defines several event's members that are used
- * by Robomongo simple event subsystem. This macro should be placed in *.cpp file.
+ * by Docutaz simple event subsystem. This macro should be placed in *.cpp file.
  * @param EVENT_CLASS: class name of Event.
  *
  * For SampleEvent shown above, registration will look like this:

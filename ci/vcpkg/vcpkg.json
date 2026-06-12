@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "docutaz-ci-deps",
+  "version-string": "2.0.0",
+  "description": "Pinned Windows CI build dependencies for Docutaz. Kept separate from the repo-root vcpkg.json so manifest-mode resolution does NOT pull mongo-cxx-driver (CI builds that from source). The builtin-baseline pins every dependency to vcpkg release 2026.06.01 (libssh2 1.11.1) for reproducible builds.",
+  "builtin-baseline": "f3e10653cc27d62a37a3763cd84b38bca07c6075",
+  "dependencies": [
+    "libssh2",
+    "openssl"
+  ]
+}

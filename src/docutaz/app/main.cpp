@@ -1,6 +1,6 @@
 #include <QApplication>
-#include <QDesktopWidget>
 
+#include <cstdio>
 #include <locale.h>
 
 #include <mongocxx/instance.hpp>
@@ -42,6 +42,18 @@ int main(int argc, char *argv[])
     // POSIX float/string conversions. Reset to "C" locale.
     setlocale(LC_NUMERIC, "C");
 
+    // --version: print the version and exit cleanly. Placed after the
+    // QApplication ctor (so it exercises platform-plugin loading and every
+    // linked runtime library) but before the EULA dialog (which would block on
+    // a machine with no accepted EULA). CI uses this as a smoke test that the
+    // packaged binary actually launches.
+    if (app.arguments().contains(QStringLiteral("--version")) ||
+        app.arguments().contains(QStringLiteral("-v"))) {
+        std::printf("Docutaz %s\n", PROJECT_VERSION);
+        rbm_ssh_cleanup();
+        return 0;
+    }
+
 #ifdef Q_OS_MAC
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
@@ -49,14 +61,8 @@ int main(int argc, char *argv[])
     // EULA License Agreement
     auto const& settings { Docutaz::AppRegistry::instance().settingsManager() };
     if (!settings->acceptedEulaVersions().contains(PROJECT_VERSION)) {
-        bool const showFormPage { settings->programExitedNormally() && !settings->disableHttpsFeatures() };
-        Docutaz::EulaDialog eulaDialog(showFormPage);
-        settings->setProgramExitedNormally(false);
-        settings->save();
-        int const result = eulaDialog.exec();
-        settings->setProgramExitedNormally(true);
-        settings->save();
-        if (QDialog::Rejected == result) {
+        Docutaz::EulaDialog eulaDialog;
+        if (QDialog::Rejected == eulaDialog.exec()) {
             rbm_ssh_cleanup();
             return 1;
         }
@@ -66,9 +72,6 @@ int main(int argc, char *argv[])
 
     // Init GUI style
     Docutaz::AppStyleUtils::initStyle();
-
-    settings->setProgramExitedNormally(false);
-    settings->save();
 
     Docutaz::MainWindow mainWindow;
     mainWindow.show();
