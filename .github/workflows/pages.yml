@@ -1,6 +1,6 @@
 name: Pages
 
-# Publishes the landing site (site/index.html + the branding images it uses)
+# Publishes the self-contained landing site in site/ (index.html + its images)
 # to GitHub Pages. Deploys from main only; run manually for a one-off.
 # Requires repo Settings -> Pages -> Source = "GitHub Actions".
 on:
@@ -20,6 +20,13 @@ permissions:
 concurrency:
   group: pages
   cancel-in-progress: false
+
+# The Pages actions (configure-pages / upload-pages-artifact -> upload-artifact /
+# deploy-pages) still ship Node 20. Force them onto Node 24 ahead of GitHub's
+# 2026-06-16 cutover — same approach as the Windows job in build.yml. Drop this
+# once those actions release Node 24 majors.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   deploy:
