@@ -446,6 +446,11 @@ jobs:
           if (Test-Path $vcpkgBin) {
             Get-ChildItem $vcpkgBin -Filter "*.dll" | Copy-Item -Destination $outDir
           }
+          # Optional Desktop / Start-menu shortcut helpers (double-click in the
+          # extracted folder). Copy only these four files — install/windows/ also
+          # holds NSIS/icon build assets that must NOT ship in the zip.
+          Copy-Item "install\windows\create-shortcut.ps1","install\windows\remove-shortcut.ps1" $outDir\
+          Copy-Item "install\windows\Create Desktop Shortcut.bat","install\windows\Remove Desktop Shortcut.bat" $outDir\
           Compress-Archive -Path $outDir -DestinationPath "docutaz-$ver-windows-x86_64.zip"
 
       - name: Smoke test (packaged binary launches)

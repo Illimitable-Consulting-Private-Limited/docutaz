@@ -93,9 +93,13 @@ DLLs are all included). **64-bit Intel/AMD only** — arm64 isn't available yet.
    (e.g. under your user directory or `C:\Program Files\Docutaz`).
 2. Run **`docutaz.exe`**. On first launch, Windows SmartScreen may warn that
    it's from an unknown publisher (the app is unsigned): click
-   **More info → Run anyway**. (Optionally, right-click `docutaz.exe` → create a
-   shortcut for your Start menu / desktop.)
-3. Install **mongosh** (see above; `winget install MongoDB.Shell` or the
+   **More info → Run anyway**.
+3. **Desktop / Start-menu shortcut (optional):** double-click
+   **`Create Desktop Shortcut.bat`** in the extracted folder to add Docutaz to
+   your Desktop and Start menu (no admin needed). `Remove Desktop Shortcut.bat`
+   undoes it. *Don't move the folder afterward* — the shortcut points at
+   `docutaz.exe` where it is; if you move it, re-run the script.
+4. Install **mongosh** (see above; `winget install MongoDB.Shell` or the
    download link).
 
 ---
