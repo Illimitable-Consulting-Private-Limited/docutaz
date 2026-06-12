@@ -139,9 +139,6 @@ namespace Docutaz
         }
         QSet<QString> const& dbVersionsConnected() const { return _dbVersionsConnected; }
 
-        void setCheckForUpdates(bool checkForUpdates) { _checkForUpdates = checkForUpdates; }
-        bool checkForUpdates() const { return _checkForUpdates; }
-
         void setBatchSize(int batchSize) { _batchSize = batchSize; }
         int batchSize() const { return _batchSize; }
 
@@ -228,7 +225,6 @@ namespace Docutaz
         QSet<QString> _acceptedEulaVersions;
         QSet<QString> _dbVersionsConnected;
         int _batchSize;
-        bool _checkForUpdates = true;
         QString _currentStyle;
         QString _textFontFamily;
         int _textFontPointSize;
