@@ -24,11 +24,11 @@ namespace Docutaz
                 s = s.left(dash);
             return QVersionNumber::fromString(s);
         }
+    }
 
-        bool isNewer(const QString &latest, const QString &current)
-        {
-            return QVersionNumber::compare(parseVersion(latest), parseVersion(current)) > 0;
-        }
+    bool UpdateChecker::isNewerVersion(const QString &latest, const QString &current)
+    {
+        return QVersionNumber::compare(parseVersion(latest), parseVersion(current)) > 0;
     }
 
     UpdateChecker::UpdateChecker(QObject *parent)
@@ -73,7 +73,7 @@ namespace Docutaz
             return;
         }
 
-        if (isNewer(tag, QStringLiteral(PROJECT_VERSION)))
+        if (isNewerVersion(tag, QStringLiteral(PROJECT_VERSION)))
             Q_EMIT updateAvailable(tag, url);
         else if (userInitiated)
             Q_EMIT upToDate();
