@@ -33,6 +33,8 @@ does not entangle with ongoing cross-platform bug fixes.
 | 17 | **De-brand leftover Robomongo/Robo 3T references** | Renamed `robo_unit_tests`→`docutaz_unit_tests`, `ROBO_SRC_DIR`→`DOCUTAZ_SRC_DIR`, `aboutRobomongo`→`aboutDocutaz`; fixed stale `// Robomongo` namespace comments, product doc comments, a user-facing error that mixed both names, three stale config-path doc comments, and the mongosh preamble banner. **Kept** (not branding): the GPLv3 upstream attribution in the About dialog, the Robo 3T/Robomongo config-migration paths and their comments, and historical "original Robomongo" lineage notes. |
 | 18 | **Privacy: remove the updates.3t.io update-check** | By default the app phoned home to Studio 3T's server 30 s after launch and hourly, leaking each user's `anonymousID`, OS and connected MongoDB versions — identified as Robomongo (`softwareId=8`) — and would have surfaced Robomongo's version in an "update available" bar. Removed the whole feature: the network call, timers, `on_networkReply`, the menu toggle, the update-bar UI (+ its hover `eventFilter`), the `QNetworkAccessManager`, and the `checkForUpdates` setting. |
 | 19 | **Unit-test coverage — BsonBridge roundtrips** | The standalone `src/tests/bson_bridge_roundtrip.cpp` was `EXCLUDE_FROM_ALL` (never built), stale (dead `Robomongo::` namespace) but had far broader coverage than the live test. Ported all of it — byte-identical BSON↔EJSON roundtrips across every type mongosh emits (ObjectId, Date, Timestamp, Binary/UUID, Decimal128 incl. NaN/Infinity, regex, nested/array, 64 KiB string, mixed docs) — into the live gtest suite (now 10 tests, all pass); deleted `src/tests`. |
+| 20 | **Privacy: remove vestigial data collection** | Follow-up to #18. The EULA wizard's second page solicited name/email/phone/company under *"we'll keep you up-to-date"* but the fields were never read or sent — removed it (the EULA is now a single license page). Also removed the now-unused `anonymousID` (per-install UUID), `dbVersionsConnected` (set of server versions connected), and the dead `programExitedNormally` flag — none left the machine, but all were collected/stored only for the deleted telemetry. The app now collects nothing it doesn't use; its only network activity is MongoDB connections and SSH tunnels to user-specified servers. |
+| 21 | **CI: self-contained packaged artifacts (smoke-test fallout)** | Getting #16 green on Windows/macOS exposed and fixed two real packaging gaps: the Windows zip was missing vcpkg's transitive runtime DLLs (e.g. zlib/zstd → `0xC0000135` on a clean machine; now copies all of vcpkg's bin), and the offscreen platform plugin (needed for the headless launch check) isn't deployed by windeployqt/macdeployqt so it's placed explicitly. All three packaged artifacts now launch from a clean layout. |
 
 Net effect: ~556k lines of vendored third-party source removed (qjson,
 esprima, googletest, libssh2, **QScintilla**, the dead `qzip`/`src/tests`
@@ -42,40 +44,37 @@ Qt 6 and runs on any Qt 6.x (no private-API pinning), no longer phones home,
 and is de-branded from its Robomongo/Robo 3T heritage (upstream attribution
 preserved).
 
-> ⚠️ The macOS/Windows libssh2 paths can only be validated on CI (a Linux host
-> builds against the system lib). Run the workflow on `modernization` —
-> manually via *Actions → Build → Run workflow*, or by opening a PR to
-> `master` — before relying on those artifacts.
+> The macOS/Windows libssh2, Qt 6 and QScintilla paths build against
+> package-manager toolchains only available on CI. As of 2026-06-12 all three
+> platforms are green — build, unit tests, and packaged-binary launch — so
+> those artifacts are validated.
 
 ---
 
 ## Pending
 
-> ⚠️ The macOS/Windows **Qt 6 + QScintilla** paths (like libssh2) can only be
-> validated on CI — a Linux host builds against the distro packages. The
-> Windows job builds QScintilla from source against the aqtinstall Qt6; the
-> macOS job uses Homebrew `qt`/`qscintilla2`. The packaged-binary smoke test
-> (#16) now exercises each artifact on its own runner, but still run the
-> workflow on `modernization` before relying on those artifacts.
-
 ### Optional / nice-to-have
 - **C++17 → C++20** now that Qt 6 is in (Qt 6 already requires C++17). Enables
   `std::span`, concepts, etc. Low urgency.
-- **Retire `dbVersionsConnected`** — still populated on connect but unread now
-  that the update-check (#18) is gone. Pure dead state; remove when convenient.
+- **GitHub-backed update check** — optional re-add of a version check using a
+  static `version.json` (or the Releases API), sending no user data. Low effort.
+- **arm64 builds** — Linux (native `ubuntu-24.04-arm` runner) is low effort;
+  Windows arm64 is moderate. Source is already arm-clean (macOS arm64 ships).
 
 ---
 
 ## Status
 
-The dependency/build modernization is complete: Qt 5→6 and QScintilla done,
-Boost gone, all four vendored third-party trees de-vendored, unit tests build
-and run on all three CI platforms, and each platform's packaged artifact is
-launch-smoke-tested. The app also runs on any Qt 6.x (no private-API pinning),
-no longer phones home, and is de-branded from its Robomongo/Robo 3T heritage.
+**Complete and CI-green on all three platforms (Linux / Windows / macOS),
+validated 2026-06-12** — build, unit tests (`ctest`), and packaged-binary
+launch on every platform. Qt 5→6 and QScintilla done, Boost gone, all vendored
+third-party trees de-vendored, the app runs on any Qt 6.x (no private-API
+pinning), collects no data and makes no network calls of its own beyond
+user-initiated MongoDB/SSH connections, and is de-branded from its
+Robomongo/Robo 3T heritage (upstream attribution preserved).
 
-The `modernization` branch is ready to merge to `main` once a CI run is green
-on all three platforms. Only the optional C++20 bump remains.
+The `modernization` branch has been merged into `main`. Only the optional
+items above remain.
 
 ---
 
