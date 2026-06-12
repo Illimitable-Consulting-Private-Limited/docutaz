@@ -17,6 +17,7 @@
 #include <mongo/client/dbclient_base.h>
 
 #include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/QueryHistory.h"
 #include "docutaz/core/EventBus.h"
 #include "docutaz/core/domain/App.h"
 #include "docutaz/core/domain/MongoCollection.h"
@@ -133,6 +134,8 @@ namespace Docutaz
 
         if (query.isEmpty())
             query = _scriptWidget->text();
+
+        _lastExecutedQuery = query;   // captured for query history; consumed in handle()
 
         showProgress();
         _shell->open(QtUtils::toStdString(query));
@@ -275,8 +278,16 @@ namespace Docutaz
 
     void QueryWidget::handle(ScriptExecutedEvent *event)
     {
-        hideProgress();        
+        hideProgress();
         _currentResult = event->result();
+
+        // Record this run in query history exactly once. An aggregation can emit
+        // several ScriptExecutedEvents; clearing the captured text after the first
+        // means only that one is recorded (and re-runs re-capture in execute()).
+        if (!_lastExecutedQuery.isEmpty()) {
+            recordHistory(event);
+            _lastExecutedQuery.clear();
+        }
 
         if (_currentResult.results().size() == 1) {
             MongoShellResult const& result = _currentResult.results().front();
@@ -348,6 +359,29 @@ namespace Docutaz
             errorDia->addButton(but, QMessageBox::NoRole);
             errorDia->exec();
         }
+    }
+
+    void QueryWidget::recordHistory(ScriptExecutedEvent *event)
+    {
+        QueryHistoryEntry e;
+        e.query = _lastExecutedQuery;
+        if (_shell && _shell->server() && _shell->server()->connectionRecord())
+            e.connection = QtUtils::toQString(_shell->server()->connectionRecord()->connectionName());
+        e.database = QtUtils::toQString(_currentResult.currentDatabase());
+        e.success  = !event->isError();
+        if (event->isError())
+            e.errorMessage = QtUtils::toQString(event->error().errorMessage());
+
+        qint64 durationMs = 0;
+        qint64 docs = 0;
+        for (MongoShellResult const &r : _currentResult.results()) {
+            durationMs += r.elapsedMs();
+            docs       += static_cast<qint64>(r.documents().size());
+        }
+        e.durationMs  = durationMs;
+        e.resultCount = e.success ? docs : -1;   // -1 = n/a on error
+
+        QueryHistoryManager::instance().add(e);
     }
 
     void QueryWidget::activateTabContent()

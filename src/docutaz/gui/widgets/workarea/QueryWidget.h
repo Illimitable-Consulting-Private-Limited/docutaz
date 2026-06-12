@@ -84,9 +84,10 @@ namespace Docutaz
         void changeShellTimeout();
         void openMongoshPreferences();
 
-    private:        
+    private:
         void updateCurrentTab();
         void displayData(const std::vector<MongoShellResult> &results, bool empty);
+        void recordHistory(ScriptExecutedEvent *event);   // append this run to query history
 
         MongoShell *_shell;
         OutputWidget *_viewer;
@@ -98,6 +99,7 @@ namespace Docutaz
         QVBoxLayout *_mainLayout;
 
         MongoShellExecResult _currentResult;
+        QString _lastExecutedQuery;   // text submitted by execute(), for history
         bool _isTextChanged;
     };
 
