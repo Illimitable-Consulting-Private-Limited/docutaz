@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: [main]
+    tags: ["v*"]            # vX.Y.Z (optionally -rc1 etc.) -> build + draft a release
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
@@ -497,3 +498,53 @@ jobs:
           name: docutaz-macos
           path: docutaz-*-macos-arm64.zip
           if-no-files-found: error
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Release — runs only on a vX.Y.Z tag. Verifies the tag matches the project
+  # version, then attaches the three platform artifacts to a DRAFT GitHub
+  # Release with auto-generated notes (review + publish manually). A tag with a
+  # suffix (e.g. v2.1.0-rc1) is flagged as a pre-release.
+  #
+  #   Release ritual: bump PROJECT_VERSION in CMakeLists.txt -> commit -> merge
+  #   to main -> `git tag v<that version>` -> `git push origin v<version>`.
+  # ──────────────────────────────────────────────────────────────────────────
+  release:
+    name: Draft GitHub Release
+    needs: [linux, windows, macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write          # required to create the release
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify tag matches PROJECT_VERSION
+        run: |
+          MAJOR=$(grep 'PROJECT_VERSION_MAJOR' CMakeLists.txt | head -1 | grep -o '"[^"]*"' | tr -d '"')
+          MINOR=$(grep 'PROJECT_VERSION_MINOR' CMakeLists.txt | head -1 | grep -o '"[^"]*"' | tr -d '"')
+          PATCH=$(grep 'PROJECT_VERSION_PATCH' CMakeLists.txt | head -1 | grep -o '"[^"]*"' | tr -d '"')
+          VER="$MAJOR.$MINOR.$PATCH"
+          TAG="${GITHUB_REF_NAME#v}"     # v2.0.0 -> 2.0.0 ; v2.1.0-rc1 -> 2.1.0-rc1
+          TAG_BASE="${TAG%%-*}"          # strip any -rc1/-beta suffix for the compare
+          echo "tag=$GITHUB_REF_NAME  tag-base=$TAG_BASE  CMakeLists=$VER"
+          if [ "$TAG_BASE" != "$VER" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME (base $TAG_BASE) != PROJECT_VERSION $VER in CMakeLists.txt. Bump the version, commit, and re-tag so the release, artifacts and binary all agree."
+            exit 1
+          fi
+
+      - name: Download platform artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: dist
+
+      - name: Draft release with artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true
+          files: |
+            dist/docutaz-linux/docutaz-*-linux-x86_64.tar.gz
+            dist/docutaz-windows/docutaz-*-windows-x86_64.zip
+            dist/docutaz-macos/docutaz-*-macos-arm64.zip
