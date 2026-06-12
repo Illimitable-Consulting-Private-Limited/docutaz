@@ -8,6 +8,8 @@
 #include <QFileInfo>
 #include <QVBoxLayout>
 #include <QMessageBox>
+#include <QDesktopServices>
+#include <QUrl>
 #include <QMainWindow>
 #include <QDockWidget>
 #include <Qsci/qsciscintilla.h>
@@ -295,16 +297,28 @@ namespace Docutaz
         if (event->isError()) {
             const QString errorMsg = QString::fromStdString(event->error().errorMessage());
 
-            if (errorMsg == "mongosh_not_found") {
-                auto *dia = new QMessageBox(QMessageBox::Critical,
-                    "mongosh Not Found",
-                    "The mongosh shell binary could not be found.\n\n"
-                    "Install mongosh from https://www.mongodb.com/try/download/shell\n"
-                    "or set the path manually in Preferences (Options → Preferences).",
+            // Compare case-insensitively: the sentinel ("mongosh_not_found") can
+            // reach here with its first letter capitalized by the error pipeline.
+            if (errorMsg.compare("mongosh_not_found", Qt::CaseInsensitive) == 0) {
+                // mongosh isn't bundled, and many people just unzip a release and
+                // run a query before installing it. Show a friendly, actionable
+                // info dialog (not a scary error) with a direct download action.
+                auto *dia = new QMessageBox(QMessageBox::Information,
+                    tr("mongosh not found"),
+                    tr("Docutaz runs your queries through MongoDB's mongosh shell, which is "
+                       "not bundled and wasn't found on your system.\n\n"
+                       "Install mongosh, then make sure it's on your PATH — or set its path "
+                       "in Options → Preferences."),
                     QMessageBox::Close, this);
-                auto *prefBtn = new QPushButton("Open Preferences");
+                auto *downloadBtn = new QPushButton(tr("Download mongosh"));
+                VERIFY(connect(downloadBtn, &QPushButton::clicked, this, [] {
+                    QDesktopServices::openUrl(QUrl("https://www.mongodb.com/try/download/shell"));
+                }));
+                dia->addButton(downloadBtn, QMessageBox::ActionRole);
+                auto *prefBtn = new QPushButton(tr("Open Preferences"));
                 VERIFY(connect(prefBtn, SIGNAL(clicked()), this, SLOT(openMongoshPreferences())));
                 dia->addButton(prefBtn, QMessageBox::ActionRole);
+                dia->setDefaultButton(downloadBtn);
                 dia->exec();
             } else {
                 // For some cases, event error message already contains string "Error:"
