@@ -21,8 +21,8 @@ namespace Docutaz
     public:
         static const QSize minimumSize;
 
-        explicit EulaDialog(bool showFormPage, QWidget *parent = nullptr);
-        
+        explicit EulaDialog(QWidget *parent = nullptr);
+
     public Q_SLOTS:
         void accept() override;
         void reject() override;
@@ -33,21 +33,11 @@ namespace Docutaz
     private Q_SLOTS:
         void on_agreeButton_clicked();
         void on_notAgreeButton_clicked();
-        void on_next_clicked();
-        void on_back_clicked();
         void on_finish_clicked();
 
     private:
         void restoreWindowSettings();
         void saveWindowSettings() const;
-
-        QLineEdit* _nameEdit;
-        QLineEdit* _lastNameEdit;
-        QLineEdit* _emailEdit;
-        QLineEdit* _phone;
-        QLineEdit* _company;
-
-        bool _showFormPage = true;
     };
 }
 

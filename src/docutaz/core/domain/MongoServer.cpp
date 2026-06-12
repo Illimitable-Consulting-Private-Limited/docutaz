@@ -221,16 +221,6 @@ namespace Docutaz {
             if (ConnectionPrimary == event->connectionType)
                 _bus->send(_worker, new RefreshReplicaSetFolderRequest(this, false));
         }
-
-        // Save connected db version if not saved before and if this is primary connection.
-        QString const versionStr = QString::fromStdString(info._dbVersionStr);
-        auto const& settingsManager = AppRegistry::instance().settingsManager();
-        if (ConnectionPrimary == _connectionType &&
-            !settingsManager->dbVersionsConnected().contains(versionStr)) {
-            settingsManager->addDbVersionConnected(versionStr);
-            settingsManager->save();
-        }
-
     }
 
     void MongoServer::handle(RefreshReplicaSetFolderResponse *event)

@@ -20,8 +20,8 @@
 
 namespace Docutaz
 {
-    EulaDialog::EulaDialog(bool showFormPage, QWidget *parent)
-        : QWizard(parent), _showFormPage(showFormPage)
+    EulaDialog::EulaDialog(QWidget *parent)
+        : QWizard(parent)
     {
         setWindowTitle("EULA");
 
@@ -65,66 +65,15 @@ namespace Docutaz
 
         firstPage->setLayout(mainLayout1);
 
-        //// Second page
-        auto secondPage = new QWizardPage;
-
-        auto nameLabel = new QLabel("<b>First Name:</b>");
-        _nameEdit = new QLineEdit;
-        auto lastNameLabel = new QLabel("<b>Last Name:</b>");
-        _lastNameEdit = new QLineEdit;
-
-        auto emailLabel = new QLabel("<b>Email:</b>");
-        _emailEdit = new QLineEdit;
-
-        _phone = new QLineEdit;
-        _company = new QLineEdit;
-
-        auto buttomLabel = new QLabel("We will only use your email to send you updates about Docutaz.");
-        buttomLabel->setOpenExternalLinks(true);
-
-        auto bodyLabel = new QLabel("\nShare your email address with us and we'll keep you "
-            "up-to-date with updates from us and new features as they come out.");
-        bodyLabel->setWordWrap(true);
-
-        auto mainLayout2 = new QGridLayout();
-        mainLayout2->addWidget(new QLabel,                      0, 0, 1, 2);
-        mainLayout2->addWidget(new QLabel("<h3>Thank you for choosing " PROJECT_NAME_TITLE "!</h3>"), 1, 0, 1, 2);
-        mainLayout2->addWidget(bodyLabel,                       2, 0 , 1, 2);
-        mainLayout2->addWidget(new QLabel,                      3, 0, 1, 2);
-        mainLayout2->addWidget(nameLabel,                       4, 0);
-        mainLayout2->addWidget(_nameEdit,                       4, 1);
-        mainLayout2->addWidget(lastNameLabel,                   5, 0);
-        mainLayout2->addWidget(_lastNameEdit,                   5, 1);
-        mainLayout2->addWidget(emailLabel,                      6, 0);
-        mainLayout2->addWidget(_emailEdit,                      6, 1);
-        mainLayout2->addWidget(new QLabel("<b>Phone: </b>"),    7, 0);
-        mainLayout2->addWidget(_phone,                          7, 1);
-        mainLayout2->addWidget(new QLabel("<b>Company:</b>"),   8, 0);
-        mainLayout2->addWidget(_company,                        8, 1);
-        mainLayout2->addWidget(new QLabel,                      9, 0, 1, 2);
-        mainLayout2->addWidget(buttomLabel,                     10, 0, 1, 2);
-
-        secondPage->setLayout(mainLayout2);
-
         addPage(firstPage);
-        if(_showFormPage)
-            addPage(secondPage);
 
         //// Buttons
-        setButtonText(QWizard::CustomButton1, tr("Back"));
-        setButtonText(QWizard::CustomButton2, tr("Next"));
         setButtonText(QWizard::CustomButton3, tr("Finish"));
 
-        VERIFY(connect(button(QWizard::CustomButton1), SIGNAL(clicked()), this, SLOT(on_back_clicked())));
-        VERIFY(connect(button(QWizard::CustomButton2), SIGNAL(clicked()), this, SLOT(on_next_clicked())));
         VERIFY(connect(button(QWizard::CustomButton3), SIGNAL(clicked()), this, SLOT(on_finish_clicked())));
 
-        setButtonLayout(QList<WizardButton>{ QWizard::Stretch, QWizard::CustomButton1, QWizard::CustomButton2,
-                                             QWizard::CancelButton, QWizard::CustomButton3});
+        setButtonLayout(QList<WizardButton>{ QWizard::Stretch, QWizard::CancelButton, QWizard::CustomButton3});
 
-        button(QWizard::CustomButton1)->setDisabled(true);
-        button(QWizard::CustomButton2)->setDisabled(true);
-        button(QWizard::CustomButton2)->setHidden(!_showFormPage);
         button(QWizard::CustomButton3)->setDisabled(true);
 
         setWizardStyle(QWizard::ModernStyle);
@@ -159,33 +108,11 @@ namespace Docutaz
 
     void EulaDialog::on_agreeButton_clicked()
     {
-        if(_showFormPage)
-            button(QWizard::CustomButton2)->setEnabled(true);
-        else
-            button(QWizard::CustomButton3)->setEnabled(true);
+        button(QWizard::CustomButton3)->setEnabled(true);
     }
 
     void EulaDialog::on_notAgreeButton_clicked()
     {
-        if (_showFormPage)
-            button(QWizard::CustomButton2)->setEnabled(false);
-        else
-            button(QWizard::CustomButton3)->setEnabled(false);
-    }
-
-    void EulaDialog::on_next_clicked()
-    {
-        next();
-        button(QWizard::CustomButton1)->setEnabled(true);
-        button(QWizard::CustomButton2)->setEnabled(false);
-        button(QWizard::CustomButton3)->setEnabled(true);
-    }
-
-    void EulaDialog::on_back_clicked()
-    {
-        back();
-        button(QWizard::CustomButton1)->setEnabled(false);
-        button(QWizard::CustomButton2)->setEnabled(true);
         button(QWizard::CustomButton3)->setEnabled(false);
     }
 

@@ -1090,7 +1090,6 @@ namespace Docutaz
 
     void MainWindow::closeEvent(QCloseEvent *event)
     {
-        AppRegistry::instance().settingsManager()->setProgramExitedNormally(true);
         AppRegistry::instance().settingsManager()->save();
         saveWindowSettings();
     #if defined(Q_OS_WIN)

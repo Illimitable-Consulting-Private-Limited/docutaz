@@ -61,14 +61,8 @@ int main(int argc, char *argv[])
     // EULA License Agreement
     auto const& settings { Docutaz::AppRegistry::instance().settingsManager() };
     if (!settings->acceptedEulaVersions().contains(PROJECT_VERSION)) {
-        bool const showFormPage { settings->programExitedNormally() && !settings->disableHttpsFeatures() };
-        Docutaz::EulaDialog eulaDialog(showFormPage);
-        settings->setProgramExitedNormally(false);
-        settings->save();
-        int const result = eulaDialog.exec();
-        settings->setProgramExitedNormally(true);
-        settings->save();
-        if (QDialog::Rejected == result) {
+        Docutaz::EulaDialog eulaDialog;
+        if (QDialog::Rejected == eulaDialog.exec()) {
             rbm_ssh_cleanup();
             return 1;
         }
@@ -78,9 +72,6 @@ int main(int argc, char *argv[])
 
     // Init GUI style
     Docutaz::AppStyleUtils::initStyle();
-
-    settings->setProgramExitedNormally(false);
-    settings->save();
 
     Docutaz::MainWindow mainWindow;
     mainWindow.show();

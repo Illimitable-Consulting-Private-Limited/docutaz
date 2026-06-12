@@ -134,11 +134,6 @@ namespace Docutaz
         void addAcceptedEulaVersion(QString const& version) { _acceptedEulaVersions.insert(version); }
         QSet<QString> const& acceptedEulaVersions() const { return _acceptedEulaVersions; }
 
-        QSet<QString>::iterator addDbVersionConnected(QString const& version) { 
-            return _dbVersionsConnected.insert(version); 
-        }
-        QSet<QString> const& dbVersionsConnected() const { return _dbVersionsConnected; }
-
         void setBatchSize(int batchSize) { _batchSize = batchSize; }
         int batchSize() const { return _batchSize; }
 
@@ -160,13 +155,8 @@ namespace Docutaz
         void setImported(bool imported) { _imported = imported; }
         bool imported() const { return _imported; }
 
-        QString anonymousID() const { return _anonymousID; }
-
         void addCacheData(QString const& key, QVariant const& value);
         QVariant cacheData(QString const& key) const;
-
-        void setProgramExitedNormally(bool value) { _programExitedNormally = value; }
-        bool programExitedNormally() const { return _programExitedNormally; }
 
         // Designed to be set only by human users
         bool disableHttpsFeatures() const { return _disableHttpsFeatures; }
@@ -188,10 +178,6 @@ namespace Docutaz
          * Save all settings to map.
          */
         QVariantMap convertToMap() const;
-
-        // Find existing anonymousID from Robomongo and 3T config files, if not found create
-        // a new anonymousID.
-        QString getOrCreateAnonymousID(QVariantMap const& map) const;
 
         /**
          * Load connection settings from previous versions of Robomongo
@@ -219,11 +205,9 @@ namespace Docutaz
         bool _minimizeToTray;
         bool _lineNumbers;
         bool _disableConnectionShortcuts;
-        bool _programExitedNormally = true;
         bool _disableHttpsFeatures = false;
         bool _debugMode = false;
         QSet<QString> _acceptedEulaVersions;
-        QSet<QString> _dbVersionsConnected;
         int _batchSize;
         QString _currentStyle;
         QString _textFontFamily;
@@ -234,13 +218,6 @@ namespace Docutaz
 
         // True when settings from previous versions of Robomongo are imported
         bool _imported;
-        
-        /**
-        * @brief This is an anonymous string taken from QUuid that is generated when Robomongo 
-        *        is first installed on a user's machine and then launched for the first time  
-        *        It stays the same throughout all upgrades.
-        */
-        QString _anonymousID;
 
         // Various cache data
         QMap<QString, QVariant> _cacheData;
