@@ -17,6 +17,7 @@
 #include <QLabel>
 #include <QStatusBar>
 #include <QHBoxLayout>
+#include <QWidget>
 #include <QSettings>
 #include <QSystemTrayIcon>
 #include <QUrl>
@@ -28,6 +29,7 @@
 #include "docutaz/core/domain/MongoServer.h"
 #include "docutaz/core/domain/App.h"
 #include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/UpdateChecker.h"
 #include "docutaz/core/EventBus.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/utils/Logger.h"
@@ -423,6 +425,12 @@ namespace Docutaz
         disabelConnectionShortcuts->setChecked(AppRegistry::instance().settingsManager()->disableConnectionShortcuts());
         VERIFY(connect(disabelConnectionShortcuts, SIGNAL(triggered()), this, SLOT(setDisableConnectionShortcuts())));
         optionsMenu->addAction(disabelConnectionShortcuts);
+
+        QAction *checkForUpdates = new QAction(tr("Check For Updates"), this);
+        checkForUpdates->setCheckable(true);
+        checkForUpdates->setChecked(AppRegistry::instance().settingsManager()->checkForUpdates());
+        VERIFY(connect(checkForUpdates, SIGNAL(triggered()), this, SLOT(toggleCheckUpdates())));
+        optionsMenu->addAction(checkForUpdates);
         
         QAction *autoExec = new QAction(tr("Automatically execute code in new tab"), this);
         autoExec->setCheckable(true);
@@ -584,6 +592,18 @@ namespace Docutaz
 
         // Catch application windows focus changes
         VERIFY(connect(qApp, SIGNAL(focusChanged(QWidget*, QWidget*)), this, SLOT(on_focusChanged())));
+
+        // Update notifier — checks GitHub for a newer release a few seconds after
+        // launch (sends no user data). Gated by the user setting and the
+        // disable-HTTPS-features escape hatch.
+        _updateChecker = new UpdateChecker(this);
+        VERIFY(connect(_updateChecker, &UpdateChecker::updateAvailable,
+                       this, &MainWindow::onUpdateAvailable));
+        {
+            auto const& s { AppRegistry::instance().settingsManager() };
+            if (s->checkForUpdates() && !s->disableHttpsFeatures())
+                QTimer::singleShot(3000, _updateChecker, &UpdateChecker::checkForUpdate);
+        }
 
         setUnifiedTitleAndToolBarOnMac(false); // https://bugreports.qt.io/browse/QTBUG-68946
     }
@@ -1288,6 +1308,53 @@ namespace Docutaz
         if (activeDock) {
             _workArea->setCurrentWidget(activeDock->getParentQueryWidget());
         }
+    }
+
+    void MainWindow::toggleCheckUpdates()
+    {
+        auto const action = qobject_cast<QAction*>(sender());
+        auto const& settings { AppRegistry::instance().settingsManager() };
+        settings->setCheckForUpdates(action->isChecked());
+        settings->save();
+        // Re-check immediately when the user turns it on.
+        if (action->isChecked() && !settings->disableHttpsFeatures())
+            _updateChecker->checkForUpdate();
+    }
+
+    void MainWindow::onUpdateAvailable(const QString& latestVersion, const QString& releaseUrl)
+    {
+        // Lazily build a dismissible top banner the first time an update is found.
+        if (!_updateBar) {
+            _updateLabel = new QLabel;
+            _updateLabel->setTextFormat(Qt::RichText);
+            _updateLabel->setOpenExternalLinks(true);   // "Download" opens the release page
+            _updateLabel->setContentsMargins(8, 0, 0, 0);
+
+            auto const closeButton = new QPushButton(QString(QChar(0x2715)));  // ✕ dismiss
+            closeButton->setFlat(true);
+            closeButton->setCursor(Qt::PointingHandCursor);
+            closeButton->setToolTip(tr("Dismiss"));
+            VERIFY(connect(closeButton, &QPushButton::clicked, this, [this]{ _updateBar->hide(); }));
+
+            auto const layout = new QHBoxLayout;
+            layout->setContentsMargins(0, 0, 4, 0);
+            layout->addWidget(_updateLabel, 1);
+            layout->addWidget(closeButton);
+            auto const barWidget = new QWidget;
+            barWidget->setLayout(layout);
+
+            _updateBar = new QToolBar(QStringLiteral("Updates"));
+            _updateBar->setMovable(false);
+            _updateBar->setStyleSheet("background-color: #b3e0ff; border: none;");  // light blue
+            _updateBar->addWidget(barWidget);
+            addToolBarBreak();
+            addToolBar(_updateBar);
+        }
+
+        _updateLabel->setText(
+            tr("<b>Docutaz %1</b> is available. <a href=\"%2\">Download</a>")
+                .arg(latestVersion.toHtmlEscaped(), releaseUrl.toHtmlEscaped()));
+        _updateBar->show();
     }
 
 }

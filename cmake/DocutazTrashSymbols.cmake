@@ -23,5 +23,7 @@ set(PROJECT_COPYRIGHT "Copyright (C) 2026 ${PROJECT_COMPANYNAME}. All Rights Res
 set(PROJECT_COMPANYNAME_DOMAIN "")
 set(PROJECT_GITHUB_FORK "")
 set(PROJECT_GITHUB_ISSUES "")
+# "owner/repo" used for the GitHub Releases update check (see UpdateChecker).
+set(PROJECT_GITHUB_REPO "Illimitable-Consulting-Private-Limited/docutaz")
 
 string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWERCASE)

@@ -137,6 +137,9 @@ namespace Docutaz
         void setBatchSize(int batchSize) { _batchSize = batchSize; }
         int batchSize() const { return _batchSize; }
 
+        void setCheckForUpdates(bool value) { _checkForUpdates = value; }
+        bool checkForUpdates() const { return _checkForUpdates; }
+
         QString currentStyle() const { return _currentStyle; }
         void setCurrentStyle(const QString& style);
 
@@ -206,6 +209,7 @@ namespace Docutaz
         bool _lineNumbers;
         bool _disableConnectionShortcuts;
         bool _disableHttpsFeatures = false;
+        bool _checkForUpdates = true;
         bool _debugMode = false;
         QSet<QString> _acceptedEulaVersions;
         int _batchSize;

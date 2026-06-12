@@ -25,6 +25,7 @@ namespace Docutaz
     class App;
     class ExplorerWidget;
     class WelcomeTab;
+    class UpdateChecker;
 
     class MainWindow : public QMainWindow
     {
@@ -109,6 +110,10 @@ namespace Docutaz
 
         void openShellTimeoutDialog();
 
+        // Update notifier (GitHub Releases; sends no user data)
+        void toggleCheckUpdates();
+        void onUpdateAvailable(const QString &latestVersion, const QString &releaseUrl);
+
     private:
         void updateConnectionsMenu();
         void createDatabaseExplorer();
@@ -140,6 +145,11 @@ namespace Docutaz
         QAction *_stopAction;
         QAction *_orientationAction;
         QToolBar *_execToolBar;
+
+        // Update notifier
+        UpdateChecker *_updateChecker = nullptr;
+        QToolBar *_updateBar = nullptr;
+        QLabel *_updateLabel = nullptr;
 
 #if defined(Q_OS_WIN)
         QSystemTrayIcon *_trayIcon;

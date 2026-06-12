@@ -195,6 +195,9 @@ namespace Docutaz
         _disableHttpsFeatures = map.contains("disableHttpsFeatures") ?
                                 map.value("disableHttpsFeatures").toBool() : false;
 
+        _checkForUpdates = map.contains("checkForUpdates") ?
+                           map.value("checkForUpdates").toBool() : true;
+
         _debugMode = map.contains("debugMode") ? map.value("debugMode").toBool() : false;
 
         // 4. Load TimeZone
@@ -343,6 +346,7 @@ namespace Docutaz
         map.insert("imported", _imported);
         map.insert("cacheData", _cacheData);
         map.insert("disableHttpsFeatures", _disableHttpsFeatures);
+        map.insert("checkForUpdates", _checkForUpdates);
         map.insert("debugMode", _debugMode);
         
         return map;

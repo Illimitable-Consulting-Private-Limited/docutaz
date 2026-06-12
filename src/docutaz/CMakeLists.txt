@@ -14,6 +14,7 @@ set(SOURCES
     core/utils/QtUtils.cpp
     core/utils/StdUtils.cpp
     core/utils/Logger.cpp
+    core/UpdateChecker.cpp
     core/HexUtils.cpp
     core/utils/BsonUtils.cpp
     core/settings/CredentialSettings.cpp
@@ -220,6 +221,7 @@ target_compile_definitions(docutaz_core
         PROJECT_COMPANYNAME_DOMAIN="${PROJECT_COMPANYNAME_DOMAIN}"
         PROJECT_GITHUB_FORK="${PROJECT_GITHUB_FORK}"
         PROJECT_GITHUB_ISSUES="${PROJECT_GITHUB_ISSUES}"
+        PROJECT_GITHUB_REPO="${PROJECT_GITHUB_REPO}"
         PROJECT_VERSION="${PROJECT_VERSION}"
         PROJECT_VERSION_SHORT="${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
         BUILD_NUMBER="${BUILD_NUMBER}"
