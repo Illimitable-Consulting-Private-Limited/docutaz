@@ -110,5 +110,7 @@ GPL v3 — see [LICENSE](LICENSE). Fork of the [Robomongo](https://github.com/St
 
 ## Contributing
 
-Issues and pull requests are welcome.  
-Please open an issue before starting large changes so we can discuss the approach.
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
+for the branch model and workflow. In short: branch off `develop` and open PRs
+against `develop`; `main` is the stable release branch. Please open an issue
+before starting large changes so we can discuss the approach.
