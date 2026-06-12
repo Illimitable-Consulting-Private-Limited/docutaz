@@ -21,36 +21,10 @@
 #include "docutaz/core/utils/StdUtils.h"
 #include "docutaz/gui/AppStyle.h"
 #include "docutaz/utils/common.h"
-#include "docutaz/utils/qzip/qzipreader_p.h"
 #include "docutaz/utils/DocutazCrypt.h"
 
 namespace Docutaz
 {
-    // 3T config files
-    auto const Studio3T_PropertiesDat {
-        QString("%1/.3T/studio-3t/properties.dat").arg(QDir::homePath())
-    };
-    auto const DataMongodb_PropertiesDat { 
-        QString("%1/.3T/data-man-mongodb/properties.dat").arg(QDir::homePath())
-    };
-    auto const MongoChefPro_PropertiesDat {
-        QString("%1/.3T/mongochef-pro/properties.dat").arg(QDir::homePath())
-    };
-    auto const MongoChefEnt_PropertiesDat {
-        QString("%1/.3T/mongochef-enterprise/properties.dat").arg(QDir::homePath())
-    };
-
-    const std::vector<std::pair<QString, QString>> S_3T_ZipFile_And_ConfigFile_List
-    {
-        { Studio3T_PropertiesDat, "Studio3T.properties" },
-        { DataMongodb_PropertiesDat, "3T.data-man-mongodb.properties" },
-        { MongoChefPro_PropertiesDat, "3T.mongochef-pro.properties" },
-        { MongoChefEnt_PropertiesDat, "3T.mongochef-enterprise.properties" }
-    };
-
-    // Extract zipFile and find the value of "anonymousID" field in propFile
-    QString extractAnonymousIDFromZip(QString const& zipFile, QString const& propfile);
-
     // Extract "anonymousID" from a config file
     QString extractAnonymousID(QString const& configFile);
 
@@ -409,16 +383,6 @@ namespace Docutaz
                 anonymousID = id.toString();
         }
 
-        // Search and import "anonymousID" from other Studio 3T config files
-        for (auto const& zipFileAndConfigFile : S_3T_ZipFile_And_ConfigFile_List) {
-            if (!anonymousID.isEmpty())
-                break;
-
-            QUuid const id(extractAnonymousIDFromZip(zipFileAndConfigFile.first, zipFileAndConfigFile.second));
-            if (!id.isNull())
-                anonymousID = id.toString();
-        }
-                 
         // Search and import "anonymousID" from other Robo 3T old config files starting from latest
         for (auto const& oldConfigFile : _configFilesOfOldVersions) {         
             if (!anonymousID.isEmpty())
@@ -692,27 +656,6 @@ namespace Docutaz
         return (std::count_if(_connections.cbegin(), _connections.cend(), 
             [](auto conn) { return conn->imported(); }
         ));
-    }
-
-    QString extractAnonymousIDFromZip(QString const& zipFile, QString const& propfile)
-    {
-        QZipReader zipReader(zipFile);
-        if (!zipReader.exists() || !zipReader.isReadable()) 
-            return QString("");       
-
-        QXmlStreamReader reader(zipReader.fileData(propfile));
-        while (!reader.atEnd()) {
-            reader.readNext();
-            if (reader.text().toString() == "AnonymousID") {
-                reader.readNext();
-                reader.readNext();
-                reader.readNext();
-                reader.readNext();
-                return reader.text().toString();
-            }
-        }
-
-        return QString("");
     }
 
     QString extractAnonymousID(QString const& configFilePath)
