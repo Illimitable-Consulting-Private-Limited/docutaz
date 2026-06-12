@@ -95,12 +95,12 @@ jobs:
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz robo_unit_tests --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
 
       - name: Expose mongocxx libs for bundler
         # bin/bundle-linux.sh scans /usr/local/lib64; copy the CI-built shared
         # libs there so the bundler's glob finds them. This also satisfies the
-        # robo_unit_tests rpath (/usr/local/lib64) before ctest runs.
+        # docutaz_unit_tests rpath (/usr/local/lib64) before ctest runs.
         run: |
           sudo mkdir -p /usr/local/lib64
           sudo find "${{ github.workspace }}/mongocxx-prefix" \
@@ -280,7 +280,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows"
 
       - name: Build
-        run: cmake --build build --target docutaz robo_unit_tests --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
 
       - name: Run unit tests
         shell: pwsh
@@ -434,7 +434,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="$QT_PREFIX;$(brew --prefix qscintilla2);$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz robo_unit_tests --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
 
       - name: Run unit tests
         run: |

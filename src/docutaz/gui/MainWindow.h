@@ -57,7 +57,7 @@ namespace Docutaz
         void selectPrevTab();
         void duplicateTab();
         void refreshConnections();
-        void aboutRobomongo();
+        void aboutDocutaz();
         void open();
         void save();
         void saveAs();

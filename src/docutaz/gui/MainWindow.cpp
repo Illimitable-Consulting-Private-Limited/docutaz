@@ -535,12 +535,12 @@ namespace Docutaz
 
     /*** About menu ***/
 
-        QAction *aboutRobomongoAction = new QAction(QString("&About ") + PROJECT_NAME_TITLE + "...", this);
-        VERIFY(connect(aboutRobomongoAction, SIGNAL(triggered()), this, SLOT(aboutRobomongo())));
+        QAction *aboutDocutazAction = new QAction(QString("&About ") + PROJECT_NAME_TITLE + "...", this);
+        VERIFY(connect(aboutDocutazAction, SIGNAL(triggered()), this, SLOT(aboutDocutaz())));
 
         // Options menu
         QMenu *helpMenu = menuBar()->addMenu("Help");
-        helpMenu->addAction(aboutRobomongoAction);
+        helpMenu->addAction(aboutDocutazAction);
 
         // Toolbar
         QToolBar *connectToolBar = new QToolBar(tr("Connections Toolbar"), this);
@@ -1023,7 +1023,7 @@ namespace Docutaz
         QString("Refresh not working yet... : <br/>  <b>Ctrl+D</b> : push Button"));
     }
 
-    void MainWindow::aboutRobomongo()
+    void MainWindow::aboutDocutaz()
     {
         AboutDialog dlg(this);
         dlg.exec();
