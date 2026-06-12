@@ -36,12 +36,11 @@ on the approach before you invest time.
 CI (`.github/workflows/build.yml`) builds and tests on **Linux, Windows, and
 macOS**, and smoke-tests that the packaged binary launches on each:
 
-- **Pushes to `main`** and **pull requests targeting `main`** run CI
-  automatically.
-- The **`develop`** branch is validated **on demand** via
-  *Actions → Build → Run workflow* (`workflow_dispatch`), and again
-  automatically when `develop` is PR'd into `main`. A maintainer may trigger a
-  run on your PR branch when reviewing.
+- **Pull requests targeting `main` or `develop`** run CI automatically — so
+  your PR is validated on all three platforms before it's merged.
+- **Pushes to `main`** also run CI automatically.
+- Direct pushes to `develop` do not auto-run; that branch can be checked
+  on demand via *Actions → Build → Run workflow* (`workflow_dispatch`).
 
 ## Building and testing
 
