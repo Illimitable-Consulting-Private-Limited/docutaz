@@ -37,39 +37,45 @@ namespace Docutaz
         connect(_net, &QNetworkAccessManager::finished, this, &UpdateChecker::onReply);
     }
 
-    void UpdateChecker::checkForUpdate()
+    void UpdateChecker::checkForUpdate(bool userInitiated)
     {
         QNetworkRequest req(QUrl(
             "https://api.github.com/repos/" PROJECT_GITHUB_REPO "/releases/latest"));
         // GitHub requires a User-Agent; we send only the app name + version.
         req.setRawHeader("User-Agent", "Docutaz/" PROJECT_VERSION);
         req.setRawHeader("Accept", "application/vnd.github+json");
-        _net->get(req);
+        QNetworkReply *reply = _net->get(req);
+        // Remember whether this was a manual check so onReply knows whether to
+        // report the no-update / failure outcomes.
+        reply->setProperty("userInitiated", userInitiated);
     }
 
     void UpdateChecker::onReply(QNetworkReply *reply)
     {
         reply->deleteLater();
+        const bool userInitiated = reply->property("userInitiated").toBool();
 
-        // Offline, rate-limited, or any error: ignore silently.
-        if (reply->error() != QNetworkReply::NoError)
+        // Offline, rate-limited (HTTP 4xx/5xx), TLS error, etc.
+        if (reply->error() != QNetworkReply::NoError) {
+            if (userInitiated)
+                Q_EMIT checkFailed(reply->errorString());
             return;
+        }
 
-        const QJsonDocument doc = QJsonDocument::fromJson(reply->readAll());
-        if (!doc.isObject())
-            return;
-
-        const QJsonObject obj = doc.object();
-        // /releases/latest already excludes drafts/prereleases; double-check.
-        if (obj.value("draft").toBool() || obj.value("prerelease").toBool())
-            return;
-
+        // fromJson(...).object() is an empty object for non-object/garbage input.
+        const QJsonObject obj = QJsonDocument::fromJson(reply->readAll()).object();
         const QString tag = obj.value("tag_name").toString();
         const QString url = obj.value("html_url").toString();
-        if (tag.isEmpty())
+        // /releases/latest already excludes drafts/prereleases; double-check.
+        if (tag.isEmpty() || obj.value("draft").toBool() || obj.value("prerelease").toBool()) {
+            if (userInitiated)
+                Q_EMIT checkFailed(tr("Unexpected response from the update server."));
             return;
+        }
 
         if (isNewer(tag, QStringLiteral(PROJECT_VERSION)))
             Q_EMIT updateAvailable(tag, url);
+        else if (userInitiated)
+            Q_EMIT upToDate();
     }
 }

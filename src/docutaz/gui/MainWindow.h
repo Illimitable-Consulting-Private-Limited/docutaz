@@ -112,7 +112,10 @@ namespace Docutaz
 
         // Update notifier (GitHub Releases; sends no user data)
         void toggleCheckUpdates();
+        void checkForUpdatesNow();                    // manual: Help -> Check for Updates
         void onUpdateAvailable(const QString &latestVersion, const QString &releaseUrl);
+        void onUpToDate();                            // manual-check feedback
+        void onUpdateCheckFailed(const QString &reason);
 
     private:
         void updateConnectionsMenu();

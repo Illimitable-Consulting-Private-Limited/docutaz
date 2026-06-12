@@ -426,7 +426,7 @@ namespace Docutaz
         VERIFY(connect(disabelConnectionShortcuts, SIGNAL(triggered()), this, SLOT(setDisableConnectionShortcuts())));
         optionsMenu->addAction(disabelConnectionShortcuts);
 
-        QAction *checkForUpdates = new QAction(tr("Check For Updates"), this);
+        QAction *checkForUpdates = new QAction(tr("Automatically Check for Updates"), this);
         checkForUpdates->setCheckable(true);
         checkForUpdates->setChecked(AppRegistry::instance().settingsManager()->checkForUpdates());
         VERIFY(connect(checkForUpdates, SIGNAL(triggered()), this, SLOT(toggleCheckUpdates())));
@@ -532,8 +532,13 @@ namespace Docutaz
         QAction *aboutDocutazAction = new QAction(QString("&About ") + PROJECT_NAME_TITLE + "...", this);
         VERIFY(connect(aboutDocutazAction, SIGNAL(triggered()), this, SLOT(aboutDocutaz())));
 
-        // Options menu
+        QAction *checkForUpdatesAction = new QAction(tr("Check for &Updates..."), this);
+        VERIFY(connect(checkForUpdatesAction, SIGNAL(triggered()), this, SLOT(checkForUpdatesNow())));
+
+        // Help menu
         QMenu *helpMenu = menuBar()->addMenu("Help");
+        helpMenu->addAction(checkForUpdatesAction);
+        helpMenu->addSeparator();
         helpMenu->addAction(aboutDocutazAction);
 
         // Toolbar
@@ -599,10 +604,14 @@ namespace Docutaz
         _updateChecker = new UpdateChecker(this);
         VERIFY(connect(_updateChecker, &UpdateChecker::updateAvailable,
                        this, &MainWindow::onUpdateAvailable));
+        VERIFY(connect(_updateChecker, &UpdateChecker::upToDate,
+                       this, &MainWindow::onUpToDate));
+        VERIFY(connect(_updateChecker, &UpdateChecker::checkFailed,
+                       this, &MainWindow::onUpdateCheckFailed));
         {
             auto const& s { AppRegistry::instance().settingsManager() };
             if (s->checkForUpdates() && !s->disableHttpsFeatures())
-                QTimer::singleShot(3000, _updateChecker, &UpdateChecker::checkForUpdate);
+                QTimer::singleShot(3000, this, [this]{ _updateChecker->checkForUpdate(); });
         }
 
         setUnifiedTitleAndToolBarOnMac(false); // https://bugreports.qt.io/browse/QTBUG-68946
@@ -1316,9 +1325,32 @@ namespace Docutaz
         auto const& settings { AppRegistry::instance().settingsManager() };
         settings->setCheckForUpdates(action->isChecked());
         settings->save();
-        // Re-check immediately when the user turns it on.
+        // Re-check (silently, in the background) when the user turns it on.
         if (action->isChecked() && !settings->disableHttpsFeatures())
             _updateChecker->checkForUpdate();
+    }
+
+    void MainWindow::checkForUpdatesNow()
+    {
+        if (AppRegistry::instance().settingsManager()->disableHttpsFeatures()) {
+            QMessageBox::information(this, tr("Check for Updates"),
+                tr("Online features are disabled in Options."));
+            return;
+        }
+        // userInitiated: also report "up to date" / failure (see on* slots below).
+        _updateChecker->checkForUpdate(true);
+    }
+
+    void MainWindow::onUpToDate()
+    {
+        QMessageBox::information(this, tr("Check for Updates"),
+            tr("You're running the latest version of Docutaz (%1).").arg(PROJECT_VERSION));
+    }
+
+    void MainWindow::onUpdateCheckFailed(const QString& reason)
+    {
+        QMessageBox::warning(this, tr("Check for Updates"),
+            tr("Could not check for updates.\n\n%1").arg(reason));
     }
 
     void MainWindow::onUpdateAvailable(const QString& latestVersion, const QString& releaseUrl)
