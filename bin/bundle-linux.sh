@@ -34,7 +34,10 @@ MINOR=$(grep 'PROJECT_VERSION_MINOR' "$REPO_ROOT/CMakeLists.txt" | head -1 | gre
 PATCH=$(grep 'PROJECT_VERSION_PATCH' "$REPO_ROOT/CMakeLists.txt" | head -1 | grep -o '"[^"]*"' | tr -d '"')
 VERSION="${MAJOR}.${MINOR}.${PATCH}"
 
-BUNDLE_NAME="docutaz-${VERSION}-linux-x86_64"
+# Architecture suffix from the build host: x86_64 or aarch64 (arm64).
+ARCH="$(uname -m)"
+
+BUNDLE_NAME="docutaz-${VERSION}-linux-${ARCH}"
 BUNDLE_DIR="$REPO_ROOT/$BUNDLE_NAME"
 TARBALL="$REPO_ROOT/${BUNDLE_NAME}.tar.gz"
 
@@ -166,7 +169,7 @@ chmod +x "$BUNDLE_DIR/uninstall-desktop.sh"
 
 # ── Write README ─────────────────────────────────────────────────────────────
 cat > "$BUNDLE_DIR/README.txt" <<EOF
-Docutaz ${VERSION} — Linux x86_64
+Docutaz ${VERSION} — Linux ${ARCH}
 ==================================
 
 Requirements

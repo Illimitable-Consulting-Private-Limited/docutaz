@@ -9,7 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       linux:
-        description: "Build Linux"
+        description: "Build Linux (x86_64)"
+        type: boolean
+        default: true
+      linux_arm64:
+        description: "Build Linux (arm64)"
         type: boolean
         default: true
       windows:
@@ -133,6 +137,103 @@ jobs:
         with:
           name: docutaz-linux
           path: docutaz-*-linux-x86_64.tar.gz
+          if-no-files-found: error
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Linux arm64 — same recipe as the x86_64 job, on the native arm64 runner.
+  # apt has arm64 Qt6/QScintilla; mongocxx builds from source; bundle-linux.sh
+  # picks up the aarch64 suffix from `uname -m`. Cache key is arch-specific so
+  # it never restores x86_64 mongocxx binaries.
+  # ──────────────────────────────────────────────────────────────────────────
+  linux-arm64:
+    name: Linux (Ubuntu 24.04 arm64)
+    runs-on: ubuntu-24.04-arm
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.linux_arm64 }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Qt6 and system deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            ninja-build \
+            qt6-base-dev \
+            libqscintilla2-qt6-dev \
+            libssl-dev \
+            libssh2-1-dev \
+            pkg-config
+
+      - name: Cache mongocxx install
+        id: cache-mongocxx
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/mongocxx-prefix
+          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-ubuntu24.04-arm64-v1
+
+      - name: Build mongo-c-driver
+        if: steps.cache-mongocxx.outputs.cache-hit != 'true'
+        run: |
+          wget -q "https://github.com/mongodb/mongo-c-driver/releases/download/${{ env.MONGOC_VERSION }}/mongo-c-driver-${{ env.MONGOC_VERSION }}.tar.gz"
+          tar xf "mongo-c-driver-${{ env.MONGOC_VERSION }}.tar.gz"
+          cmake -S "mongo-c-driver-${{ env.MONGOC_VERSION }}" -B build-mongoc -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/mongocxx-prefix" \
+            -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+            -DENABLE_TESTS=OFF \
+            -DENABLE_EXAMPLES=OFF
+          cmake --build build-mongoc
+          cmake --install build-mongoc
+
+      - name: Build mongo-cxx-driver
+        if: steps.cache-mongocxx.outputs.cache-hit != 'true'
+        run: |
+          wget -q "https://github.com/mongodb/mongo-cxx-driver/releases/download/r${{ env.MONGOCXX_VERSION }}/mongo-cxx-driver-r${{ env.MONGOCXX_VERSION }}.tar.gz"
+          tar xf "mongo-cxx-driver-r${{ env.MONGOCXX_VERSION }}.tar.gz"
+          cmake -S "mongo-cxx-driver-r${{ env.MONGOCXX_VERSION }}" -B build-mongocxx -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/mongocxx-prefix" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix"
+          cmake --build build-mongocxx
+          cmake --install build-mongocxx
+
+      - name: Configure Docutaz
+        run: |
+          mkdir build
+          cmake -S . -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DDOCUTAZ_BUILD_TESTS=ON \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
+
+      - name: Build
+        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
+
+      - name: Expose mongocxx libs for bundler
+        run: |
+          sudo mkdir -p /usr/local/lib64
+          sudo find "${{ github.workspace }}/mongocxx-prefix" \
+            \( -name "*.so" -o -name "*.so.*" \) \
+            -exec cp -Pf {} /usr/local/lib64/ \;
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Create tarball
+        run: bash bin/bundle-linux.sh
+
+      - name: Smoke test (packaged binary launches)
+        run: |
+          tar xzf docutaz-*-linux-aarch64.tar.gz
+          dir=$(echo docutaz-*-linux-aarch64/)
+          out=$(cd "$dir" && QT_QPA_PLATFORM=offscreen ./docutaz.sh --version)
+          echo "$out"
+          echo "$out" | grep -q "Docutaz" || { echo "ERROR: binary did not launch / print version"; exit 1; }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: docutaz-linux-arm64
+          path: docutaz-*-linux-aarch64.tar.gz
           if-no-files-found: error
 
   # ──────────────────────────────────────────────────────────────────────────
@@ -510,7 +611,7 @@ jobs:
   # ──────────────────────────────────────────────────────────────────────────
   release:
     name: Draft GitHub Release
-    needs: [linux, windows, macos]
+    needs: [linux, linux-arm64, windows, macos]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     permissions:
@@ -546,5 +647,6 @@ jobs:
           fail_on_unmatched_files: true
           files: |
             dist/docutaz-linux/docutaz-*-linux-x86_64.tar.gz
+            dist/docutaz-linux-arm64/docutaz-*-linux-aarch64.tar.gz
             dist/docutaz-windows/docutaz-*-windows-x86_64.zip
             dist/docutaz-macos/docutaz-*-macos-arm64.zip
