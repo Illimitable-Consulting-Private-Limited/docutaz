@@ -7,6 +7,8 @@
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/KeyboardManager.h"
 #include "docutaz/core/domain/MongoShell.h"
+#include "docutaz/core/domain/MongoServer.h"
+#include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/SettingsManager.h"
 
 #include "docutaz/gui/widgets/workarea/WorkAreaTabBar.h"
@@ -14,6 +16,7 @@
 #include "docutaz/gui/widgets/workarea/WelcomeTab.h"
 #include "docutaz/gui/widgets/workarea/QueryHistoryTab.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/ConnectionEnvironment.h"
 
 namespace Docutaz
 {
@@ -324,6 +327,14 @@ namespace Docutaz
 #if !defined(Q_OS_MAC)
         setTabIcon(count() - 1, GuiRegistry::instance().mongodbIcon());
 #endif
+        // Tint the tab text by the connection's environment (prod/staging/…) so
+        // an open production shell stands out in the tab bar.
+        if (event->shell->server() && event->shell->server()->connectionRecord()) {
+            const QColor envColor = ConnectionEnvironment::color(
+                event->shell->server()->connectionRecord()->environment());
+            if (envColor.isValid())
+                tabBar()->setTabTextColor(count() - 1, envColor);
+        }
         if (!event->shell->isExecutable()) {
             queryWidget->hideProgress();
             queryWidget->setCurrentDatabase(event->shell->dbname());

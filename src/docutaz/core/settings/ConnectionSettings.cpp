@@ -82,6 +82,7 @@ namespace Docutaz
         setDefaultDatabase(QtUtils::toStdString(map.value("defaultDatabase").toString()));
         setReplicaSet(map.value("isReplicaSet").toBool());
         setSrv(map.value("isSrv").toBool());
+        setEnvironment(QtUtils::toStdString(map.value("environment").toString()));
         
         QVariantList list = map.value("credentials").toList();
         for (QVariantList::const_iterator it = list.begin(); it != list.end(); ++it) {
@@ -145,6 +146,7 @@ namespace Docutaz
         setImported(source->imported());
         setReplicaSet(source->isReplicaSet());
         setSrv(source->isSrv());
+        setEnvironment(source->environment());
 
         clearCredentials();
         QList<CredentialSettings *> cred = source->credentials();
@@ -173,6 +175,7 @@ namespace Docutaz
         map.insert("defaultDatabase", QtUtils::toQString(defaultDatabase()));
         map.insert("isReplicaSet", isReplicaSet());
         map.insert("isSrv", isSrv());
+        map.insert("environment", QtUtils::toQString(environment()));
         if (isReplicaSet())
             map.insert("replicaSet", _replicaSetSettings->toVariant());
 

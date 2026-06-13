@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QMessageBox>
+#include <QBrush>
 
 #include "docutaz/core/domain/MongoServer.h"
 #include "docutaz/core/domain/MongoDatabase.h"
@@ -18,6 +19,7 @@
 #include "docutaz/gui/widgets/explorer/ExplorerReplicaSetTreeItem.h"
 #include "docutaz/gui/dialogs/CreateDatabaseDialog.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/ConnectionEnvironment.h"
 
 
 namespace
@@ -86,6 +88,14 @@ namespace Docutaz
         setText(0, buildServerName());
         setIcon(0, _server->connectionRecord()->isReplicaSet() ? GuiRegistry::instance().replicaSetIcon()
                                                                : GuiRegistry::instance().serverIcon());
+        // Colour-code by environment (prod/staging/…). Foreground persists across
+        // later setText() refreshes, so setting it once here is enough.
+        {
+            const QColor envColor =
+                ConnectionEnvironment::color(_server->connectionRecord()->environment());
+            if (envColor.isValid())
+                setForeground(0, QBrush(envColor));
+        }
         setExpanded(true);
         setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);
 

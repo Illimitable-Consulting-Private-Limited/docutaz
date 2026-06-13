@@ -159,6 +159,14 @@ namespace Docutaz
         QString uuid() const { return _uuid; }
         void setUuid(QString const& uuid) { _uuid = uuid; }
 
+        // Environment tag used to colour-code the connection in the UI (explorer
+        // row, shell tab, an accent strip above the editor) — a "don't run a
+        // delete on prod" safeguard. Stored as a stable key: "" (none),
+        // "production", "staging", "development", "other". See
+        // gui/ConnectionEnvironment.h for the key→colour/label mapping.
+        std::string environment() const { return _environment; }
+        void setEnvironment(const std::string &env) { _environment = env; }
+
         // Percent-encode a connection-string userinfo component (username or
         // password) per RFC 3986: every byte outside the unreserved set
         // (A-Z a-z 0-9 - . _ ~) is encoded. Required so a password containing
@@ -177,6 +185,7 @@ namespace Docutaz
         std::unique_ptr<SslSettings> _sslSettings;
         bool _isReplicaSet;
         bool _isSrv = false;
+        std::string _environment;   // "" | production | staging | development | other
         std::unique_ptr<ReplicaSetSettings> _replicaSetSettings;
         
         // Was this connection imported from somewhere?

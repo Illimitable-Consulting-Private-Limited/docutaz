@@ -40,6 +40,8 @@ namespace Docutaz
         QLabel *_nameLabel;
         QLineEdit *_connectionName;
         QLabel *_connInfoLabel;
+        QLabel *_environmentLabel;
+        QComboBox *_environment;
         QLabel *_addressLabel;
         QLineEdit *_serverAddress;
         QLabel *_colon;

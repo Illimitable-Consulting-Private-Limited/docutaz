@@ -21,6 +21,9 @@
 #include "docutaz/gui/dialogs/ConnectionDialog.h"
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/utils/GuiConstants.h"
+#include "docutaz/gui/ConnectionEnvironment.h"
+
+#include <QPixmap>
 
 #include "mongo/client/mongo_uri.h"
 
@@ -38,10 +41,24 @@ namespace Docutaz
                         this, SLOT(on_ConnectionTypeChange(int)))
         );
         
-        _nameLabel = new QLabel("Name:"); 
+        _nameLabel = new QLabel("Name:");
         _connectionName = new QLineEdit(QtUtils::toQString(_settings->connectionName()));
         _connInfoLabel = new QLabel("Choose any connection name that will help you to identify this connection.");
         _connInfoLabel->setWordWrap(true);
+
+        // Environment colour tag (None/Production/Staging/Development/Other). Tints
+        // the explorer row, shell tabs and an accent strip above the editor so a
+        // prod connection is unmistakable. Each item carries a colour swatch icon.
+        _environmentLabel = new QLabel("Environment:");
+        _environment = new QComboBox;
+        for (auto const &p : ConnectionEnvironment::presets()) {
+            QPixmap swatch(12, 12);
+            swatch.fill(p.color.isValid() ? p.color : QColor(Qt::transparent));
+            _environment->addItem(QIcon(swatch), QString::fromLatin1(p.name),
+                                  QString::fromLatin1(p.key));
+            if (_settings->environment() == p.key)
+                _environment->setCurrentIndex(_environment->count() - 1);
+        }
 
         _addressLabel = new QLabel("Address:");
         _serverAddress = new QLineEdit(QtUtils::toQString(_settings->serverHost()));
@@ -130,6 +147,8 @@ namespace Docutaz
         connLayout->addWidget(_connectionType,                1, 1, 1, 3);
         connLayout->addWidget(_nameLabel,                     3, 0);
         connLayout->addWidget(_connectionName,                3, 1, 1, 3);
+        connLayout->addWidget(_environmentLabel,              4, 0);
+        connLayout->addWidget(_environment,                   4, 1, 1, 3);
         connLayout->addWidget(_addressLabel,                  5, 0);
         connLayout->addWidget(_serverAddress,                 5, 1);
         connLayout->addWidget(_colon,                         5, 2);
@@ -165,6 +184,7 @@ namespace Docutaz
     {
         _settings->setReplicaSet(static_cast<bool>(_connectionType->currentIndex()));
         _settings->setConnectionName(QtUtils::toStdString(_connectionName->text()));
+        _settings->setEnvironment(QtUtils::toStdString(_environment->currentData().toString()));
 
         if (_settings->isReplicaSet() && _members->topLevelItemCount() == 0) {
             QMessageBox::critical(this, "Error", "Replica set members cannot be empty. "  
