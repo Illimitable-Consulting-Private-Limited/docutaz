@@ -12,6 +12,7 @@
 #include "docutaz/gui/widgets/workarea/WorkAreaTabBar.h"
 #include "docutaz/gui/widgets/workarea/QueryWidget.h"
 #include "docutaz/gui/widgets/workarea/WelcomeTab.h"
+#include "docutaz/gui/widgets/workarea/QueryHistoryTab.h"
 #include "docutaz/gui/GuiRegistry.h"
 
 namespace Docutaz
@@ -162,6 +163,22 @@ namespace Docutaz
 
         scrollArea->setFrameShape(QFrame::NoFrame);
         setCurrentIndex(indexOf(scrollArea));
+    }
+
+    void WorkAreaTabWidget::openQueryHistoryTab()
+    {
+        // Singleton: create once, then just re-add/focus. Closing the tab does
+        // not delete the widget (closeTab only deletes QueryWidget pages), so the
+        // pointer stays valid and the history/filter state is preserved.
+        if (!_historyTab)
+            _historyTab = new QueryHistoryTab(this);
+
+        int idx = indexOf(_historyTab);
+        if (idx == -1) {
+            addTab(_historyTab, GuiRegistry::instance().timeIcon(), tr("Query History"));
+            idx = indexOf(_historyTab);
+        }
+        setCurrentIndex(idx);
     }
 
     /**

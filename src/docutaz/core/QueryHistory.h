@@ -2,6 +2,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QDateTime>
 #include <QList>
 
@@ -55,6 +56,14 @@ namespace Docutaz
         static QString dedupKey(const QString &query, const QString &connection,
                                 const QString &database);
         static QString deriveKind(const QString &query);   // find/aggregate/update/...
+        // Collection names referenced by the script (db.getCollection('x'),
+        // db.x.…, db['x']). De-duplicated, in first-seen order. Used by the
+        // history view's Collection filter.
+        static QStringList collectionsOf(const QString &query);
+        // True when the script is more than one top-level statement (a composite
+        // script rather than a single query/aggregate). Heuristic — adequate for
+        // the view's type indicator.
+        static bool isScript(const QString &query);
 
     Q_SIGNALS:
         void changed();

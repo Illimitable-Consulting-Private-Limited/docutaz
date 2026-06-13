@@ -36,7 +36,6 @@
 #include "docutaz/core/utils/Logger.h"
 
 #include "docutaz/gui/widgets/LogWidget.h"
-#include "docutaz/gui/widgets/QueryHistoryWidget.h"
 #include "docutaz/gui/widgets/explorer/ExplorerWidget.h"
 #include "docutaz/gui/widgets/explorer/ExplorerCollectionTreeItem.h"
 #include "docutaz/gui/widgets/explorer/ExplorerTreeWidget.h"
@@ -930,14 +929,10 @@ namespace Docutaz
         widget->execute();
     }
 
-    void MainWindow::openHistoryQuery(const QString &query)
+    void MainWindow::openQueryHistoryTab()
     {
-        // Re-open a query from the history panel in a new tab on the current
-        // connection; if no query tab is open, fall back to the clipboard.
-        if (QueryWidget *widget = _workArea->currentQueryWidget())
-            widget->openWithQuery(query);
-        else
-            QApplication::clipboard()->setText(query);
+        if (_workArea)
+            _workArea->openQueryHistoryTab();
     }
 
     void MainWindow::stopScript()
@@ -1233,17 +1228,10 @@ namespace Docutaz
 
         addDockWidget(Qt::BottomDockWidgetArea, _logDock);
 
-        // Query History dock
-        QueryHistoryWidget *history = new QueryHistoryWidget(this);
-        VERIFY(connect(history, &QueryHistoryWidget::openQuery, this, &MainWindow::openHistoryQuery));
-        _historyDock = new QDockWidget(tr("Query History"));
-        _historyDock->setAllowedAreas(Qt::AllDockWidgetAreas);
-        _historyDock->setWidget(history);
-        _historyDock->setVisible(false);
-        QAction *historyAction = _historyDock->toggleViewAction();
-        historyAction->setText(tr("Query &History"));
+        // Query History opens as a full work-area tab (View menu).
+        QAction *historyAction = new QAction(GuiRegistry::instance().timeIcon(), tr("Query &History"), this);
+        VERIFY(connect(historyAction, &QAction::triggered, this, &MainWindow::openQueryHistoryTab));
         _viewMenu->addAction(historyAction);
-        addDockWidget(Qt::RightDockWidgetArea, _historyDock);
     }
 
     void MainWindow::updateMenus()

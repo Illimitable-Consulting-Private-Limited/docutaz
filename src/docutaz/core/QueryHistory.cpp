@@ -7,6 +7,8 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QRegularExpression>
+#include <QSet>
 
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
@@ -82,6 +84,71 @@ namespace Docutaz
         if (query.contains(".count")  || query.contains(".distinct(")
             || query.contains(".estimatedDocumentCount("))                 return QStringLiteral("count");
         return QStringLiteral("other");
+    }
+
+    QStringList QueryHistoryManager::collectionsOf(const QString &query)
+    {
+        QStringList out;
+        QSet<QString> seen;
+        auto addName = [&](const QString &name) {
+            const QString n = name.trimmed();
+            if (!n.isEmpty() && !seen.contains(n)) { seen.insert(n); out << n; }
+        };
+
+        // db.getCollection('x') / db.getCollection("x")
+        static const QRegularExpression getColl(
+            R"(\bdb\.getCollection\(\s*['"]([^'"]+)['"])");
+        // db['x'] / db["x"]
+        static const QRegularExpression bracket(
+            R"(\bdb\[\s*['"]([^'"]+)['"]\s*\])");
+        // db.<name>.  (excluding the db helper methods, handled below)
+        static const QRegularExpression dotForm(
+            R"(\bdb\.([A-Za-z_$][\w$]*)\s*\.)");
+        // db.<name>(  e.g. db.users.find — already covered by dotForm; but also
+        // catch shell helpers we must NOT treat as collections.
+        static const QStringList dbMethods = {
+            "getCollection", "getSiblingDB", "getMongo", "getName", "runCommand",
+            "adminCommand", "createCollection", "getCollectionNames",
+            "getCollectionInfos", "dropDatabase", "stats", "version", "hostInfo",
+            "serverStatus", "currentOp", "killOp", "getReplicationInfo", "help",
+            "auth", "createUser", "dropUser", "getUsers", "watch", "aggregate"
+        };
+
+        for (auto it = getColl.globalMatch(query); it.hasNext();)
+            addName(it.next().captured(1));
+        for (auto it = bracket.globalMatch(query); it.hasNext();)
+            addName(it.next().captured(1));
+        for (auto it = dotForm.globalMatch(query); it.hasNext();) {
+            const QString name = it.next().captured(1);
+            if (!dbMethods.contains(name)) addName(name);
+        }
+        return out;
+    }
+
+    bool QueryHistoryManager::isScript(const QString &query)
+    {
+        const QString q = query.trimmed();
+        if (q.isEmpty())
+            return false;
+
+        // More than one top-level, semicolon-separated statement → script.
+        int segments = 0;
+        const QStringList parts = q.split(';');
+        for (const QString &p : parts)
+            if (!p.trimmed().isEmpty())
+                if (++segments > 1)
+                    return true;
+
+        // No semicolons but several lines each starting a new db.* statement
+        // (continuation lines of a multi-line single query don't start with db.).
+        int dbLines = 0;
+        const QStringList lines = q.split('\n');
+        for (const QString &l : lines)
+            if (l.trimmed().startsWith("db."))
+                if (++dbLines > 1)
+                    return true;
+
+        return false;
     }
 
     void QueryHistoryManager::add(const QueryHistoryEntry &incoming)

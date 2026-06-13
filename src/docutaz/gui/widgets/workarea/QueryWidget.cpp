@@ -161,13 +161,6 @@ namespace Docutaz
         }
     }
 
-    void QueryWidget::openWithQuery(const QString &query)
-    {
-        if (_shell)
-            AppRegistry::instance().app()->openShell(
-                _shell->server(), query, _currentResult.currentDatabase(), false);
-    }
-
     void QueryWidget::saveToFile()
     {
         if (_shell) {

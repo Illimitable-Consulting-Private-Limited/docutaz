@@ -51,3 +51,32 @@ TEST(query_history, derive_kind)
     EXPECT_EQ(QueryHistoryManager::deriveKind("db.c.countDocuments({})"),        "count");
     EXPECT_EQ(QueryHistoryManager::deriveKind("db.serverStatus()"),             "other");
 }
+
+TEST(query_history, collections_of)
+{
+    // getCollection('x'), db.x. and db['x'] forms; shell helpers excluded; deduped.
+    EXPECT_EQ(QueryHistoryManager::collectionsOf("db.getCollection('user').find({})"),
+              (QStringList{"user"}));
+    EXPECT_EQ(QueryHistoryManager::collectionsOf("db.orders.aggregate([])"),
+              (QStringList{"orders"}));
+    EXPECT_EQ(QueryHistoryManager::collectionsOf("db['my-coll'].find({})"),
+              (QStringList{"my-coll"}));
+    // Multiple distinct collections, first-seen order, helper db.getSiblingDB ignored.
+    EXPECT_EQ(QueryHistoryManager::collectionsOf(
+                  "var x = db.getCollection('company').findOne({}); db.order.find({c:x._id})"),
+              (QStringList{"company", "order"}));
+    // db helper methods are not collections.
+    EXPECT_TRUE(QueryHistoryManager::collectionsOf("db.runCommand({ping:1})").isEmpty());
+}
+
+TEST(query_history, is_script)
+{
+    // Single statements (incl. multi-line / trailing semicolon) are NOT scripts.
+    EXPECT_FALSE(QueryHistoryManager::isScript("db.user.find({})"));
+    EXPECT_FALSE(QueryHistoryManager::isScript("db.user.find({});"));
+    EXPECT_FALSE(QueryHistoryManager::isScript("db.user.aggregate([\n  {$match:{}}\n])"));
+    // Multiple statements (semicolon- or newline-separated) ARE scripts.
+    EXPECT_TRUE(QueryHistoryManager::isScript(
+                    "var c = db.company.findOne({}); db.order.find({c:c._id})"));
+    EXPECT_TRUE(QueryHistoryManager::isScript("db.a.find({})\ndb.b.find({})"));
+}

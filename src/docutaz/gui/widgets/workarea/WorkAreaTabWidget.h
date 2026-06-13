@@ -7,6 +7,7 @@ namespace Docutaz
     class QueryWidget;
     class OpeningShellEvent;
     class WelcomeTab;
+    class QueryHistoryTab;
 
     /**
      * @brief WorkArea tab widget. Each tab represents MongoDB shell.
@@ -30,6 +31,8 @@ namespace Docutaz
         QueryWidget *queryWidget(int index);
         WelcomeTab *getWelcomeTab();
         void openWelcomeTab();
+        // Open (or focus, if already open) the singleton Query History tab.
+        void openQueryHistoryTab();
 
     public Q_SLOTS:
         void handle(OpeningShellEvent *event);
@@ -54,5 +57,6 @@ namespace Docutaz
 
     private:
         WelcomeTab* _welcomeTab;
+        QueryHistoryTab* _historyTab = nullptr;   // singleton; survives tab close
     };
 }

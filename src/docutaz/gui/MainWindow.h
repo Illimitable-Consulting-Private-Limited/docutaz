@@ -118,8 +118,8 @@ namespace Docutaz
         void onUpToDate();                            // manual-check feedback
         void onUpdateCheckFailed(const QString &reason);
 
-        // Re-open a query chosen in the Query History panel
-        void openHistoryQuery(const QString &query);
+        // Open the Query History work-area tab.
+        void openQueryHistoryTab();
 
     private:
         void updateConnectionsMenu();
@@ -131,7 +131,6 @@ namespace Docutaz
         void saveWindowSettings() const;
 
         QDockWidget *_logDock;
-        QDockWidget *_historyDock = nullptr;
 
         WorkAreaTabWidget *_workArea;
 

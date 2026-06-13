@@ -39,7 +39,6 @@ namespace Docutaz
         void toggleOrientation();
         void activateTabContent();
         void openNewTab();
-        void openWithQuery(const QString &query);   // new tab on this server, given text
         void reload();
         void duplicate();
         void enterTreeMode();
