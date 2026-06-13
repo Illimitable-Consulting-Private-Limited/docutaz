@@ -95,6 +95,14 @@ std::vector<std::string> MongoClient::getCollectionNamesWithDbname(const std::st
     return collNames;
 }
 
+void MongoClient::ping() const
+{
+    // Intentionally does NOT catch: a connection failure (unreachable host,
+    // refused, auth) must propagate so the caller can fail the connection
+    // cleanly instead of mistaking an unreachable server for a live one.
+    _client["admin"].run_command(make_document(kvp("ping", 1)).view());
+}
+
 float MongoClient::getVersion() const
 {
     try {

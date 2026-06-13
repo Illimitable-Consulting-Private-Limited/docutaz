@@ -293,6 +293,22 @@ namespace Docutaz
         try {
             _client = mongocxx::client(mongocxx::uri(buildConnectionUri()));
 
+            // Verify the server is actually reachable before doing anything else.
+            // mongocxx connects lazily, and getVersion()/getStorageEngineType()
+            // swallow errors — so without an explicit throwing check an
+            // unreachable server (e.g. connection refused) would slip through as a
+            // "successful" connection: getDatabaseNamesSafe() still returns the
+            // auth database, the empty-list guard below never fires, and the user
+            // gets only a misleading "manually specify visible databases" hint
+            // (from getDatabaseNamesSafe's catch) with no connection-failed error.
+            // ping() throws here, taking the catch below and reporting a proper
+            // connection failure; it also means that hint now only appears for a
+            // genuine listdatabases-permission failure on a reachable server.
+            {
+                std::unique_ptr<MongoClient> client(getClient());
+                client->ping();
+            }
+
             std::vector<std::string> const dbNames = getDatabaseNamesSafe(event);
             if (dbNames.empty())
                 throw std::runtime_error("Failed to execute \"listdatabases\" command.");

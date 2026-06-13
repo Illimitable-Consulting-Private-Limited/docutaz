@@ -18,6 +18,13 @@ namespace Docutaz
     public:
         MongoClient(mongocxx::client& client);
 
+        // Liveness check: runs {ping:1} on admin. Unlike getVersion()/
+        // getStorageEngineType()/dbVersionStr() (which swallow exceptions and
+        // return defaults), this DOES throw on connection failure, so callers can
+        // detect an unreachable server before treating a connection as
+        // established (mongocxx connects lazily on the first command).
+        void ping() const;
+
         std::vector<std::string> getCollectionNamesWithDbname(const std::string &dbname) const;
         std::vector<std::string> getDatabaseNames() const;
         float getVersion() const;
