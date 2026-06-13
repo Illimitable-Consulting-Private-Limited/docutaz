@@ -61,14 +61,43 @@ fetched on demand (pinned via CMake `FetchContent`) only when
 
 ## Building
 
+Install the system packages, then build and install the mongo-cxx-driver, and
+finally build Docutaz — in that order (the Docutaz configure step needs the
+driver already installed).
+
+### 1. Linux — system packages (Fedora/RHEL)
+```bash
+sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel \
+    qscintilla-qt6-devel openssl-devel libssh2-devel
+```
+
+### 1. Linux — system packages (Debian/Ubuntu)
+```bash
+sudo apt install cmake ninja-build g++ qt6-base-dev \
+    libqscintilla2-qt6-dev libssl-dev libssh2-1-dev
+```
+
+### 2. mongo-cxx-driver
+Docutaz links against `libmongocxx` and `libbsoncxx` (mongo-cxx-driver **4.x**,
+which builds on mongo-c-driver 2.x). Build and install both **before** building
+Docutaz:
+```bash
+# See https://github.com/mongodb/mongo-cxx-driver (build mongo-c-driver, then
+# mongo-cxx-driver). The CI workflow (.github/workflows/build.yml) has exact,
+# working build steps for all three platforms.
+cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
+sudo cmake --install .
+```
+
+### 3. Docutaz
 ```bash
 # Clone
 git clone https://github.com/Illimitable-Consulting-Private-Limited/docutaz.git
 cd docutaz
 
-# Configure
+# Configure (point CMAKE_PREFIX_PATH at the installed driver from step 2)
 mkdir build && cd build
-cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
+cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=/usr/local/lib64/cmake
 
 # Build
 ninja docutaz -j$(nproc)
@@ -78,30 +107,6 @@ ninja docutaz -j$(nproc)
 # build/src/docutaz/Docutaz.app    (macOS)
 # build/src/docutaz/docutaz.exe    (Windows)
 ```
-
-### Linux — additional packages (Fedora/RHEL)
-```bash
-sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel \
-    qscintilla-qt6-devel openssl-devel libssh2-devel
-```
-
-### Linux — additional packages (Debian/Ubuntu)
-```bash
-sudo apt install cmake ninja-build g++ qt6-base-dev \
-    libqscintilla2-qt6-dev libssl-dev libssh2-1-dev
-```
-
-### mongo-cxx-driver
-Docutaz links against `libmongocxx` and `libbsoncxx` (mongo-cxx-driver **4.x**,
-which builds on mongo-c-driver 2.x). Build and install both first:
-```bash
-# See https://github.com/mongodb/mongo-cxx-driver (build mongo-c-driver, then
-# mongo-cxx-driver). The CI workflow (.github/workflows/build.yml) has exact,
-# working build steps for all three platforms.
-cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local
-sudo cmake --install .
-```
-Then pass `-DCMAKE_PREFIX_PATH=/usr/local/lib64/cmake` (or your install prefix) to the Docutaz cmake configure step.
 
 ---
 
