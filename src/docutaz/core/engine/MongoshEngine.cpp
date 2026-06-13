@@ -104,9 +104,22 @@ MongoShellExecResult MongoshEngine::exec(const std::string& script,
     const int pe = prepOut.indexOf(PREP_END, ps < 0 ? 0 : ps);
     if (ps < 0 || pe < 0)
         return MongoShellExecResult(true, "mongosh prepare failed.");
-    const QByteArray wrappedB64 =
+    const QByteArray prepBody =
         prepOut.mid(ps + PREP_START.size(), pe - (ps + PREP_START.size())).trimmed();
-    const QByteArray wrapped = QByteArray::fromBase64(wrappedB64);
+
+    // Prepare parse-checks the script. A syntax error is reported here (instead
+    // of the base64 wrapped source) so we fail fast without sending un-runnable
+    // input and waiting out the timeout. The marker can't collide with base64.
+    static const QByteArray PARSE_ERR("__ROBO_PARSE_ERROR__");
+    if (prepBody.startsWith(PARSE_ERR)) {
+        const QString m =
+            QString::fromUtf8(QByteArray::fromBase64(prepBody.mid(PARSE_ERR.size()))).trimmed();
+        return MongoShellExecResult(
+            true, (m.isEmpty() ? QStringLiteral("Syntax error in script.")
+                               : ("SyntaxError: " + m)).toStdString());
+    }
+
+    const QByteArray wrapped = QByteArray::fromBase64(prepBody);
 
     // Phase 2 — execute: send the wrapped source verbatim as REPL input so it is
     // rewritten. It ends by calling __robo_emit(execId), which frames the result.
@@ -125,6 +138,23 @@ MongoShellExecResult MongoshEngine::exec(const std::string& script,
     }
 
     const QByteArray cleaned = drainLogs(output);
+
+    // No result frame means the script never ran to completion. The usual cause
+    // is a JS syntax error: mongosh rejects the wrapped source while parsing it,
+    // before our try/catch and __robo_emit can run, so it prints the error to
+    // the REPL and no <<<ROBO_START_…>>> ever arrives. Surface that as an error
+    // rather than rendering the leftover REPL text as a plain result — so the
+    // user gets an error dialog, history records a failed run, and MongoWorker's
+    // retry() can transparently re-run a transient first-execution failure.
+    if (!cleaned.contains("<<<ROBO_START_")) {
+        QString msg = QString::fromUtf8(cleaned)
+                          .remove(QRegularExpression("<<<ROBO_[^>]+>>>"))
+                          .trimmed();
+        if (msg.isEmpty())
+            msg = QStringLiteral("Script did not complete — no result was produced.");
+        return MongoShellExecResult(true, msg.toStdString());
+    }
+
     auto results = parseExecOutput(cleaned, script, elapsedMs);
     return MongoShellExecResult(
         results, _settings->serverHost(), true, _currentDb, true);
@@ -207,7 +237,39 @@ bool MongoshEngine::startProcess(const std::string& dbName) {
     // setBatchSize() was first called on a not-yet-running subprocess.
     send("__robo_set_batch(" + QString::number(_batchSize) + ");");
     readUntil("<<<ROBO_BATCH_OK>>>", 3000);
+    warmUp();
     return true;
+}
+
+void MongoshEngine::warmUp() {
+    // Run one throwaway query through the full prepare→exec→emit protocol right
+    // after the process starts. This compiles mongosh's async-rewriter (babel)
+    // once up front so the user's first real query doesn't pay that cold-start
+    // latency. Best-effort: any failure just means the first real query is a bit
+    // slower.
+    if (!_proc || _proc->state() != QProcess::Running) return;
+
+    const QString execId = QStringLiteral("WARMUP00");
+    const std::string script =
+        "var __robo_warm = db.getCollection('__robodummy__').find({}).toArray(); "
+        "__robo_warm.length;";
+
+    if (!send("__robo_prepare(\"" + toBase64(script) + "\", \"" + execId + "\");"))
+        return;
+
+    const QByteArray PREP_START = ("<<<ROBO_PREP_" + execId + ">>>").toUtf8();
+    const QByteArray PREP_END   = ("<<<ROBO_PREP_END_" + execId + ">>>").toUtf8();
+    const QByteArray prepOut = readUntil(PREP_END, 10000);
+    const int ps = prepOut.indexOf(PREP_START);
+    const int pe = prepOut.indexOf(PREP_END, ps < 0 ? 0 : ps);
+    if (ps < 0 || pe < 0) return;
+    const QByteArray prepBody =
+        prepOut.mid(ps + PREP_START.size(), pe - (ps + PREP_START.size())).trimmed();
+    if (prepBody.startsWith("__ROBO_PARSE_ERROR__")) return;
+
+    const QByteArray wrapped = QByteArray::fromBase64(prepBody);
+    if (!sendRaw(wrapped)) return;
+    readUntil(("<<<ROBO_END_" + execId + ">>>").toUtf8(), 10000);
 }
 
 void MongoshEngine::stopProcess() {

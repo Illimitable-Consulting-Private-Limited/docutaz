@@ -300,9 +300,16 @@ namespace Docutaz
 
         updateCurrentTab();
 
-        displayData(event->result().results(), event->empty());
-        // this should be in ScriptWidget, which is subscribed to ScriptExecutedEvent              
-        _scriptWidget->setup(event->result()); 
+        if (event->isError()) {
+            // The error is reported via the dialog below — don't render a
+            // "executed successfully, but no results" message for a failed run.
+            _outputLabel->setVisible(false);
+            _viewer->present(_shell, event->result().results());
+        } else {
+            displayData(event->result().results(), event->empty());
+        }
+        // this should be in ScriptWidget, which is subscribed to ScriptExecutedEvent
+        _scriptWidget->setup(event->result());
         activateTabContent();
 
         if (event->isError()) {
@@ -363,14 +370,22 @@ namespace Docutaz
 
     void QueryWidget::recordHistory(ScriptExecutedEvent *event)
     {
+        // Only successful runs are kept in history — a syntax error or a failed
+        // statement is noise, not something worth re-opening later. A run fails
+        // if the engine flagged an error, or any produced result is an error
+        // (e.g. a runtime/server error captured by the preamble, which doesn't
+        // set the engine-level error flag).
+        if (event->isError())
+            return;
+        for (MongoShellResult const &r : _currentResult.results())
+            if (r.type() == "error")
+                return;
+
         QueryHistoryEntry e;
         e.query = _lastExecutedQuery;
         if (_shell && _shell->server() && _shell->server()->connectionRecord())
             e.connection = QtUtils::toQString(_shell->server()->connectionRecord()->connectionName());
         e.database = QtUtils::toQString(_currentResult.currentDatabase());
-        e.success  = !event->isError();
-        if (event->isError())
-            e.errorMessage = QtUtils::toQString(event->error().errorMessage());
 
         qint64 durationMs = 0;
         qint64 docs = 0;
@@ -379,7 +394,7 @@ namespace Docutaz
             docs       += static_cast<qint64>(r.documents().size());
         }
         e.durationMs  = durationMs;
-        e.resultCount = e.success ? docs : -1;   // -1 = n/a on error
+        e.resultCount = docs;   // reached only for successful runs
 
         QueryHistoryManager::instance().add(e);
     }

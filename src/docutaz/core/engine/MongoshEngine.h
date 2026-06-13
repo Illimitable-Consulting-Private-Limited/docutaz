@@ -47,6 +47,10 @@ private:
     bool startProcess(const std::string& dbName);
     void stopProcess();
     bool injectPreamble();
+    // Run one throwaway query through the full prepare→execute→emit protocol so
+    // the user's first real script isn't the first thing the freshly-started
+    // mongosh REPL / async-rewriter ever runs. Non-fatal on failure.
+    void warmUp();
 
     bool send(const QString& line);
     // Writes raw bytes (e.g. a multi-line wrapped script) to mongosh stdin,

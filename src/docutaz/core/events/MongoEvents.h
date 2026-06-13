@@ -1109,7 +1109,7 @@ namespace Docutaz
             Event(sender), _result(result), _empty(empty), _timeoutReached(timeoutReached) {}
 
         ScriptExecutedEvent(QObject *sender, const EventError &error, bool timeoutReached = false) :
-            Event(sender, error), _timeoutReached(timeoutReached) {}
+            Event(sender, error), _empty(true), _timeoutReached(timeoutReached) {}
 
         MongoShellExecResult result() const { return _result; }
         bool empty() const { return _empty; }

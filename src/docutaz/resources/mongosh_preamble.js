@@ -1,5 +1,9 @@
 // DOCUTAZ MONGOSH PREAMBLE — injected once at shell startup
-// Protocol version: 4
+// Protocol version: 5
+//
+// v5: __robo_prepare parse-checks the wrapped source and reports a syntax error
+//     through the prep channel (__ROBO_PARSE_ERROR__) so malformed scripts fail
+//     fast instead of being rejected at REPL time and waiting out the timeout.
 //
 // ── Execution model ─────────────────────────────────────────────────────────
 //
@@ -343,6 +347,29 @@
             '  globalThis.__robo_set_error(__robo_e);\n' +
             '}\n' +
             '__robo_emit(' + JSON.stringify(execId) + ');\n';
+
+        // Parse-check before handing the source back to be run as REPL input. A
+        // syntax error (e.g. an unterminated string) would otherwise be rejected
+        // by mongosh's parser at REPL time, where it emits no result frame and
+        // the C++ side just waits out the shell timeout. Compiling inside an
+        // async function validates syntax (top-level await stays legal) without
+        // executing anything; we report any error through the prep channel so the
+        // run is aborted cleanly and immediately.
+        try {
+            new Function('return (async function __robo_check() {\n' + wrapped + '\n});');
+        } catch (e) {
+            // Only a genuine SyntaxError aborts the run. If the Function
+            // constructor is unavailable or throws for any other reason, fall
+            // through and let mongosh run the source exactly as before.
+            if (e && (e instanceof SyntaxError || e.name === 'SyntaxError')) {
+                const emsg = e.message ? e.message : String(e);
+                _print('<<<ROBO_PREP_' + execId + '>>>__ROBO_PARSE_ERROR__' +
+                       Buffer.from(emsg, 'utf8').toString('base64') +
+                       '<<<ROBO_PREP_END_' + execId + '>>>');
+                return;
+            }
+            _roboLog('parse-check skipped: ' + (e && e.message ? e.message : String(e)));
+        }
 
         _print('<<<ROBO_PREP_' + execId + '>>>' +
                Buffer.from(wrapped, 'utf8').toString('base64') +
