@@ -79,7 +79,8 @@ namespace Docutaz
         setServerHost(QtUtils::toStdString(map.value("serverHost").toString().left(maxLength)));
         setServerPort(map.value("serverPort").toInt());
         setDefaultDatabase(QtUtils::toStdString(map.value("defaultDatabase").toString()));
-        setReplicaSet(map.value("isReplicaSet").toBool());       
+        setReplicaSet(map.value("isReplicaSet").toBool());
+        setSrv(map.value("isSrv").toBool());
         
         QVariantList list = map.value("credentials").toList();
         for (QVariantList::const_iterator it = list.begin(); it != list.end(); ++it) {
@@ -142,6 +143,7 @@ namespace Docutaz
         setDefaultDatabase(source->defaultDatabase());
         setImported(source->imported());
         setReplicaSet(source->isReplicaSet());
+        setSrv(source->isSrv());
 
         clearCredentials();
         QList<CredentialSettings *> cred = source->credentials();
@@ -169,6 +171,7 @@ namespace Docutaz
         map.insert("serverPort", serverPort());
         map.insert("defaultDatabase", QtUtils::toQString(defaultDatabase()));
         map.insert("isReplicaSet", isReplicaSet());
+        map.insert("isSrv", isSrv());
         if (isReplicaSet())
             map.insert("replicaSet", _replicaSetSettings->toVariant());
 
@@ -246,6 +249,10 @@ namespace Docutaz
 
     std::string ConnectionSettings::getFullAddress() const
     {
+        // An SRV seed list has no meaningful port — appending :27017 would be
+        // misleading in status/error messages.
+        if (_isSrv)
+            return _host;
         return hostAndPort().toString();
     }
 

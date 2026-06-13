@@ -147,6 +147,14 @@ namespace Docutaz
 
         bool isReplicaSet() const { return _isReplicaSet; }
         void setReplicaSet(bool flag) { _isReplicaSet = flag; }
+
+        // DNS seed list ("mongodb+srv://") connection, e.g. MongoDB Atlas. When
+        // set, serverHost() holds the SRV hostname (no port), and the connection
+        // URI is built with the mongodb+srv:// scheme so the driver resolves the
+        // real hosts / replica-set / TLS from DNS — rather than connecting to the
+        // SRV name directly (which has no A record and fails to resolve).
+        bool isSrv() const { return _isSrv; }
+        void setSrv(bool flag) { _isSrv = flag; }
        
         QString uuid() const { return _uuid; }
         void setUuid(QString const& uuid) { _uuid = uuid; }
@@ -162,6 +170,7 @@ namespace Docutaz
         std::unique_ptr<SshSettings> _sshSettings;
         std::unique_ptr<SslSettings> _sslSettings;
         bool _isReplicaSet;
+        bool _isSrv = false;
         std::unique_ptr<ReplicaSetSettings> _replicaSetSettings;
         
         // Was this connection imported from somewhere?

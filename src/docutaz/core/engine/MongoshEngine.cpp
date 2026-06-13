@@ -510,12 +510,17 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
 // ── URI building ─────────────────────────────────────────────────────────────
 
 std::string MongoshEngine::buildConnectionUri(const std::string& dbName) const {
-    std::string uri = "mongodb://";
+    const bool isSrv = _settings->isSrv();
+    std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
     const CredentialSettings* cred = _settings->primaryCredential();
     if (cred && !cred->userName().empty())
         uri += cred->userName() + ":" + cred->userPassword() + "@";
 
-    if (_settings->isReplicaSet()) {
+    if (isSrv) {
+        // DNS seed list (Atlas): SRV hostname only, no port; the driver resolves
+        // hosts / replica-set / TLS from DNS.
+        uri += _settings->serverHost();
+    } else if (_settings->isReplicaSet()) {
         const auto& members = _settings->replicaSetSettings()->members();
         for (int i = 0; i < members.size(); ++i) {
             if (i) uri += ",";
@@ -529,8 +534,12 @@ std::string MongoshEngine::buildConnectionUri(const std::string& dbName) const {
 
     std::vector<std::string> opts;
     if (cred && !cred->userName().empty()) {
-        const std::string mech = cred->mechanism();
-        opts.push_back("authMechanism=" + (mech.empty() ? "SCRAM-SHA-256" : mech));
+        // For SRV/Atlas, let the driver negotiate the auth mechanism (picks
+        // SCRAM-SHA-256); forcing one (URI import defaults to SCRAM-SHA-1) fails.
+        if (!isSrv) {
+            const std::string mech = cred->mechanism();
+            opts.push_back("authMechanism=" + (mech.empty() ? "SCRAM-SHA-256" : mech));
+        }
         if (!cred->databaseName().empty())
             opts.push_back("authSource=" + cred->databaseName());
     }
@@ -555,7 +564,9 @@ std::string MongoshEngine::buildConnectionUri(const std::string& dbName) const {
     // host so mongosh doesn't spin on SDAM topology monitoring.
     opts.push_back("serverSelectionTimeoutMS=10000");
     opts.push_back("connectTimeoutMS=10000");
-    if (!_settings->isReplicaSet())
+    // Not for SRV: a seed list resolves to multiple hosts / a replica set, so
+    // directConnection would defeat discovery.
+    if (!_settings->isReplicaSet() && !isSrv)
         opts.push_back("directConnection=true");
 
     if (!opts.empty()) {

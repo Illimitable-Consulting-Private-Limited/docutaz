@@ -349,9 +349,35 @@ namespace Docutaz
         _connectionDialog->clearConnAuthTab();
         _connectionDialog->clearSslTab();
 
-        // Set Basic (this) Tab
-        auto const isReplicaSet = mongoUri.type() == mongo::ConnectionString::ConnectionType::SET;
-        if(isReplicaSet) {
+        // A "mongodb+srv://" URI (e.g. MongoDB Atlas) is a DNS seed list: the
+        // hostname has no A record and must be resolved at connect time via an SRV
+        // lookup that also yields TLS and the replica-set name. We must keep the
+        // srv scheme and the SRV hostname rather than expanding to the resolved
+        // members here — connecting to the bare SRV name as a plain host fails to
+        // resolve. Detect it from the raw scheme (the parsed MongoURI hides it).
+        bool const isSrv = uriStr.startsWith("mongodb+srv://", Qt::CaseInsensitive);
+        _settings->setSrv(isSrv);
+
+        auto const isReplicaSet = !isSrv &&
+            mongoUri.type() == mongo::ConnectionString::ConnectionType::SET;
+        if (isSrv) {
+            // Extract the SRV hostname from the raw URI: drop the scheme and any
+            // "user:pass@", then take everything up to the next '/' or '?'.
+            QString authority = uriStr.mid(QString("mongodb+srv://").length());
+            int const at = authority.lastIndexOf('@');
+            if (at >= 0)
+                authority = authority.mid(at + 1);
+            int end = authority.indexOf('/');
+            int const q = authority.indexOf('?');
+            if (q >= 0 && (end < 0 || q < end))
+                end = q;
+            QString const srvHost = (end >= 0) ? authority.left(end) : authority;
+
+            _connectionType->setCurrentIndex(0);   // single SRV host, not a member list
+            _serverAddress->setText(srvHost);
+            _serverPort->clear();                   // no port for an SRV seed list
+        }
+        else if(isReplicaSet) {
             _connectionType->setCurrentIndex(1);    // Switch to Replica Set
             for (auto const& hostAndPort : mongoUri.getServers()) {
                 auto host = QString::fromStdString(hostAndPort.host());

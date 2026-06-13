@@ -132,12 +132,17 @@ namespace Docutaz
 
     std::string MongoWorker::buildConnectionUri() const
     {
-        std::string uri = "mongodb://";
+        const bool isSrv = _connSettings->isSrv();
+        std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
         const CredentialSettings *cred = _connSettings->primaryCredential();
         if (cred && !cred->userName().empty())
             uri += cred->userName() + ":" + cred->userPassword() + "@";
 
-        if (_connSettings->isReplicaSet()) {
+        if (isSrv) {
+            // DNS seed list: just the SRV hostname, no port. The driver resolves
+            // the real hosts (and replica-set name + TLS) from DNS.
+            uri += _connSettings->serverHost();
+        } else if (_connSettings->isReplicaSet()) {
             const auto &members = _connSettings->replicaSetSettings()->members();
             for (int i = 0; i < static_cast<int>(members.size()); ++i) {
                 if (i) uri += ",";
@@ -151,8 +156,13 @@ namespace Docutaz
 
         std::vector<std::string> opts;
         if (cred && !cred->userName().empty()) {
-            const std::string mech = cred->mechanism();
-            opts.push_back("authMechanism=" + (mech.empty() ? "SCRAM-SHA-256" : mech));
+            // For an SRV/Atlas connection let the driver negotiate the auth
+            // mechanism (it picks SCRAM-SHA-256). Forcing a mechanism here — the
+            // URI import defaults to SCRAM-SHA-1 — makes Atlas auth fail.
+            if (!isSrv) {
+                const std::string mech = cred->mechanism();
+                opts.push_back("authMechanism=" + (mech.empty() ? "SCRAM-SHA-256" : mech));
+            }
             if (!cred->databaseName().empty())
                 opts.push_back("authSource=" + cred->databaseName());
         }
@@ -184,7 +194,9 @@ namespace Docutaz
         // For a single (non-replica-set) host, connect directly. This disables
         // SDAM topology monitoring, whose background monitor threads otherwise
         // keep retrying an unreachable host and linger across failed attempts.
-        if (!_connSettings->isReplicaSet())
+        // NOT for SRV: a seed list resolves to multiple hosts / a replica set, so
+        // directConnection would defeat discovery.
+        if (!_connSettings->isReplicaSet() && !isSrv)
             opts.push_back("directConnection=true");
 
         if (!opts.empty()) {
