@@ -54,7 +54,13 @@ namespace Docutaz
 
         _security = new QComboBox();
         _security->addItems(QStringList() << "Password" << "Private Key");
-        VERIFY(connect(_security, SIGNAL(currentIndexChanged(const QString&)), this, SLOT(securityChange(const QString&))));
+        // Qt6 removed QComboBox::currentIndexChanged(const QString&); its
+        // text-carrying counterpart is currentTextChanged(const QString&). Use the
+        // type-safe functor connect so a wrong/removed signal fails to COMPILE
+        // rather than asserting at runtime (the string-based SIGNAL/SLOT form
+        // silently resolves at runtime and crashed here when creating/editing a
+        // connection).
+        VERIFY(connect(_security, &QComboBox::currentTextChanged, this, &SshTunnelTab::securityChange));
 
         _passwordBox = new QLineEdit(QtUtils::toQString(info->userPassword()));
         _passwordBox->setEchoMode(QLineEdit::Password);
