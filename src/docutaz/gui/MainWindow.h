@@ -127,6 +127,9 @@ namespace Docutaz
         void createTabs();
         void createStylesMenu();
         void createStatusBar();
+        // Show/hide the persistent "mongosh not detected" status-bar item based
+        // on current detection.
+        void updateMongoshIndicator();
         void restoreWindowSettings();
         void saveWindowSettings() const;
 
@@ -157,6 +160,9 @@ namespace Docutaz
         UpdateChecker *_updateChecker = nullptr;
         QToolBar *_updateBar = nullptr;
         QLabel *_updateLabel = nullptr;
+
+        // Persistent status-bar nudge shown when mongosh can't be found.
+        QLabel *_mongoshStatusLabel = nullptr;
 
 #if defined(Q_OS_WIN)
         QSystemTrayIcon *_trayIcon;

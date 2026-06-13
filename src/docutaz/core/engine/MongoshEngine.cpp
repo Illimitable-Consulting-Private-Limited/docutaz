@@ -596,6 +596,10 @@ QString MongoshEngine::makeExecId() {
     return QString::number(++counter, 16).toUpper().rightJustified(8, '0');
 }
 
+bool MongoshEngine::isMongoshAvailable() {
+    return !findMongosh().isEmpty();
+}
+
 QString MongoshEngine::findMongosh() {
     // User-configured path takes highest priority
     const QString fromSettings = AppRegistry::instance().settingsManager()->mongoshPath();

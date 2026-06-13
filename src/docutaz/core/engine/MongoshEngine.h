@@ -43,6 +43,11 @@ public:
     bool failedScope() const { return _failed; }
     void changeTimeout(int newTimeout) { _timeoutSec = newTimeout; }
 
+    // True if a mongosh binary can be located (user-configured path, env var, or
+    // a standard install location). Used by the UI to proactively nudge the user
+    // to install/configure mongosh before they hit a failed query.
+    static bool isMongoshAvailable();
+
 private:
     bool startProcess(const std::string& dbName);
     void stopProcess();

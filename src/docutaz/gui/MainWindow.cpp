@@ -34,6 +34,7 @@
 #include "docutaz/core/EventBus.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/utils/Logger.h"
+#include "docutaz/core/engine/MongoshEngine.h"
 
 #include "docutaz/gui/widgets/LogWidget.h"
 #include "docutaz/gui/widgets/explorer/ExplorerWidget.h"
@@ -673,6 +674,26 @@ namespace Docutaz
 
         statusBar()->insertWidget(0, log);
         statusBar()->setStyleSheet("QStatusBar::item { border: 0px solid black };");
+
+        // Persistent mongosh nudge (right side). Warning text + a "Set path" link
+        // only — no Download button here (it doesn't read well in a status bar;
+        // the Welcome-tab card carries the full Download action). Hidden unless
+        // mongosh is missing.
+        _mongoshStatusLabel = new QLabel(this);
+        _mongoshStatusLabel->setText(
+            "<span style='color:#B9770E;'>⚠ mongosh not detected</span> — "
+            "<a href='#prefs'>Set path</a>");
+        _mongoshStatusLabel->setTextFormat(Qt::RichText);
+        VERIFY(connect(_mongoshStatusLabel, SIGNAL(linkActivated(QString)),
+                       this, SLOT(openPreferences())));
+        statusBar()->addPermanentWidget(_mongoshStatusLabel);
+        updateMongoshIndicator();
+    }
+
+    void MainWindow::updateMongoshIndicator()
+    {
+        if (_mongoshStatusLabel)
+            _mongoshStatusLabel->setVisible(!MongoshEngine::isMongoshAvailable());
     }
 
     void MainWindow::changeStyle(QAction *ac)
@@ -987,6 +1008,8 @@ namespace Docutaz
     {
         PreferencesDialog dlg(this);
         dlg.exec();
+        // The user may have just set the mongosh path — re-evaluate the nudge.
+        updateMongoshIndicator();
     }
 
 

@@ -5,6 +5,15 @@
 #include <QScrollArea>
 #include <QShowEvent>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QFrame>
+#include <QPushButton>
+#include <QDesktopServices>
+#include <QUrl>
+
+#include "docutaz/core/engine/MongoshEngine.h"
+#include "docutaz/core/utils/QtUtils.h"
+#include "docutaz/gui/dialogs/PreferencesDialog.h"
 
 namespace Docutaz
 {
@@ -74,18 +83,67 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
     body->setText(QString::fromUtf8(BODY_HTML));
     body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
+    // Proactive "mongosh not detected" card — shown only when mongosh can't be
+    // found, so the unzip-and-run crowd is nudged before they hit a failed query.
+    _mongoshCard = new QFrame(this);
+    _mongoshCard->setObjectName("mongoshCard");
+    _mongoshCard->setStyleSheet(
+        "QFrame#mongoshCard { background-color: #FFF4E5; border: 1px solid #E6A23C;"
+        " border-radius: 6px; }");
+    {
+        auto* cardLayout = new QVBoxLayout(_mongoshCard);
+        cardLayout->setContentsMargins(14, 12, 14, 12);
+        cardLayout->setSpacing(8);
+
+        auto* msg = new QLabel(
+            "<b>⚠ mongosh not detected.</b>  Docutaz runs your queries through "
+            "MongoDB's <code>mongosh</code> shell, which isn't bundled. Install it "
+            "and make sure it's on your <code>PATH</code> — or point Docutaz at it "
+            "in Preferences.", _mongoshCard);
+        msg->setTextFormat(Qt::RichText);
+        msg->setWordWrap(true);
+
+        auto* btnRow = new QHBoxLayout;
+        auto* download = new QPushButton("Download mongosh", _mongoshCard);
+        VERIFY(connect(download, &QPushButton::clicked, this, [] {
+            QDesktopServices::openUrl(QUrl("https://www.mongodb.com/try/download/shell"));
+        }));
+        auto* setPath = new QPushButton("Set path…", _mongoshCard);
+        VERIFY(connect(setPath, &QPushButton::clicked, this, [this] {
+            PreferencesDialog dlg(this);
+            dlg.exec();
+            refreshMongoshCard();   // configuring a path here should clear the card
+        }));
+        btnRow->addWidget(download);
+        btnRow->addWidget(setPath);
+        btnRow->addStretch();
+
+        cardLayout->addWidget(msg);
+        cardLayout->addLayout(btnRow);
+    }
+
     auto* layout = new QVBoxLayout(this);
     layout->setContentsMargins(32, 28, 32, 28);
     layout->setSpacing(16);
     layout->addWidget(_logo, 0, Qt::AlignLeft | Qt::AlignTop);
+    layout->addWidget(_mongoshCard);
     layout->addWidget(body);
     layout->addStretch();
     setLayout(layout);
+
+    refreshMongoshCard();
+}
+
+void WelcomeTab::refreshMongoshCard()
+{
+    if (_mongoshCard)
+        _mongoshCard->setVisible(!MongoshEngine::isMongoshAvailable());
 }
 
 void WelcomeTab::showEvent(QShowEvent* event)
 {
     QWidget::showEvent(event);
+    refreshMongoshCard();
     resize();
 }
 

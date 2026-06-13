@@ -8,6 +8,7 @@ class QLabel;
 class QScrollArea;
 class QResizeEvent;
 class QShowEvent;
+class QFrame;
 QT_END_NAMESPACE
 
 namespace Docutaz
@@ -29,8 +30,13 @@ namespace Docutaz
         void resizeEvent(QResizeEvent* event) override;
 
     private:
+        // Show/hide the "mongosh not detected" card based on current detection
+        // (re-checked on show, so configuring a path elsewhere clears it).
+        void refreshMongoshCard();
+
         QScrollArea* _parent;
         QLabel*      _logo;
         QPixmap      _logoPx;
+        QFrame*      _mongoshCard = nullptr;
     };
 }
