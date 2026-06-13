@@ -36,6 +36,10 @@ namespace Docutaz
 
         int resultIndex(OutputItemContentWidget *result);
 
+        // Number of result parts currently rendered. Used to tell an initial
+        // execution (no parts yet) from a paging re-run (parts already shown).
+        int partsCount() const { return static_cast<int>(_outputItemContentWidgets.size()); }
+
         void showProgress();
         void hideProgress();
         bool progressBarActive() const;

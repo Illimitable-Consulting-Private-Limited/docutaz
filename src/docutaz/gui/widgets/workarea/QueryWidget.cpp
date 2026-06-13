@@ -281,10 +281,15 @@ namespace Docutaz
         hideProgress();
         _currentResult = event->result();
 
+        // A fresh user execution sets _lastExecutedQuery in execute(); aggregation
+        // *paging* (driven from the paging widget via _shell->execute()) does not.
+        // We must know this before recordHistory() clears it below.
+        const bool fromUserExecute = !_lastExecutedQuery.isEmpty();
+
         // Record this run in query history exactly once. An aggregation can emit
         // several ScriptExecutedEvents; clearing the captured text after the first
         // means only that one is recorded (and re-runs re-capture in execute()).
-        if (!_lastExecutedQuery.isEmpty()) {
+        if (fromUserExecute) {
             recordHistory(event);
             _lastExecutedQuery.clear();
         }
@@ -292,7 +297,15 @@ namespace Docutaz
         if (_currentResult.results().size() == 1) {
             MongoShellResult const& result = _currentResult.results().front();
             AggrInfo const& aggrInfo = result.aggrInfo();
-            if (aggrInfo.isValid && aggrInfo.resultIndex > -1) {
+            // Update an existing part in place ONLY for an aggregation paging
+            // re-run (not a fresh user execution). A fresh run must fall through
+            // to present() so it rebuilds the view: this both renders a first-run
+            // aggregate on an empty tab (otherwise updatePart's out-of-range check
+            // no-ops → blank) and gives a now-successful query a fresh,
+            // tree-capable widget instead of reusing a prior error result's
+            // text-only widget (which is stuck in text mode forever).
+            if (!fromUserExecute && aggrInfo.isValid && aggrInfo.resultIndex > -1 &&
+                aggrInfo.resultIndex < _viewer->partsCount()) {
                 _viewer->updatePart(aggrInfo.resultIndex, aggrInfo, _currentResult.results().front().documents());
                 return;
             }
