@@ -159,6 +159,12 @@ namespace Docutaz
         QString uuid() const { return _uuid; }
         void setUuid(QString const& uuid) { _uuid = uuid; }
 
+        // Percent-encode a connection-string userinfo component (username or
+        // password) per RFC 3986: every byte outside the unreserved set
+        // (A-Z a-z 0-9 - . _ ~) is encoded. Required so a password containing
+        // ':', '/', '?', '#', '[', ']', '@', '%', etc. doesn't corrupt the URI.
+        static std::string percentEncodeUserInfo(const std::string &component);
+
     private:
         CredentialSettings *findCredential(const std::string &databaseName) const;
 

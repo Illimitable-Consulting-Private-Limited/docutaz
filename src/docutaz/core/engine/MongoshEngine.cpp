@@ -514,7 +514,8 @@ std::string MongoshEngine::buildConnectionUri(const std::string& dbName) const {
     std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
     const CredentialSettings* cred = _settings->primaryCredential();
     if (cred && !cred->userName().empty())
-        uri += cred->userName() + ":" + cred->userPassword() + "@";
+        uri += ConnectionSettings::percentEncodeUserInfo(cred->userName()) + ":" +
+               ConnectionSettings::percentEncodeUserInfo(cred->userPassword()) + "@";
 
     if (isSrv) {
         // DNS seed list (Atlas): SRV hostname only, no port; the driver resolves

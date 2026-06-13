@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <QUuid>
+#include <QUrl>
 
 #include "docutaz/core/settings/CredentialSettings.h"
 #include "docutaz/core/settings/ReplicaSetSettings.h"
@@ -245,6 +246,17 @@ namespace Docutaz
     {
         qDeleteAll(_credentials);
         _credentials.clear();
+    }
+
+    std::string ConnectionSettings::percentEncodeUserInfo(const std::string &component)
+    {
+        // QUrl::toPercentEncoding (default exclude/include) encodes every byte that
+        // is not in the RFC 3986 unreserved set (ALPHA / DIGIT / - . _ ~) — a
+        // superset of the characters MongoDB requires encoded in userinfo
+        // (: / ? # [ ] @ %), which is safe because the driver percent-decodes it.
+        const QByteArray encoded = QUrl::toPercentEncoding(
+            QByteArray(component.data(), static_cast<int>(component.size())));
+        return std::string(encoded.constData(), static_cast<size_t>(encoded.size()));
     }
 
     std::string ConnectionSettings::getFullAddress() const

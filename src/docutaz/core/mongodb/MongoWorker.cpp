@@ -136,7 +136,8 @@ namespace Docutaz
         std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
         const CredentialSettings *cred = _connSettings->primaryCredential();
         if (cred && !cred->userName().empty())
-            uri += cred->userName() + ":" + cred->userPassword() + "@";
+            uri += ConnectionSettings::percentEncodeUserInfo(cred->userName()) + ":" +
+                   ConnectionSettings::percentEncodeUserInfo(cred->userPassword()) + "@";
 
         if (isSrv) {
             // DNS seed list: just the SRV hostname, no port. The driver resolves
