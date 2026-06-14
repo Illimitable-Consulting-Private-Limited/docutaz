@@ -77,8 +77,17 @@ ShowUnInstDetails show
 
 !insertmacro MUI_LANGUAGE "English"
 
+; The installer itself is a 32-bit exe; without this it would write the
+; Add/Remove-Programs entry into the WOW6432Node redirect rather than the native
+; 64-bit hive where Windows/Winget look for this 64-bit app. Set it before the
+; automatic InstallDirRegKey lookup runs (end of .onInit).
+Function .onInit
+  SetRegView 64
+FunctionEnd
+
 ; ---------------------------------------------------------------------------
 Section "Install"
+  SetRegView 64
   SetOutPath "$INSTDIR"
 
   ; Clean any previous install in-place first so renamed/removed DLLs across
@@ -118,7 +127,12 @@ Section "Install"
 SectionEnd
 
 ; ---------------------------------------------------------------------------
+Function un.onInit
+  SetRegView 64
+FunctionEnd
+
 Section "Uninstall"
+  SetRegView 64
   Delete "$SMPROGRAMS\${APP_NAME}.lnk"
   Delete "$DESKTOP\${APP_NAME}.lnk"
 
