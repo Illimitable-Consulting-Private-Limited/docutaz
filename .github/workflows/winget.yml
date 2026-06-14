@@ -16,6 +16,16 @@ name: Submit to Winget
 on:
   release:
     types: [released]
+  # Manual fallback: a `release` event runs the workflow file as it existed in
+  # the tagged commit, so a fix made after tagging can't be picked up by
+  # re-triggering the release. workflow_dispatch runs the file from the selected
+  # branch (use main), letting us (re)submit an already-published release.
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: "Existing release tag to submit (e.g. v2.1.1)"
+        required: true
+        type: string
 
 jobs:
   winget:
@@ -33,4 +43,7 @@ jobs:
           # (which is what fork-user defaults to), so name it explicitly. The
           # WINGET_TOKEN PAT must have push access to this fork.
           fork-user: Illimitable-Consulting-Private-Limited
+          # On a release event use the triggering tag; on manual dispatch use the
+          # tag passed as input.
+          release-tag: ${{ github.event.release.tag_name || inputs.release-tag }}
           token: ${{ secrets.WINGET_TOKEN }}
