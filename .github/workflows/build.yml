@@ -488,13 +488,17 @@ jobs:
           # a Nullsoft installer (Start-menu/Desktop shortcuts, Add/Remove entry,
           # silent /S install for Winget). choco installs makensis to a known
           # Program Files location but doesn't add it to this shell's PATH, so
-          # invoke it by full path (fall back to PATH just in case).
+          # invoke it by full path (fall back to PATH just in case). Pass the
+          # source dir and output file as ABSOLUTE paths: NSIS resolves relative
+          # File/OutFile paths against the .nsi's directory, not the CWD where
+          # the portable dir lives, so relative paths would not be found.
           $ver = "${{ steps.ver.outputs.version }}"
-          $outDir = "docutaz-$ver-windows-x86_64"
-          $setup = "docutaz-$ver-windows-x86_64-setup.exe"
+          $here = (Get-Location).Path
+          $outDir = Join-Path $here "docutaz-$ver-windows-x86_64"
+          $setup = Join-Path $here "docutaz-$ver-windows-x86_64-setup.exe"
           $makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
           if (-not (Test-Path $makensis)) { $makensis = "makensis" }
-          & $makensis /DVERSION=$ver /DINSTALL_SRC=$outDir /DOUTFILE=$setup install\windows\docutaz.nsi
+          & $makensis /DVERSION=$ver "/DINSTALL_SRC=$outDir" "/DOUTFILE=$setup" install\windows\docutaz.nsi
           if ($LASTEXITCODE -ne 0) { throw "makensis failed ($LASTEXITCODE)" }
           if (-not (Test-Path $setup)) { throw "installer not produced: $setup" }
           Write-Host "Built $setup ($([math]::Round((Get-Item $setup).Length/1MB,1)) MB)"

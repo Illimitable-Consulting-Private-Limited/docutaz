@@ -35,9 +35,9 @@ Unicode true
 !define ABOUT_URL     "https://illimitable-consulting-private-limited.github.io/docutaz/"
 !define UNINST_KEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
 
-; Assets sit next to this script; __FILEDIR__ keeps the paths portable
-; regardless of the working directory makensis is launched from.
-!define ASSET_DIR     "${__FILEDIR__}"
+; NSIS resolves icon/bitmap/license paths relative to THIS script's directory,
+; so the co-located assets are referenced by bare name and LICENSE as ..\..\.
+; (INSTALL_SRC/OUTFILE are passed as absolute paths from CI instead.)
 
 Name "${APP_NAME} ${VERSION}"
 OutFile "${OUTFILE}"
@@ -53,12 +53,12 @@ ShowUnInstDetails show
 !include "FileFunc.nsh"
 
 ; ---- Modern UI look ----
-!define MUI_ICON   "${ASSET_DIR}\docutaz.ico"
-!define MUI_UNICON "${ASSET_DIR}\docutaz.ico"
+!define MUI_ICON   "docutaz.ico"
+!define MUI_UNICON "docutaz.ico"
 !define MUI_HEADERIMAGE
-!define MUI_HEADERIMAGE_BITMAP "${ASSET_DIR}\nsis-topbar.bmp"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "${ASSET_DIR}\nsis-sidebar.bmp"
-!define MUI_UNWELCOMEFINISHPAGE_BITMAP "${ASSET_DIR}\nsis-sidebar.bmp"
+!define MUI_HEADERIMAGE_BITMAP "nsis-topbar.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "nsis-sidebar.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "nsis-sidebar.bmp"
 !define MUI_ABORTWARNING
 
 ; Offer to launch the app from the finish page.
@@ -67,7 +67,7 @@ ShowUnInstDetails show
 
 ; ---- Pages ----
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "${__FILEDIR__}\..\..\LICENSE"
+!insertmacro MUI_PAGE_LICENSE "..\..\LICENSE"
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
