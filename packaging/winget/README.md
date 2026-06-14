@@ -24,7 +24,9 @@ cross-repo PR to `microsoft/winget-pkgs`, so a personal access token is needed:
 
 1. **Fork** `microsoft/winget-pkgs` into the
    `Illimitable-Consulting-Private-Limited` org (winget-releaser pushes the
-   version branch to this fork, then PRs upstream from it).
+   version branch to this fork, then PRs upstream from it). The workflow already
+   sets `fork-user: Illimitable-Consulting-Private-Limited`, so the fork must
+   live in the org and the `WINGET_TOKEN` PAT must have push access to it.
 2. **Create a classic PAT** with the `public_repo` scope (fine-grained tokens
    also work with *Contents: read/write* + *Pull requests: read/write* on the
    fork). Use an account that has access to the fork.

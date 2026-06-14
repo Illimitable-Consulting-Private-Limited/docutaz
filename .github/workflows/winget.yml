@@ -29,4 +29,8 @@ jobs:
           # Only the NSIS setup .exe is an installer; the portable zip and the
           # Linux/macOS archives in the same release must not be picked up.
           installers-regex: 'setup\.exe$'
+          # The winget-pkgs fork lives in the org, not the token owner's account
+          # (which is what fork-user defaults to), so name it explicitly. The
+          # WINGET_TOKEN PAT must have push access to this fork.
+          fork-user: Illimitable-Consulting-Private-Limited
           token: ${{ secrets.WINGET_TOKEN }}
