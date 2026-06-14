@@ -55,7 +55,7 @@ Publisher: Illimitable Consulting Private Limited
 PublisherUrl: https://illimitable.in
 PublisherSupportUrl: https://github.com/Illimitable-Consulting-Private-Limited/docutaz/issues
 PackageUrl: https://illimitable-consulting-private-limited.github.io/docutaz/
-License: GPL-3.0-or-later
+License: GPL-3.0-only
 LicenseUrl: https://github.com/Illimitable-Consulting-Private-Limited/docutaz/blob/main/LICENSE
 Moniker: docutaz
 ShortDescription: Cross-platform MongoDB management tool (MongoDB 8+ GUI).
