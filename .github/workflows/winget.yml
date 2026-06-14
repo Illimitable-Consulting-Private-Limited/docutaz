@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Submit manifest with winget-releaser
-        uses: vedantmgoyal/winget-releaser@v2
+        uses: vedantmgoyal9/winget-releaser@v2
         with:
           identifier: Illimitable.Docutaz
           # Only the NSIS setup .exe is an installer; the portable zip and the

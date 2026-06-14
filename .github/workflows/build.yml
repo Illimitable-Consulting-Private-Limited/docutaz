@@ -15,6 +15,7 @@ on:
       - "**/*.md"
       - "LICENSE"
       - ".github/workflows/pages.yml"
+      - ".github/workflows/winget.yml"
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
