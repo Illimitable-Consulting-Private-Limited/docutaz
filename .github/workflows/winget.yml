@@ -1,0 +1,32 @@
+name: Submit to Winget
+
+# Publish Docutaz to the Windows Package Manager community repo
+# (microsoft/winget-pkgs) automatically whenever a GitHub Release is published.
+#
+# The `released` event fires when a release is published as a *full* release
+# (not a draft, not a pre-release) — exactly when the Windows installer asset
+# (docutaz-<ver>-windows-x86_64-setup.exe) is already attached. Pre-releases
+# (tags like v2.2.0-rc1) do NOT trigger this, so RCs never reach Winget.
+#
+# One-time setup is required before this works — see packaging/winget/README.md:
+#   1. Fork microsoft/winget-pkgs into this org.
+#   2. Create a classic PAT with `public_repo` scope and add it as the
+#      WINGET_TOKEN repository secret.
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  winget:
+    name: Open winget-pkgs PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Submit manifest with winget-releaser
+        uses: vedantmgoyal/winget-releaser@v2
+        with:
+          identifier: Illimitable.Docutaz
+          # Only the NSIS setup .exe is an installer; the portable zip and the
+          # Linux/macOS archives in the same release must not be picked up.
+          installers-regex: 'setup\.exe$'
+          token: ${{ secrets.WINGET_TOKEN }}
