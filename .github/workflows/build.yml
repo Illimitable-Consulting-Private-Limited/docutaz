@@ -477,11 +477,52 @@ jobs:
             throw "binary did not launch / print version (exit $code)"
           }
 
+      - name: Build installer (NSIS)
+        shell: pwsh
+        run: |
+          # Package the same assembled, smoke-tested portable dir as the zip into
+          # a Nullsoft installer (Start-menu/Desktop shortcuts, Add/Remove entry,
+          # silent /S install for Winget). makensis ships with the runner image
+          # but isn't always on PATH, so fall back to its known location.
+          $ver = "${{ steps.ver.outputs.version }}"
+          $outDir = "docutaz-$ver-windows-x86_64"
+          $setup = "docutaz-$ver-windows-x86_64-setup.exe"
+          $makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          if (-not (Test-Path $makensis)) { $makensis = "makensis" }
+          & $makensis /DVERSION=$ver /DINSTALL_SRC=$outDir /DOUTFILE=$setup install\windows\docutaz.nsi
+          if ($LASTEXITCODE -ne 0) { throw "makensis failed ($LASTEXITCODE)" }
+          if (-not (Test-Path $setup)) { throw "installer not produced: $setup" }
+          Write-Host "Built $setup ($([math]::Round((Get-Item $setup).Length/1MB,1)) MB)"
+
+      - name: Test installer (silent install + launch)
+        shell: pwsh
+        run: |
+          # Validate exactly what Winget will: a silent (/S) install that lands
+          # the exe in Program Files, registers an uninstall entry, and produces
+          # a launchable binary.
+          $ver = "${{ steps.ver.outputs.version }}"
+          $setup = "docutaz-$ver-windows-x86_64-setup.exe"
+          $installDir = "$env:ProgramFiles\Docutaz"
+          Start-Process -FilePath ".\$setup" -ArgumentList "/S" -Wait
+          $exe = Join-Path $installDir "docutaz.exe"
+          if (-not (Test-Path $exe)) { throw "silent install did not place docutaz.exe in $installDir" }
+          $reg = "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\Docutaz"
+          if (-not (Test-Path $reg)) { throw "installer did not register an uninstall entry" }
+          Write-Host "registered DisplayVersion=$((Get-ItemProperty $reg).DisplayVersion)"
+          # The installed copy must launch (same offscreen --version probe).
+          Copy-Item "$env:QT_ROOT_DIR\plugins\platforms\qoffscreen.dll" "$installDir\platforms\" -Force
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $out = & $exe --version 2>&1 | Out-String
+          Write-Host "installed exe output: $out"
+          if ($out -notmatch "Docutaz") { throw "installed binary did not print version" }
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: docutaz-windows
-          path: docutaz-*-windows-x86_64.zip
+          path: |
+            docutaz-*-windows-x86_64.zip
+            docutaz-*-windows-x86_64-setup.exe
           if-no-files-found: error
 
   # ──────────────────────────────────────────────────────────────────────────
@@ -665,4 +706,5 @@ jobs:
             dist/docutaz-linux/docutaz-*-linux-x86_64.tar.gz
             dist/docutaz-linux-arm64/docutaz-*-linux-aarch64.tar.gz
             dist/docutaz-windows/docutaz-*-windows-x86_64.zip
+            dist/docutaz-windows/docutaz-*-windows-x86_64-setup.exe
             dist/docutaz-macos/docutaz-*-macos-arm64.zip

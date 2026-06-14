@@ -1,0 +1,130 @@
+; Docutaz Windows installer (NSIS / Nullsoft).
+;
+; This is a *standalone* script: it packages the fully-assembled, smoke-tested
+; portable directory that the CI Windows job already produces for the zip
+; (windeployqt'd docutaz.exe + every runtime DLL + platform plugins). We do NOT
+; drive this through CPack — the portable dir is already complete and verified,
+; so pointing makensis at it is simpler and less fragile than re-deriving the
+; file set from install() rules.
+;
+; Invoked from the repo root by CI as:
+;   makensis /DVERSION=2.1.0 \
+;            /DINSTALL_SRC=docutaz-2.1.0-windows-x86_64 \
+;            /DOUTFILE=docutaz-2.1.0-windows-x86_64-setup.exe \
+;            install\windows\docutaz.nsi
+;
+; Produces a per-machine installer (Program Files) with Start-menu + Desktop
+; shortcuts, an Add/Remove-Programs entry, and a matching uninstaller. Supports
+; silent install/uninstall via /S — required by Winget (InstallerType: nullsoft).
+
+Unicode true
+
+!ifndef VERSION
+  !define VERSION "0.0.0"
+!endif
+!ifndef INSTALL_SRC
+  !error "INSTALL_SRC (the assembled portable dir) must be passed with /DINSTALL_SRC=..."
+!endif
+!ifndef OUTFILE
+  !define OUTFILE "docutaz-${VERSION}-windows-x86_64-setup.exe"
+!endif
+
+!define APP_NAME      "Docutaz"
+!define PUBLISHER     "Illimitable Consulting Private Limited"
+!define EXE_NAME      "docutaz.exe"
+!define ABOUT_URL     "https://illimitable-consulting-private-limited.github.io/docutaz/"
+!define UNINST_KEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
+
+; Assets sit next to this script; __FILEDIR__ keeps the paths portable
+; regardless of the working directory makensis is launched from.
+!define ASSET_DIR     "${__FILEDIR__}"
+
+Name "${APP_NAME} ${VERSION}"
+OutFile "${OUTFILE}"
+InstallDir "$PROGRAMFILES64\${APP_NAME}"
+; Reuse the previous install location on upgrade, if any.
+InstallDirRegKey HKLM "${UNINST_KEY}" "InstallLocation"
+RequestExecutionLevel admin           ; per-machine install needs elevation
+SetCompressor /SOLID lzma
+ShowInstDetails show
+ShowUnInstDetails show
+
+!include "MUI2.nsh"
+!include "FileFunc.nsh"
+
+; ---- Modern UI look ----
+!define MUI_ICON   "${ASSET_DIR}\docutaz.ico"
+!define MUI_UNICON "${ASSET_DIR}\docutaz.ico"
+!define MUI_HEADERIMAGE
+!define MUI_HEADERIMAGE_BITMAP "${ASSET_DIR}\nsis-topbar.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "${ASSET_DIR}\nsis-sidebar.bmp"
+!define MUI_UNWELCOMEFINISHPAGE_BITMAP "${ASSET_DIR}\nsis-sidebar.bmp"
+!define MUI_ABORTWARNING
+
+; Offer to launch the app from the finish page.
+!define MUI_FINISHPAGE_RUN "$INSTDIR\${EXE_NAME}"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch ${APP_NAME}"
+
+; ---- Pages ----
+!insertmacro MUI_PAGE_WELCOME
+!insertmacro MUI_PAGE_LICENSE "${__FILEDIR__}\..\..\LICENSE"
+!insertmacro MUI_PAGE_DIRECTORY
+!insertmacro MUI_PAGE_INSTFILES
+!insertmacro MUI_PAGE_FINISH
+
+!insertmacro MUI_UNPAGE_CONFIRM
+!insertmacro MUI_UNPAGE_INSTFILES
+
+!insertmacro MUI_LANGUAGE "English"
+
+; ---------------------------------------------------------------------------
+Section "Install"
+  SetOutPath "$INSTDIR"
+
+  ; Clean any previous install in-place first so renamed/removed DLLs across
+  ; versions don't linger (Winget upgrades run the new installer over the old).
+  ReadRegStr $0 HKLM "${UNINST_KEY}" "QuietUninstallString"
+  ${If} $0 != ""
+    DetailPrint "Removing previous ${APP_NAME} installation..."
+    ; _?=$INSTDIR keeps the uninstaller from copying itself to %TEMP%, so the
+    ; call is synchronous and we can install over it immediately afterwards.
+    ExecWait '$0 _?=$INSTDIR'
+  ${EndIf}
+
+  ; Pull in the entire assembled portable directory (exe, all DLLs, plugins).
+  File /r "${INSTALL_SRC}\*"
+
+  ; Start-menu + Desktop shortcuts.
+  CreateShortCut "$SMPROGRAMS\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}"
+  CreateShortCut "$DESKTOP\${APP_NAME}.lnk"    "$INSTDIR\${EXE_NAME}"
+
+  ; Uninstaller + Add/Remove Programs registration.
+  WriteUninstaller "$INSTDIR\uninstall.exe"
+  WriteRegStr   HKLM "${UNINST_KEY}" "DisplayName"     "${APP_NAME}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "DisplayVersion"  "${VERSION}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "Publisher"       "${PUBLISHER}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "DisplayIcon"     "$INSTDIR\${EXE_NAME}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "InstallLocation" "$INSTDIR"
+  WriteRegStr   HKLM "${UNINST_KEY}" "URLInfoAbout"    "${ABOUT_URL}"
+  WriteRegStr   HKLM "${UNINST_KEY}" "UninstallString"      '"$INSTDIR\uninstall.exe"'
+  WriteRegStr   HKLM "${UNINST_KEY}" "QuietUninstallString" '"$INSTDIR\uninstall.exe" /S'
+  WriteRegDWORD HKLM "${UNINST_KEY}" "NoModify" 1
+  WriteRegDWORD HKLM "${UNINST_KEY}" "NoRepair" 1
+
+  ; Report the on-disk size to Add/Remove Programs (in KB).
+  ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
+  IntFmt $0 "0x%08X" $0
+  WriteRegDWORD HKLM "${UNINST_KEY}" "EstimatedSize" $0
+SectionEnd
+
+; ---------------------------------------------------------------------------
+Section "Uninstall"
+  Delete "$SMPROGRAMS\${APP_NAME}.lnk"
+  Delete "$DESKTOP\${APP_NAME}.lnk"
+
+  ; Remove everything we installed. RMDir /r on the install dir is safe because
+  ; we install into a dedicated per-app directory under Program Files.
+  RMDir /r "$INSTDIR"
+
+  DeleteRegKey HKLM "${UNINST_KEY}"
+SectionEnd
