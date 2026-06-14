@@ -477,13 +477,18 @@ jobs:
             throw "binary did not launch / print version (exit $code)"
           }
 
+      - name: Install NSIS
+        shell: pwsh
+        run: choco install nsis -y --no-progress
+
       - name: Build installer (NSIS)
         shell: pwsh
         run: |
           # Package the same assembled, smoke-tested portable dir as the zip into
           # a Nullsoft installer (Start-menu/Desktop shortcuts, Add/Remove entry,
-          # silent /S install for Winget). makensis ships with the runner image
-          # but isn't always on PATH, so fall back to its known location.
+          # silent /S install for Winget). choco installs makensis to a known
+          # Program Files location but doesn't add it to this shell's PATH, so
+          # invoke it by full path (fall back to PATH just in case).
           $ver = "${{ steps.ver.outputs.version }}"
           $outDir = "docutaz-$ver-windows-x86_64"
           $setup = "docutaz-$ver-windows-x86_64-setup.exe"
