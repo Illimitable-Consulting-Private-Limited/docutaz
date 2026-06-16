@@ -91,6 +91,16 @@ namespace Docutaz
             constexpr int PING_INTERVAL_MSEC{60 * 1000};
             _timerId = startTimer(PING_INTERVAL_MSEC);
             _dbAutocompleteCacheTimerId = startTimer(30000);
+
+            // Warm up the mongosh subprocess in the background now that the
+            // connection is up, so the user's first query doesn't pay the spawn
+            // + preamble + async-rewriter cold start (very noticeable on slower
+            // CPUs). Queued onto this worker thread so it runs after the connect
+            // handshake reply is sent, overlapping with the user browsing the
+            // explorer / typing their first query rather than blocking either.
+            QMetaObject::invokeMethod(this, [this] {
+                if (_scriptEngine) _scriptEngine->prewarm();
+            }, Qt::QueuedConnection);
         } catch (const std::exception &ex) {
             auto const msg{"Failed to initialize MongoWorker. Reason: "};
             sendLog(this, LogEvent::RBM_ERROR, msg + std::string(ex.what()));

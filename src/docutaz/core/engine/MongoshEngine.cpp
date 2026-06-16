@@ -160,6 +160,16 @@ MongoShellExecResult MongoshEngine::exec(const std::string& script,
         results, _settings->serverHost(), true, _currentDb, true);
 }
 
+void MongoshEngine::prewarm() {
+    QMutexLocker lock(&_mutex);
+    if (_mongoshPath.isEmpty()) return;
+    if (_proc && _proc->state() == QProcess::Running) return;
+    // startProcess() runs spawn → wait-for-prompt → preamble → warmUp(); doing
+    // it here (off the first query) is the whole point. Record the outcome so a
+    // failed warm-up doesn't get silently retried as "running" by exec().
+    _failed = !startProcess(_currentDb);
+}
+
 void MongoshEngine::interrupt() {
     if (_proc && _proc->state() == QProcess::Running) {
 #ifdef Q_OS_UNIX

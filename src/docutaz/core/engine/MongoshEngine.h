@@ -34,6 +34,13 @@ public:
                                const std::string& dbName = {},
                                AggrInfo aggrInfo = AggrInfo());
 
+    // Eagerly start (and warm up) the mongosh subprocess if it isn't already
+    // running, so the user's first query doesn't pay the spawn + preamble +
+    // async-rewriter cold-start cost. Safe to call once the connection is
+    // established; a no-op if mongosh is missing or already running. Must run on
+    // the engine's own thread (it owns the QProcess).
+    void prewarm();
+
     void interrupt();
     void use(const std::string& dbName);
     void setBatchSize(int batchSize);
