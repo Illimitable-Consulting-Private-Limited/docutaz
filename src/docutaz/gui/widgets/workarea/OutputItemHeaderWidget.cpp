@@ -164,7 +164,7 @@ namespace Docutaz
             _dockUndockButton->setVisible(true);
         }
       
-        if(tabbedResults)
+        if(tabbedResults && !QtUtils::isDarkPalette(this))
             setStyleSheet("background-color: white");
     }
 

@@ -2,6 +2,9 @@
 
 #include <QThread>
 #include <QTreeWidgetItem>
+#include <QApplication>
+#include <QPalette>
+#include <QWidget>
 
 namespace Docutaz
 {
@@ -52,6 +55,12 @@ namespace Docutaz
                 root->removeChild(item);
                 delete item;
             }
+        }
+
+        bool isDarkPalette(const QWidget *const w)
+        {
+            const QPalette pal = w ? w->palette() : qApp->palette();
+            return pal.color(QPalette::Window).lightness() < 128;
         }
     }
 }

@@ -1,8 +1,10 @@
 #include "docutaz/gui/widgets/workarea/CollectionStatsTreeWidget.h"
 
 #include <QHeaderView>
+#include <QPalette>
 
 #include "docutaz/gui/widgets/workarea/CollectionStatsTreeItem.h"
+#include "docutaz/core/utils/QtUtils.h"
 
 namespace Docutaz
 {
@@ -14,9 +16,12 @@ namespace Docutaz
         colums << "Name" << "Count" << "Size" << "Storage" << "Index" << "Average Object" << "Padding";
         setHeaderLabels(colums);
 
-        setStyleSheet(
-            "QTreeWidget { border-left: 1px solid #c7c5c4; border-top: 1px solid #c7c5c4; }"
-        );
+        {
+            const QString line = QtUtils::isDarkPalette(this)
+                ? palette().window().color().lighter(140).name()
+                : QStringLiteral("#c7c5c4");
+            setStyleSheet(QString("QTreeWidget { border-left: 1px solid %1; border-top: 1px solid %1; }").arg(line));
+        }
 
         QList<QTreeWidgetItem *> items;
         size_t documentsCount = documents.size();

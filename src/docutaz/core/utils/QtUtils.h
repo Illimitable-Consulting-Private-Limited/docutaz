@@ -6,6 +6,7 @@ QT_BEGIN_NAMESPACE
 class QThread;
 class QTreeWidgetItem;
 class QAbstractItemModel;
+class QWidget;
 QT_END_NAMESPACE
 
 #ifdef QT_NO_DEBUG
@@ -28,6 +29,12 @@ namespace Docutaz
         void cleanUpThread(QThread *const thread);
 
         void clearChildItems(QTreeWidgetItem *root);
+
+        // True when the active palette is a dark one (dark desktop theme). The
+        // app follows the OS palette and has no theme of its own, so widgets
+        // that hardcode light colours use this to pick legible alternatives.
+        // Pass a widget to read its palette, or nullptr to use the app palette.
+        bool isDarkPalette(const QWidget *w = nullptr);
 
         template<typename Type>
         inline Type item(const QModelIndex &index)

@@ -1,6 +1,7 @@
 #include "docutaz/gui/widgets/workarea/WelcomeTab.h"
 
 #include <QLabel>
+#include <QPalette>
 #include <QResizeEvent>
 #include <QScrollArea>
 #include <QShowEvent>
@@ -18,23 +19,27 @@
 namespace Docutaz
 {
 
+// Body copy as a template; the %MUTED%/%INTRO%/%HR%/%STRONG%/%BODY% colour
+// tokens are filled in at runtime from the palette so the text stays legible in
+// both light and dark themes (the app follows the OS palette, it has no theme of
+// its own).
 static const char* BODY_HTML = R"(
 <table width='100%' cellspacing='0' cellpadding='0'>
 <tr><td>
 
-<p style='margin:0 0 4px 0; font-size:11pt; color:#666;'>
+<p style='margin:0 0 4px 0; font-size:11pt; color:%MUTED%;'>
   <i>Pronounced &nbsp;<b>dok &middot; you &middot; taz</b></i>
 </p>
 
-<p style='margin:0 0 18px 0; font-size:13pt; color:#222;'>
+<p style='margin:0 0 18px 0; font-size:13pt; color:%INTRO%;'>
   A cross-platform MongoDB management tool<br>
   built for developers who work with documents.
 </p>
 
-<hr style='border:none; border-top:1px solid #ddd; margin:0 0 18px 0;'/>
+<hr style='border:none; border-top:1px solid %HR%; margin:0 0 18px 0;'/>
 
-<p style='margin:0 0 6px 0; font-size:11pt; color:#111;'><b>About the name</b></p>
-<p style='margin:0 0 18px 0; font-size:10pt; color:#444; line-height:1.6;'>
+<p style='margin:0 0 6px 0; font-size:11pt; color:%STRONG%;'><b>About the name</b></p>
+<p style='margin:0 0 18px 0; font-size:10pt; color:%BODY%; line-height:1.6;'>
   <i>Dotaz</i> is the Czech word for <i>query</i>.
   Combine it with <i>Document</i> and you get <b>Docutaz</b> &mdash;
   a tool that puts document querying at the centre of your workflow.
@@ -42,8 +47,8 @@ static const char* BODY_HTML = R"(
   do with them (query), in one word that crosses language boundaries.
 </p>
 
-<p style='margin:0 0 6px 0; font-size:11pt; color:#111;'><b>What you can do</b></p>
-<ul style='margin:0 0 18px 0; padding-left:20px; font-size:10pt; color:#444; line-height:1.8;'>
+<p style='margin:0 0 6px 0; font-size:11pt; color:%STRONG%;'><b>What you can do</b></p>
+<ul style='margin:0 0 18px 0; padding-left:20px; font-size:10pt; color:%BODY%; line-height:1.8;'>
   <li>Connect to local or remote MongoDB instances, replica sets and authenticated deployments</li>
   <li>Browse databases, collections and documents in tree, table or raw text view</li>
   <li>Run multi-statement JavaScript queries using the built-in mongosh shell</li>
@@ -53,8 +58,8 @@ static const char* BODY_HTML = R"(
   <li>Use <code>use &lt;database&gt;</code> directly in the shell to switch contexts</li>
 </ul>
 
-<p style='margin:0 0 6px 0; font-size:11pt; color:#111;'><b>Getting started</b></p>
-<p style='margin:0; font-size:10pt; color:#444; line-height:1.6;'>
+<p style='margin:0 0 6px 0; font-size:11pt; color:%STRONG%;'><b>Getting started</b></p>
+<p style='margin:0; font-size:10pt; color:%BODY%; line-height:1.6;'>
   Click <b>Connect</b> in the toolbar or press
   <b>Ctrl+,</b> to open the connection manager and add your first MongoDB server.
   Docutaz will remember your connections across sessions.
@@ -75,21 +80,38 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
     _logo->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     _logo->setContentsMargins(0, 0, 0, 0);
 
+    const bool dark = QtUtils::isDarkPalette(this);
+
+    QString bodyHtml = QString::fromUtf8(BODY_HTML);
+    bodyHtml.replace("%MUTED%",  dark ? "#9aa0a6" : "#666");
+    bodyHtml.replace("%INTRO%",  dark ? "#e8eaed" : "#222");
+    bodyHtml.replace("%HR%",     dark ? "#3c4043" : "#ddd");
+    bodyHtml.replace("%STRONG%", dark ? "#f1f3f4" : "#111");
+    bodyHtml.replace("%BODY%",   dark ? "#c0c4c9" : "#444");
+
     auto* body = new QLabel(this);
     body->setTextFormat(Qt::RichText);
     body->setWordWrap(true);
     body->setOpenExternalLinks(true);
     body->setContentsMargins(0, 0, 0, 0);
-    body->setText(QString::fromUtf8(BODY_HTML));
+    body->setText(bodyHtml);
     body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     // Proactive "mongosh not detected" card — shown only when mongosh can't be
     // found, so the unzip-and-run crowd is nudged before they hit a failed query.
+    // Amber warning styling, toned down for dark palettes; the message text
+    // colour is pinned too, otherwise it inherits the (light) palette text and
+    // washes out against the card.
     _mongoshCard = new QFrame(this);
     _mongoshCard->setObjectName("mongoshCard");
     _mongoshCard->setStyleSheet(
-        "QFrame#mongoshCard { background-color: #FFF4E5; border: 1px solid #E6A23C;"
-        " border-radius: 6px; }");
+        dark
+        ? "QFrame#mongoshCard { background-color: #3a2f15; border: 1px solid #a17a2c;"
+          " border-radius: 6px; }"
+          " QFrame#mongoshCard QLabel { color: #f3d9a6; background: transparent; }"
+        : "QFrame#mongoshCard { background-color: #FFF4E5; border: 1px solid #E6A23C;"
+          " border-radius: 6px; }"
+          " QFrame#mongoshCard QLabel { color: #5c4612; background: transparent; }");
     {
         auto* cardLayout = new QVBoxLayout(_mongoshCard);
         cardLayout->setContentsMargins(14, 12, 14, 12);

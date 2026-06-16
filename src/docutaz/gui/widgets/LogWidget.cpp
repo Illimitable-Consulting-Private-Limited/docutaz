@@ -6,6 +6,7 @@
 #include <QTime>
 #include <QAction>
 #include <QPlainTextEdit>
+#include <QPalette>
 #include "docutaz/core/utils/QtUtils.h"
 
 namespace Docutaz
@@ -47,7 +48,9 @@ namespace Docutaz
 
         // Nice color for the future: "#CD9800" :)
 
-        QColor textColor = QColor(Qt::black);
+        // Default to the palette text colour (not a fixed black) so normal log
+        // lines stay legible under a dark theme.
+        QColor textColor = _logTextEdit->palette().color(QPalette::Text);
 
         if (level == mongo::logger::LogSeverity::Error())
             textColor = QColor("#CD0000");

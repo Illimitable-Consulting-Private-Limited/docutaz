@@ -3,6 +3,9 @@
 #include <QMouseEvent>
 #include <QTabWidget>
 #include <QScrollArea>
+#include <QPalette>
+
+#include "docutaz/core/utils/QtUtils.h"
 
 namespace Docutaz
 {
@@ -145,6 +148,61 @@ namespace Docutaz
         QString aga1 = gradientOne.name();
         QString aga2 = gradientTwo.name();
         QString aga3 = background.name();
+
+        // The light-mode tab colours below are hardcoded and unreadable against a
+        // dark palette (light text on a near-white gradient). Derive a dark
+        // equivalent from the window colour so tabs stay legible.
+        if (QtUtils::isDarkPalette(this)) {
+            const QString text     = palette().color(QPalette::WindowText).name();
+            const QString unselTop = background.lighter(118).name();
+            const QString unselBot = background.lighter(108).name();
+            const QString border   = background.lighter(140).name();
+            const QString selected = background.lighter(150).name();
+
+            return QString(
+                #ifndef __APPLE__
+                "QTabBar::tab:first { margin-left: 4px; }  "
+                "QTabBar::tab:last { margin-right: 1px; }  "
+                #endif
+                "QTabBar::close-button { "
+                #ifdef __APPLE__
+                    "image: url(:/docutaz/icons/close_2_Mac_16x16.png);"
+                #else
+                    "image: url(:/docutaz/icons/close_2_16x16.png);"
+                #endif
+                    "width: 10px; height: 10px;"
+                "}"
+                "QTabBar::close-button:hover { "
+                    "image: url(:/docutaz/icons/close_hover_16x16.png);"
+                    "width: 15px; height: 15px;"
+                "}"
+                "QTabBar::tab {"
+                    "color: %5;"
+                    "background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
+                                                "stop: 0 %1, stop: 1.0 %2);"
+                    "border: 1px solid %3;"
+                    "border-bottom-color: %3;"
+                    "border-top-left-radius: 6px;"
+                    "border-top-right-radius: 6px;"
+                    "padding: 4px 0px 5px 0px;"
+                    #ifndef __APPLE__
+                    "max-width: 200px;"
+                    "margin: 0px; margin-left: 1px; margin-right: -3px;"
+                    #endif
+                "}"
+                "QTabBar::tab:selected, QTabBar::tab:hover {"
+                    "background-color: %4;"
+                "}"
+                "QTabBar::tab:selected {"
+                    "border-color: %3;"
+                    "border-bottom-color: %4;"
+                "}"
+                "QTabBar::tab:!selected { margin-top: 2px; }  "
+                #ifndef __APPLE__
+                "QTabBar::tab:only-one { margin-top: 2px; margin-left:4px; }"
+                #endif
+            ).arg(unselTop, unselBot, border, selected, text);
+        }
 
         QString styles = QString(
             #ifndef __APPLE__

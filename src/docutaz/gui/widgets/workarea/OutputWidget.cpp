@@ -4,6 +4,7 @@
 #include <QSplitter>
 #include <QWidget>
 #include <QMouseEvent>
+#include <QPalette>
 
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/domain/MongoShell.h"
@@ -270,7 +271,54 @@ namespace Docutaz
         QString aga2 = gradientTwo.name();
         QString aga3 = background.name();
 
-#ifdef __APPLE__      
+        // The light-mode tab colours below are unreadable under a dark palette
+        // (light text on near-white tabs); derive a dark equivalent from the
+        // window colour instead. Same approach as WorkAreaTabBar.
+        if (QtUtils::isDarkPalette(this)) {
+            const QString text     = palette().color(QPalette::WindowText).name();
+            const QString unselTop = background.lighter(118).name();
+            const QString unselBot = background.lighter(108).name();
+            const QString border   = background.lighter(140).name();
+            const QString selected = background.lighter(150).name();
+
+            return QString(
+                "QTabWidget::pane { background-color: %6; }"
+                "QTabBar::close-button { "
+                #ifdef __APPLE__
+                    "image: url(:/docutaz/icons/close_2_Mac_16x16.png);"
+                #else
+                    "image: url(:/docutaz/icons/close_2_16x16.png);"
+                #endif
+                    "width: 10px; height: 10px;"
+                "}"
+                "QTabBar::close-button:hover { "
+                    "image: url(:/docutaz/icons/close_hover_16x16.png);"
+                    "width: 15px; height: 15px;"
+                "}"
+                "QTabBar::tab {"
+                    "color: %5;"
+                    "font-size: 11px;"
+                    "background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
+                                                "stop: 0 %1, stop: 1.0 %2);"
+                    "border: 1px solid %3;"
+                    "border-bottom-color: %3;"
+                    "border-top-left-radius: 6px;"
+                    "border-top-right-radius: 6px;"
+                    "padding: 4px 4px 5px 8px;"
+                "}"
+                "QTabBar::tab:selected, QTabBar::tab:hover {"
+                    "background-color: %4;"
+                "}"
+                "QTabBar::tab:selected {"
+                    "margin-top: 1px;"
+                    "border-color: %3;"
+                    "border-bottom-color: %4;"
+                "}"
+                "QTabBar::tab:!selected { margin-top: 2px; }"
+            ).arg(unselTop, unselBot, border, selected, text, background.name());
+        }
+
+#ifdef __APPLE__
         QString styles = QString(
             "QTabWidget::pane { background-color: white; }"   // This style disables default styling under Mac
             "QTabWidget::tab-bar {"

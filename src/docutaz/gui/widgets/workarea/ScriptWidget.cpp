@@ -2,6 +2,7 @@
 
 #include <QVBoxLayout>
 #include <QKeyEvent>
+#include <QPalette>
 #include <QCompleter>
 #include <QStringListModel>
 #include <Qsci/qscilexerjavascript.h>
@@ -55,8 +56,14 @@ namespace Docutaz
         _textChanged(false),
         _disableTextAndCursorNotifications(false)
     {
-        setStyleSheet("QFrame {background-color: rgb(255, 255, 255); border: 0px solid #c7c5c4;"
-                      "border-radius: 0px; margin: 0px; padding: 0px;}");
+        // Forcing white here makes the connection/server/db indicator labels
+        // (which use the palette text colour) invisible under a dark desktop
+        // theme, so follow the palette window colour instead.
+        const QString bg = QtUtils::isDarkPalette(this)
+            ? palette().color(QPalette::Window).name()
+            : QStringLiteral("rgb(255, 255, 255)");
+        setStyleSheet(QString("QFrame {background-color: %1; border: 0px solid #c7c5c4;"
+                      "border-radius: 0px; margin: 0px; padding: 0px;}").arg(bg));
 
         _queryText = new FindFrame(this);
         _topStatusBar = new TopStatusBar(_shell->server()->connectionRecord()->connectionName(), 

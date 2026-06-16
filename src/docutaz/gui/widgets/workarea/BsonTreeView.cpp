@@ -4,6 +4,7 @@
 #include <QAction>
 #include <QMenu>
 #include <QKeyEvent>
+#include <QPalette>
 
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/GuiRegistry.h"
@@ -33,7 +34,12 @@ namespace Docutaz
         _collapseRecursive->setShortcut(QKeySequence(Qt::ALT + Qt::Key_Left));
         VERIFY(connect(_collapseRecursive, SIGNAL(triggered()), SLOT(onCollapseRecursive())));
 
-        setStyleSheet("QTreeView { border-left: 1px solid #c7c5c4; border-top: 1px solid #c7c5c4; }");
+        {
+            const QString line = QtUtils::isDarkPalette(this)
+                ? palette().window().color().lighter(140).name()
+                : QStringLiteral("#c7c5c4");
+            setStyleSheet(QString("QTreeView { border-left: 1px solid %1; border-top: 1px solid %1; }").arg(line));
+        }
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         header()->setSectionResizeMode(QHeaderView::Interactive);
 #endif

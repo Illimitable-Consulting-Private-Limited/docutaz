@@ -144,12 +144,17 @@ namespace Docutaz
         QString explorerColor = background.lighter(103).name();
     #endif
 
+        // A faint shade of the window colour for the query backdrop and the
+        // window splitters — replaces the old hardcoded light grey (#E7E5E4),
+        // which showed as a light band under a dark palette.
+        const QString separatorColor = (QtUtils::isDarkPalette(this)
+            ? background.lighter(130) : background.darker(108)).name();
         qApp->setStyleSheet(QString(
-            "QWidget#queryWidget { background-color:#E7E5E4; margin: 0px; padding:0px; } \n"
+            "QWidget#queryWidget { background-color:%2; margin: 0px; padding:0px; } \n"
             "Docutaz--ExplorerTreeWidget#explorerTree { padding: 1px 0px 0px 0px; background-color: %1; border: 0px; } \n"
-            "QMainWindow::separator { background: #E7E5E4; width: 1px; } \n"
+            "QMainWindow::separator { background: %2; width: 1px; } \n"
             "QMessageBox { messagebox-text-interaction-flags: 5; }"  // Make QMessageBox text selectable
-        ).arg(explorerColor));
+        ).arg(explorerColor, separatorColor));
         _openAction = new QAction(GuiRegistry::instance().openIcon(), tr("&Open..."), this);
         _openAction->setToolTip(QString("Load script from the file to the currently opened shell <b>(%1 + O)</b>").arg(controlKey));
         _openAction->setShortcuts(QKeySequence::Open);
@@ -1410,6 +1415,15 @@ namespace Docutaz
             _updateLabel->setTextFormat(Qt::RichText);
             _updateLabel->setOpenExternalLinks(true);   // "Download" opens the release page
             _updateLabel->setContentsMargins(8, 0, 0, 0);
+            // The bar background is always light blue, so pin dark text/link
+            // colours here — otherwise a dark palette renders light-on-light.
+            {
+                QPalette pal = _updateLabel->palette();
+                pal.setColor(QPalette::WindowText, QColor("#0a3d62"));
+                pal.setColor(QPalette::Text, QColor("#0a3d62"));
+                pal.setColor(QPalette::Link, QColor("#0a4b8c"));
+                _updateLabel->setPalette(pal);
+            }
 
             auto const closeButton = new QPushButton(QString(QChar(0x2715)));  // ✕ dismiss
             closeButton->setFlat(true);
@@ -1426,7 +1440,10 @@ namespace Docutaz
 
             _updateBar = new QToolBar(QStringLiteral("Updates"));
             _updateBar->setMovable(false);
-            _updateBar->setStyleSheet("background-color: #b3e0ff; border: none;");  // light blue
+            // Light-blue accent bar with dark text/dismiss button in both themes.
+            _updateBar->setStyleSheet(
+                "QToolBar { background-color: #b3e0ff; border: none; }"
+                " QToolBar QPushButton { color: #0a3d62; }");
             _updateBar->addWidget(barWidget);
             addToolBarBreak();
             addToolBar(_updateBar);

@@ -2,6 +2,7 @@
 
 #include <QKeyEvent>
 #include <QScrollArea>
+#include <QPalette>
 
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/utils/QtUtils.h"
@@ -41,23 +42,43 @@ namespace Docutaz
         QFont font = tab->font();
         font.setPixelSize(12);
         tab->setFont(font);
-        QString styles = QString(
-            "QTabWidget::pane { background-color: white; }"   // This style disables default styling under Mac
-            "QTabWidget::tab-bar {"
-                "alignment: left;"
-            "}"
-            "QTabBar::tab:selected { "
-                "background: white; /*#E1E1E1*/; "
-                "color: #282828;"
-            "} "
-            "QTabBar::tab {"
-                "color: #505050;"
-                "font-size: 11px;"
-                "background: %1;"
-                "border-right: 1px solid #aaaaaa;"
-                "padding: 4px 5px 7px 5px;"
-            "}"
-        ).arg(QWidget::palette().color(QWidget::backgroundRole()).darker(114).name());
+        QString styles;
+        if (QtUtils::isDarkPalette(this)) {
+            // White pane + dark text are unreadable under a dark palette; key the
+            // colours off the window colour instead.
+            const QColor bg = palette().window().color();
+            styles = QString(
+                "QTabWidget::pane { background-color: %1; }"
+                "QTabWidget::tab-bar { alignment: left; }"
+                "QTabBar::tab:selected { background: %2; color: %4; } "
+                "QTabBar::tab {"
+                    "color: %4;"
+                    "font-size: 11px;"
+                    "background: %3;"
+                    "border-right: 1px solid %3;"
+                    "padding: 4px 5px 7px 5px;"
+                "}"
+            ).arg(bg.name(), bg.lighter(150).name(), bg.lighter(118).name(),
+                  palette().color(QPalette::WindowText).name());
+        } else {
+            styles = QString(
+                "QTabWidget::pane { background-color: white; }"   // This style disables default styling under Mac
+                "QTabWidget::tab-bar {"
+                    "alignment: left;"
+                "}"
+                "QTabBar::tab:selected { "
+                    "background: white; /*#E1E1E1*/; "
+                    "color: #282828;"
+                "} "
+                "QTabBar::tab {"
+                    "color: #505050;"
+                    "font-size: 11px;"
+                    "background: %1;"
+                    "border-right: 1px solid #aaaaaa;"
+                    "padding: 4px 5px 7px 5px;"
+                "}"
+            ).arg(QWidget::palette().color(QWidget::backgroundRole()).darker(114).name());
+        }
         setStyleSheet(styles);
 #endif
 
