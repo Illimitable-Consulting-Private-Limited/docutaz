@@ -98,15 +98,22 @@ namespace Docutaz
             _timerId = startTimer(PING_INTERVAL_MSEC);
             _dbAutocompleteCacheTimerId = startTimer(30000);
 
-            // Warm up the mongosh subprocess in the background now that the
-            // connection is up, so the user's first query doesn't pay the spawn
-            // + preamble + async-rewriter cold start (very noticeable on slower
-            // CPUs). Queued onto this worker thread so it runs after the connect
-            // handshake reply is sent, overlapping with the user browsing the
-            // explorer / typing their first query rather than blocking either.
-            QMetaObject::invokeMethod(this, [this] {
-                if (_scriptEngine) _scriptEngine->prewarm();
-            }, Qt::QueuedConnection);
+            // Warm up the mongosh subprocess in the background so the user's
+            // first query doesn't pay the spawn + preamble + async-rewriter cold
+            // start (noticeable on slower CPUs).
+            //
+            // Disabled for now: prewarm() runs synchronously on this worker
+            // thread, so the queued warm-up blocks the LoadDatabaseNames /
+            // LoadCollectionNames events behind it — making the explorer slower
+            // to populate than before, which is a worse first impression than a
+            // cold first query. Re-enable only once warm-up no longer competes
+            // with the worker's request queue (e.g. on its own thread).
+            constexpr bool kWarmUpMongoshOnConnect = false;
+            if (kWarmUpMongoshOnConnect) {
+                QMetaObject::invokeMethod(this, [this] {
+                    if (_scriptEngine) _scriptEngine->prewarm();
+                }, Qt::QueuedConnection);
+            }
         } catch (const std::exception &ex) {
             auto const msg{"Failed to initialize MongoWorker. Reason: "};
             sendLog(this, LogEvent::RBM_ERROR, msg + std::string(ex.what()));
