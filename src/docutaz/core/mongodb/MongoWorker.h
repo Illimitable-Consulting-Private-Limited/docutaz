@@ -52,6 +52,11 @@ namespace Docutaz
         void handle(RemoveDocumentRequest *event);
         void handle(ExecuteQueryRequest *event);
         void handle(ExecuteScriptRequest *event);
+        // Fast path for plain `db.coll.find(...)` scripts: runs them through the
+        // in-process driver (like paging does) instead of mongosh, avoiding the
+        // Node/babel per-query round-trip. Returns true (and replies) when it
+        // handled the script; false means the caller must fall back to mongosh.
+        bool tryDriverFind(ExecuteScriptRequest *event);
         void retry(ExecuteScriptRequest *event);
         void handle(StopScriptRequest *event);
         void handle(AutocompleteRequest *event);

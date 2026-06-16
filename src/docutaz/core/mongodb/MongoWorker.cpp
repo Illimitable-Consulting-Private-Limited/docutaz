@@ -3,8 +3,11 @@
 #include <algorithm>
 #include <exception>
 #include <memory>
+#include <chrono>
 
 #include <QThread>
+#include <QRegularExpression>
+#include <QString>
 
 #include <mongocxx/exception/exception.hpp>
 #include <mongocxx/uri.hpp>
@@ -19,6 +22,9 @@
 #include "docutaz/core/engine/MongoshEngine.h"
 #include "docutaz/core/EventBus.h"
 #include "docutaz/core/mongodb/MongoClient.h"
+#include "docutaz/core/domain/MongoDocument.h"
+#include "docutaz/core/domain/MongoQueryInfo.h"
+#include "docutaz/core/utils/BsonBridge.h"
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/ReplicaSetSettings.h"
 #include "docutaz/core/settings/CredentialSettings.h"
@@ -561,9 +567,169 @@ namespace Docutaz
         }
     }
 
+    namespace {
+        // Index of the ')' matching the '(' at openIdx, tracking quoted strings;
+        // -1 if unbalanced.
+        int matchParen(const QString &s, int openIdx) {
+            int depth = 0;
+            bool inStr = false; QChar quote;
+            for (int i = openIdx; i < s.size(); ++i) {
+                const QChar c = s[i];
+                if (inStr) {
+                    if (c == '\\') { ++i; continue; }
+                    if (c == quote) inStr = false;
+                    continue;
+                }
+                if (c == '\'' || c == '"' || c == '`') { inStr = true; quote = c; continue; }
+                if (c == '(') ++depth;
+                else if (c == ')') { if (--depth == 0) return i; }
+            }
+            return -1;
+        }
+
+        // True if `args` has a top-level comma — i.e. find(filter, projection).
+        // We only fast-path the single-argument form; anything else falls back.
+        bool hasTopLevelComma(const QString &args) {
+            int depth = 0; bool inStr = false; QChar quote;
+            for (int i = 0; i < args.size(); ++i) {
+                const QChar c = args[i];
+                if (inStr) {
+                    if (c == '\\') { ++i; continue; }
+                    if (c == quote) inStr = false;
+                    continue;
+                }
+                if (c == '\'' || c == '"' || c == '`') { inStr = true; quote = c; continue; }
+                else if (c == '(' || c == '[' || c == '{') ++depth;
+                else if (c == ')' || c == ']' || c == '}') --depth;
+                else if (c == ',' && depth == 0) return true;
+            }
+            return false;
+        }
+    } // namespace
+
+    bool MongoWorker::tryDriverFind(ExecuteScriptRequest *event)
+    {
+        // Aggregations have their own (mongosh) paging protocol — never fast-path.
+        if (event->aggrInfo.isValid)
+            return false;
+
+        QString s = QString::fromStdString(event->script).trimmed();
+        if (s.endsWith(';')) { s.chop(1); s = s.trimmed(); }
+        if (s.isEmpty())
+            return false;
+
+        // Leading accessor: db.getCollection('X').find(  or  db.X.find(
+        static const QRegularExpression head(
+            QStringLiteral(R"(^db\.(?:getCollection\(\s*(['"])(.+?)\1\s*\)|([A-Za-z_$][A-Za-z0-9_$]*))\.find\()"));
+        const QRegularExpressionMatch hm = head.match(s);
+        if (!hm.hasMatch())
+            return false;
+        const QString coll = !hm.captured(2).isEmpty() ? hm.captured(2) : hm.captured(3);
+        if (coll.isEmpty())
+            return false;
+
+        const int openParen  = hm.capturedEnd(0) - 1;     // the '(' of find(
+        const int closeParen = matchParen(s, openParen);
+        if (closeParen < 0)
+            return false;
+
+        const QString args = s.mid(openParen + 1, closeParen - openParen - 1).trimmed();
+        if (hasTopLevelComma(args))                        // find(filter, projection)
+            return false;
+
+        mongo::BSONObj filter, sort;
+        int skip = 0, limit = 0;
+        try {
+            if (!args.isEmpty() && args != QLatin1String("{}"))
+                filter = BsonBridge::ejsonToBson(args.toStdString());
+        } catch (...) {
+            return false;   // not strict EJSON (e.g. ObjectId(), unquoted keys) → mongosh
+        }
+
+        // Trailing chain: only .sort()/.skip()/.limit()/.pretty() are safe to map
+        // onto a driver find; anything else (e.g. .forEach, .count) → mongosh.
+        QString rest = s.mid(closeParen + 1).trimmed();
+        while (!rest.isEmpty()) {
+            static const QRegularExpression call(QStringLiteral(R"(^\.([A-Za-z]+)\()"));
+            const QRegularExpressionMatch cm = call.match(rest);
+            if (!cm.hasMatch())
+                return false;
+            const QString method = cm.captured(1);
+            const int o = cm.capturedEnd(0) - 1;
+            const int c = matchParen(rest, o);
+            if (c < 0)
+                return false;
+            const QString a = rest.mid(o + 1, c - o - 1).trimmed();
+            if (method == QLatin1String("pretty")) {
+                // no-op for our rendering
+            } else if (method == QLatin1String("sort")) {
+                try { if (!a.isEmpty() && a != QLatin1String("{}")) sort = BsonBridge::ejsonToBson(a.toStdString()); }
+                catch (...) { return false; }
+            } else if (method == QLatin1String("skip")) {
+                bool ok = false; skip = a.toInt(&ok); if (!ok) return false;
+            } else if (method == QLatin1String("limit")) {
+                bool ok = false; limit = a.toInt(&ok); if (!ok) return false;
+            } else {
+                return false;
+            }
+            rest = rest.mid(c + 1).trimmed();
+        }
+
+        const std::string db = event->databaseName.empty()
+            ? _connSettings->defaultDatabase() : event->databaseName;
+        if (db.empty())
+            return false;
+        const int batch = _batchSize > 0 ? _batchSize : 50;
+
+        // Result metadata mirrors the mongosh "query" result exactly so the tree
+        // view and paging behave identically (limit stays 0 = paged by batch).
+        MongoQueryInfo qi;
+        qi.setBatchSize(batch);
+        qi.setDatabaseName(db);
+        qi.setCollectionName(coll.toStdString());
+        qi.setServerAddress(_connSettings->serverHost());
+        qi.setFilter(filter);
+        qi.setSort(sort);
+        qi.setSkip(skip);
+
+        // First-page fetch: bound to one batch. A limit of 0 would otherwise stream
+        // the whole collection; an explicit smaller .limit() is honoured.
+        MongoQueryInfo fetchQi(qi);
+        fetchQi._limit = (limit > 0 && limit < batch) ? limit : batch;
+
+        std::vector<MongoDocumentPtr> docs;
+        qint64 elapsedMs = 0;
+        try {
+            const auto t0 = std::chrono::steady_clock::now();
+            std::unique_ptr<MongoClient> client(getClient());
+            docs = client->query(fetchQi);
+            client->done();
+            const auto t1 = std::chrono::steady_clock::now();
+            elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        } catch (...) {
+            // Let the mongosh path (with its retry) handle anything that fails here.
+            return false;
+        }
+
+        std::vector<MongoShellResult> results;
+        results.emplace_back("query", "", docs, qi, event->script, elapsedMs);
+        const MongoShellExecResult result(
+            results, _connSettings->serverHost(), true, db, true);
+        reply(event->sender(),
+              new ExecuteScriptResponse(this, result, event->script.empty(), false));
+        return true;
+    }
+
     void MongoWorker::handle(ExecuteScriptRequest *event)
     {
         try {
+            // Browse-style plain finds (collection double-click, "open shell") go
+            // straight through the driver — matching Robo3T's latency instead of
+            // paying the mongosh/Node round-trip. Falls through on anything it
+            // can't safely handle.
+            if (tryDriverFind(event))
+                return;
+
             if (!_scriptEngine) {
                 reply(event->sender(),
                       new ExecuteScriptResponse(
