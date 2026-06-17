@@ -5,6 +5,8 @@
 
 #include <QThread>
 #include <QFile>
+#include <QDir>
+#include <QCoreApplication>
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -43,6 +45,8 @@ MongoshEngine::MongoshEngine(ConnectionSettings* connection, int timeoutSec,
 
 MongoshEngine::~MongoshEngine() {
     stopProcess();
+    if (!_preamblePath.isEmpty())
+        QFile::remove(_preamblePath);
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────
@@ -296,19 +300,45 @@ void MongoshEngine::stopProcess() {
 }
 
 bool MongoshEngine::injectPreamble() {
-    QFile f(":/docutaz/mongosh_preamble.js");
-    if (!f.open(QIODevice::ReadOnly)) return false;
-    const QByteArray preamble = f.readAll();
-    f.close();
-    const int CHUNK = 4096;
-    for (int i = 0; i < preamble.size(); i += CHUNK) {
-        _proc->write(preamble.mid(i, CHUNK));
-        _proc->waitForBytesWritten(1000);
-    }
-    _proc->write("\n");
-    _proc->waitForBytesWritten(1000);
+    const QString path = ensurePreambleFile();
+    if (path.isEmpty()) return false;
+
+    // load() evaluates the whole preamble in a single shot (plain Node), instead
+    // of feeding ~490 lines through the interactive REPL where each top-level
+    // statement is individually run through mongosh's babel async-rewriter and
+    // prompt round-trip. That difference is the bulk of the cold start (~1.1s on
+    // a dev box, more on slow CPUs). The preamble still prints
+    // <<<ROBO_PREAMBLE_READY>>> at its end, so the handshake is unchanged.
+    QString jsPath = path;
+    jsPath.replace('\\', QLatin1String("/"));   // Node accepts '/' on every OS
+    jsPath.replace('"', QLatin1String("\\\""));
+    if (!send("load(\"" + jsPath + "\");"))
+        return false;
     const QByteArray ready = readUntil("<<<ROBO_PREAMBLE_READY>>>", 10000);
     return ready.contains("<<<ROBO_PREAMBLE_READY>>>");
+}
+
+QString MongoshEngine::ensurePreambleFile() {
+    if (!_preamblePath.isEmpty() && QFile::exists(_preamblePath))
+        return _preamblePath;
+
+    QFile res(":/docutaz/mongosh_preamble.js");
+    if (!res.open(QIODevice::ReadOnly)) return {};
+    const QByteArray content = res.readAll();
+    res.close();
+
+    const QString path = QDir::tempPath() + "/docutaz_mongosh_preamble_" +
+        QString::number(QCoreApplication::applicationPid()) + "_" +
+        QString::number(reinterpret_cast<quintptr>(this), 16) + ".js";
+
+    QFile out(path);
+    if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) return {};
+    const bool ok = out.write(content) == content.size();
+    out.close();
+    if (!ok) { QFile::remove(path); return {}; }
+
+    _preamblePath = path;
+    return _preamblePath;
 }
 
 // ── I/O ──────────────────────────────────────────────────────────────────────

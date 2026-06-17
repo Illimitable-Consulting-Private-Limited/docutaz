@@ -59,6 +59,10 @@ private:
     bool startProcess(const std::string& dbName);
     void stopProcess();
     bool injectPreamble();
+    // Extracts the compiled-in preamble resource to a temp file (once per engine)
+    // so it can be loaded with load() in one shot instead of fed line-by-line
+    // through the REPL. Returns the file path, or empty on failure.
+    QString ensurePreambleFile();
     // Run one throwaway query through the full prepare→execute→emit protocol so
     // the user's first real script isn't the first thing the freshly-started
     // mongosh REPL / async-rewriter ever runs. Non-fatal on failure.
@@ -96,6 +100,7 @@ private:
     QProcess* _proc = nullptr;
     QMutex   _mutex;
     QString  _mongoshPath;
+    QString  _preamblePath;
     std::string _currentDb;
 };
 
