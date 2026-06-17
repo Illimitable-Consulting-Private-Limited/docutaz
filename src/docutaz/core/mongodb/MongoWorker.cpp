@@ -25,6 +25,7 @@
 #include "docutaz/core/domain/MongoDocument.h"
 #include "docutaz/core/domain/MongoQueryInfo.h"
 #include "docutaz/core/utils/BsonBridge.h"
+#include "docutaz/shell/bson/json.h"
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/ReplicaSetSettings.h"
 #include "docutaz/core/settings/CredentialSettings.h"
@@ -647,10 +648,15 @@ namespace Docutaz
         mongo::BSONObj filter, sort;
         int skip = 0, limit = 0;
         try {
+            // fromjson() normalizes relaxed shell syntax (unquoted keys, single
+            // quotes, ObjectId()/NumberLong()/...) to strict Extended JSON before
+            // parsing, so common filters like {_id: ObjectId('..')} stay on the
+            // fast driver path instead of cold-starting mongosh. Anything it can't
+            // parse throws → caught below → mongosh fallback (never a wrong result).
             if (!args.isEmpty() && args != QLatin1String("{}"))
-                filter = BsonBridge::ejsonToBson(args.toStdString());
+                filter = mongo::Docutaz::fromjson(args.toStdString());
         } catch (...) {
-            return false;   // not strict EJSON (e.g. ObjectId(), unquoted keys) → mongosh
+            return false;   // not parseable as a document (e.g. /regex/) → mongosh
         }
 
         // Trailing chain: only .sort()/.skip()/.limit()/.pretty() are safe to map
@@ -670,7 +676,7 @@ namespace Docutaz
             if (method == QLatin1String("pretty")) {
                 // no-op for our rendering
             } else if (method == QLatin1String("sort")) {
-                try { if (!a.isEmpty() && a != QLatin1String("{}")) sort = BsonBridge::ejsonToBson(a.toStdString()); }
+                try { if (!a.isEmpty() && a != QLatin1String("{}")) sort = mongo::Docutaz::fromjson(a.toStdString()); }
                 catch (...) { return false; }
             } else if (method == QLatin1String("skip")) {
                 bool ok = false; skip = a.toInt(&ok); if (!ok) return false;
