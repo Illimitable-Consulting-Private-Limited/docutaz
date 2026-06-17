@@ -242,7 +242,7 @@ namespace Docutaz
     void ExplorerCollectionTreeItem::ui_removeDocument()
     {
         openCurrentCollectionShell(
-            "remove({ '' : '' });"
+            "deleteMany({ '' : '' });"
             , false, CursorPosition(0, -10));
     }
 
@@ -268,20 +268,21 @@ namespace Docutaz
     void ExplorerCollectionTreeItem::ui_updateDocument()
     {
         openCurrentCollectionShell(
-            "update(\n"
-            "    // query \n"
+            "updateMany(\n"
+            "    // filter \n"
             "    {\n"
             "        \"key\" : \"value\"\n"
             "    },\n"
             "    \n"
             "    // update \n"
             "    {\n"
+            "        $set : {\n"
+            "        }\n"
             "    },\n"
             "    \n"
             "    // options \n"
             "    {\n"
-            "        \"multi\" : false,  // update only one document \n"
-            "        \"upsert\" : false  // insert a new document, if no existing document match the query \n"
+            "        \"upsert\" : false  // insert a new document, if no existing document matches the filter \n"
             "    }\n"
             ");", false);
     }
