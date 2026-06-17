@@ -3,9 +3,13 @@
 #include <QPainter>
 #include <QApplication>
 #include <QKeyEvent>
+#include <QContextMenuEvent>
+#include <QMenu>
+#include <QAction>
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/editors/JsBeautifier.h"
 #include "docutaz/core/utils/QtUtils.h"
 
 namespace
@@ -154,6 +158,14 @@ namespace Docutaz
             return;
         }
 
+        if ((keyEvent->modifiers() & Qt::ControlModifier) &&
+            (keyEvent->modifiers() & Qt::ShiftModifier) &&
+            keyEvent->key() == Qt::Key_F) {
+            keyEvent->accept();
+            formatCode();
+            return;
+        }
+
         if (((keyEvent->modifiers() & Qt::ControlModifier) &&
             (keyEvent->key() == Qt::Key_F4 || keyEvent->key() == Qt::Key_W ||
              keyEvent->key() == Qt::Key_T || keyEvent->key() == Qt::Key_Space ||
@@ -180,6 +192,78 @@ namespace Docutaz
         // If line numbers margin already displayed, update its width
         if (lineNumberMarginWidth()) {
             setMarginWidth(0, _lineNumberMarginWidth);
+        }
+    }
+
+    void DocutazScintilla::contextMenuEvent(QContextMenuEvent *e)
+    {
+        // QsciScintilla's built-in context menu cannot be extended, so build a
+        // standard edit menu and append the Format action.
+        QMenu menu(this);
+
+        QAction *undoAct = menu.addAction(tr("&Undo"));
+        undoAct->setShortcut(QKeySequence::Undo);
+        undoAct->setEnabled(isUndoAvailable());
+        VERIFY(connect(undoAct, SIGNAL(triggered()), this, SLOT(undo())));
+
+        QAction *redoAct = menu.addAction(tr("&Redo"));
+        redoAct->setShortcut(QKeySequence::Redo);
+        redoAct->setEnabled(isRedoAvailable());
+        VERIFY(connect(redoAct, SIGNAL(triggered()), this, SLOT(redo())));
+
+        menu.addSeparator();
+
+        QAction *cutAct = menu.addAction(tr("Cu&t"));
+        cutAct->setShortcut(QKeySequence::Cut);
+        cutAct->setEnabled(hasSelectedText());
+        VERIFY(connect(cutAct, SIGNAL(triggered()), this, SLOT(cut())));
+
+        QAction *copyAct = menu.addAction(tr("&Copy"));
+        copyAct->setShortcut(QKeySequence::Copy);
+        copyAct->setEnabled(hasSelectedText());
+        VERIFY(connect(copyAct, SIGNAL(triggered()), this, SLOT(copy())));
+
+        QAction *pasteAct = menu.addAction(tr("&Paste"));
+        pasteAct->setShortcut(QKeySequence::Paste);
+        VERIFY(connect(pasteAct, SIGNAL(triggered()), this, SLOT(paste())));
+
+        menu.addSeparator();
+
+        QAction *formatAct = menu.addAction(tr("&Format Code"));
+        formatAct->setShortcut(QKeySequence(QStringLiteral("Ctrl+Shift+F")));
+        formatAct->setEnabled(!text().isEmpty());
+        VERIFY(connect(formatAct, SIGNAL(triggered()), this, SLOT(formatCode())));
+
+        menu.addSeparator();
+
+        QAction *selectAllAct = menu.addAction(tr("Select &All"));
+        selectAllAct->setShortcut(QKeySequence::SelectAll);
+        VERIFY(connect(selectAllAct, SIGNAL(triggered()), this, SLOT(selectAll())));
+
+        menu.exec(e->globalPos());
+    }
+
+    void DocutazScintilla::formatCode()
+    {
+        const bool hasSel = hasSelectedText();
+        const std::string src =
+            QtUtils::toStdString(hasSel ? selectedText() : text());
+        if (src.empty())
+            return;
+
+        const std::string out = JsBeautifier::format(src, indentationWidth);
+        if (out == src)   // nothing to do, or the beautifier safely bailed out
+            return;
+
+        const QString formatted = QtUtils::toQString(out);
+        if (hasSel) {
+            replaceSelectedText(formatted);
+        } else {
+            int line = 0, index = 0;
+            getCursorPosition(&line, &index);
+            setText(formatted);
+            // Best-effort: keep the caret on roughly the same line.
+            setCursorPosition(std::min(line, lines() - 1), 0);
         }
     }
 

@@ -2,6 +2,8 @@
 
 #include <Qsci/qsciscintilla.h>
 
+class QContextMenuEvent;
+
 namespace Docutaz
 {
     class DocutazScintilla : public QsciScintilla
@@ -21,9 +23,16 @@ namespace Docutaz
         int textWidth(int style, const QString &text);
         void setAppropriateBraceMatching();
 
+    public Q_SLOTS:
+        // Reflow the current selection (or the whole buffer when nothing is
+        // selected) with the Prettier-style JS beautifier. Pure text transform;
+        // leaves the text untouched if it cannot be reformatted safely.
+        void formatCode();
+
     protected:
         void wheelEvent(QWheelEvent *e);
         void keyPressEvent(QKeyEvent *e);
+        void contextMenuEvent(QContextMenuEvent *e) override;
 
     private Q_SLOTS:
         void updateLineNumbersMarginWidth();
