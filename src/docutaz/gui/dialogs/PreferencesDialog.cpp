@@ -75,6 +75,13 @@ namespace Docutaz
         _disabelConnectionShortcutsCheckBox = new QCheckBox("Disable connection shortcuts");
         layout->addWidget(_disabelConnectionShortcutsCheckBox);
 
+        _shareShellPerConnectionCheckBox = new QCheckBox("Share one shell process across a connection's tabs");
+        _shareShellPerConnectionCheckBox->setToolTip(
+            "Reuse a single mongosh process for all tabs of the same connection.\n"
+            "Lower memory and instant tab opening, but queries serialize — a long\n"
+            "query in one tab blocks its sibling tabs. Takes effect for new tabs.");
+        layout->addWidget(_shareShellPerConnectionCheckBox);
+
         QHBoxLayout *stylesLayout = new QHBoxLayout(this);
         QLabel *stylesLabel = new QLabel("Styles:");
         stylesLayout->addWidget(stylesLabel);
@@ -113,6 +120,7 @@ namespace Docutaz
         utils::setCurrentText(_uuidEncodingComboBox, convertUUIDEncodingToString(Docutaz::AppRegistry::instance().settingsManager()->uuidEncoding()));
         _loadMongoRcJsCheckBox->setChecked(AppRegistry::instance().settingsManager()->loadMongoRcJs());
         _disabelConnectionShortcutsCheckBox->setChecked(AppRegistry::instance().settingsManager()->disableConnectionShortcuts());
+        _shareShellPerConnectionCheckBox->setChecked(AppRegistry::instance().settingsManager()->shareShellPerConnection());
         utils::setCurrentText(_stylesComboBox, Docutaz::AppRegistry::instance().settingsManager()->currentStyle());
         _mongoshPathEdit->setText(AppRegistry::instance().settingsManager()->mongoshPath());
     }
@@ -130,6 +138,7 @@ namespace Docutaz
 
         AppRegistry::instance().settingsManager()->setLoadMongoRcJs(_loadMongoRcJsCheckBox->isChecked());
         AppRegistry::instance().settingsManager()->setDisableConnectionShortcuts(_disabelConnectionShortcutsCheckBox->isChecked());
+        AppRegistry::instance().settingsManager()->setShareShellPerConnection(_shareShellPerConnectionCheckBox->isChecked());
         Docutaz::AppRegistry::instance().settingsManager()->setCurrentStyle(_stylesComboBox->currentText());
         AppStyleUtils::applyStyle(_stylesComboBox->currentText());
         AppRegistry::instance().settingsManager()->setMongoshPath(_mongoshPathEdit->text().trimmed());

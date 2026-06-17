@@ -15,6 +15,8 @@
 #include "docutaz/core/settings/SslSettings.h"
 #include "docutaz/core/mongodb/SshTunnelWorker.h"
 #include "docutaz/core/EventBus.h"
+#include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/utils/StdUtils.h"
 #include "docutaz/core/utils/Logger.h"
@@ -213,14 +215,40 @@ namespace Docutaz
 
     void App::openShell(MongoServer* server, ConnectionSettings* connection, const ScriptInfo &scriptInfo)
     {
-        auto serverClone{ openServerInternal(connection, ConnectionSecondary) };
-        if (!serverClone || !server)
+        if (!server)
             return;
 
-        auto shell{ std::make_unique<MongoShell>(serverClone.get(), scriptInfo) };
-        _servers.push_back(move(serverClone));
+        // By default each tab gets its own secondary connection (and its own
+        // mongosh), which isolates tabs but spawns a subprocess per tab. When
+        // shareShellPerConnection is enabled, reuse the secondary server already
+        // backing another tab of this same connection — one mongosh for all its
+        // tabs (lower memory, instant tabs; execution serializes across them).
+        MongoServer* shellServer = nullptr;
+        std::unique_ptr<MongoServer> ownedClone;
+
+        if (AppRegistry::instance().settingsManager()->shareShellPerConnection()) {
+            const QString uuid = connection->uuid();
+            for (auto const& sh : _shells) {
+                if (sh->server() && sh->server()->connectionRecord()
+                    && sh->server()->connectionRecord()->uuid() == uuid) {
+                    shellServer = sh->server();
+                    break;
+                }
+            }
+        }
+
+        if (!shellServer) {
+            ownedClone = openServerInternal(connection, ConnectionSecondary);
+            if (!ownedClone)
+                return;
+            shellServer = ownedClone.get();
+        }
+
+        auto shell{ std::make_unique<MongoShell>(shellServer, scriptInfo) };
+        if (ownedClone)
+            _servers.push_back(move(ownedClone));
         // Connection between explorer's server and tab's MongoShells
-        _bus->subscribe(server, ReplicaSetRefreshed::Type, shell.get()); 
+        _bus->subscribe(server, ReplicaSetRefreshed::Type, shell.get());
         _bus->publish(new OpeningShellEvent(this, shell.get()));
         shell->execute();
         _shells.push_back(move(shell));
@@ -241,8 +269,17 @@ namespace Docutaz
         if (itr == _shells.end())
             return;
 
-        closeServer(shell->server());
+        MongoServer* const shellServer = shell->server();
         _shells.erase(itr);
+
+        // Close the backing server only when no other tab still uses it. In the
+        // default (per-tab server) model that's always the case; with
+        // shareShellPerConnection one server backs several tabs, so it must
+        // outlive all but the last.
+        const bool stillUsed = std::any_of(_shells.begin(), _shells.end(),
+            [&](auto const& s) { return s->server() == shellServer; });
+        if (!stillUsed)
+            closeServer(shellServer);
     }
 
     void App::handle(EstablishSshConnectionResponse *event) {

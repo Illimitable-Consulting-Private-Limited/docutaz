@@ -211,6 +211,7 @@ namespace Docutaz
         _timeZone = (SupportedTimes)timeZone;
         _loadMongoRcJs = map.value("loadMongoRcJs").toBool();
         _mongoshPath = map.value("mongoshPath").toString();
+        _shareShellPerConnection = map.value("shareShellPerConnection", false).toBool();
         _disableConnectionShortcuts = map.value("disableConnectionShortcuts").toBool();
         
         if (map.contains("acceptedEulaVersions")) 
@@ -314,6 +315,7 @@ namespace Docutaz
         // 6. Save loadInitJs
         map.insert("loadMongoRcJs", _loadMongoRcJs);
         map.insert("mongoshPath", _mongoshPath);
+        map.insert("shareShellPerConnection", _shareShellPerConnection);
 
         // 7. Save disableConnectionShortcuts
         map.insert("disableConnectionShortcuts", _disableConnectionShortcuts);

@@ -128,6 +128,13 @@ namespace Docutaz
         void setMongoshPath(const QString& path) { _mongoshPath = path; }
         QString mongoshPath() const { return _mongoshPath; }
 
+        // When true, all shell tabs of one connection share a single mongosh
+        // subprocess instead of each spawning its own. Lower memory and instant
+        // tab opening, at the cost of serialized execution (a long query in one
+        // tab blocks its siblings). Default false.
+        void setShareShellPerConnection(bool v) { _shareShellPerConnection = v; }
+        bool shareShellPerConnection() const { return _shareShellPerConnection; }
+
         void setDisableConnectionShortcuts(bool isDisable) { _disableConnectionShortcuts = isDisable; }
         bool disableConnectionShortcuts() const { return _disableConnectionShortcuts; }
 
@@ -206,6 +213,7 @@ namespace Docutaz
         AutocompletionMode _autocompletionMode;
         bool _loadMongoRcJs;
         QString _mongoshPath;
+        bool _shareShellPerConnection = false;
         bool _autoExpand;
         bool _autoExec;
         bool _minimizeToTray;

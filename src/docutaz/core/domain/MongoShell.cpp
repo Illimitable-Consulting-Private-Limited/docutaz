@@ -39,9 +39,13 @@ namespace Docutaz
             return;
 
         std::string const finalScript = script.empty() ? query() : script;
+        // Carry the tab's own database explicitly so a server shared across tabs
+        // (shareShellPerConnection) runs each query against the right db. A no-op
+        // for the per-tab-server default, where the clone already defaults to it.
+        std::string const finalDb = dbName.empty() ? _scriptInfo.dbname() : dbName;
         eventBus()->publish(new ScriptExecutingEvent(this));
-        eventBus()->send(_server->worker(), 
-            new ExecuteScriptRequest(this, finalScript, dbName, _aggrInfo));
+        eventBus()->send(_server->worker(),
+            new ExecuteScriptRequest(this, finalScript, finalDb, _aggrInfo));
         if (!_scriptInfo.script().isEmpty())
             LOG_MSG(_scriptInfo.script(), mongo::logger::LogSeverity::Info());
     }

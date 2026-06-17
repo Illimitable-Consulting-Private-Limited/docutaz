@@ -28,6 +28,7 @@ namespace Docutaz
         QComboBox *_uuidEncodingComboBox;
         QCheckBox *_loadMongoRcJsCheckBox;
         QCheckBox *_disabelConnectionShortcutsCheckBox;
+        QCheckBox *_shareShellPerConnectionCheckBox;
         QComboBox *_stylesComboBox;
         QLineEdit *_mongoshPathEdit;
     };

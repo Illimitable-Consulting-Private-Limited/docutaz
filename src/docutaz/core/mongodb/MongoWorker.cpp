@@ -759,8 +759,10 @@ namespace Docutaz
                 }
             }
 
+            const std::string execDb = event->databaseName.empty()
+                ? _connSettings->defaultDatabase() : event->databaseName;
             MongoShellExecResult result{
-                _scriptEngine->exec(event->script, _connSettings->defaultDatabase(), event->aggrInfo)};
+                _scriptEngine->exec(event->script, execDb, event->aggrInfo)};
 
             if (!result.error()) {
                 reply(event->sender(),
@@ -779,8 +781,10 @@ namespace Docutaz
 
     void MongoWorker::retry(ExecuteScriptRequest *event)
     {
+        const std::string execDb = event->databaseName.empty()
+            ? _connSettings->defaultDatabase() : event->databaseName;
         MongoShellExecResult const result{
-            _scriptEngine->exec(event->script, _connSettings->defaultDatabase())};
+            _scriptEngine->exec(event->script, execDb)};
         if (result.error()) {
             auto const error{EventError(result.errorMessage())};
             reply(event->sender(), new ExecuteScriptResponse(this, error));
