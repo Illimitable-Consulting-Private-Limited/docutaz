@@ -36,10 +36,23 @@ namespace Docutaz
 
     private Q_SLOTS:
         void updateLineNumbersMarginWidth();
+        // One text-change scan that drives the inline indicators: bracket-pair
+        // colorization (each bracket tinted by nesting depth) and highlighting of
+        // mongo $-operators / field paths ($match, $group, "$amount", ...).
+        // Strings/comments/regex are skipped for the bracket depth count.
+        void updateSyntaxIndicators();
 
     private:
         void setLineNumbers(bool displayNumbers);
         void toggleLineNumbers();
+        // Auto-close brackets and quotes. Returns true (and accepts the event)
+        // when it fully handled the key: inserting a matching closer, typing
+        // over an existing one, wrapping a selection, or removing an empty pair
+        // on Backspace. Returns false to let normal editing proceed.
+        bool handleAutoClose(QKeyEvent *e);
+        // The closing character for an opener/quote, or a null QChar if the
+        // character does not open a pair.
+        static QChar autoCloseChar(QChar open);
         bool _ignoreEnterKey;
         bool _ignoreTabKey;
         int _lineNumberMarginWidth;

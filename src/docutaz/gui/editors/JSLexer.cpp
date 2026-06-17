@@ -37,6 +37,12 @@ namespace Docutaz
             //return QColor("#FDE15D");
             return QColor("#BEE5FF");
 
+        case KeywordSet2:
+            // mongo-shell globals, BSON type constructors and the iconic
+            // collection/db methods — a warm orange that stands apart from the
+            // light-blue JavaScript keywords.
+            return QColor("#FFB86C");
+
         case DoubleQuotedString:
         case SingleQuotedString:
         case RawString:
@@ -110,16 +116,32 @@ namespace Docutaz
 
     const char *JSLexer::keywords(int set) const
     {
+        // Set 1 (Keyword style): standard JavaScript keywords and literals.
         if (set == 1)
             return
-                "abstract boolean break byte case catch char class const continue "
-                "debugger default delete do double else enum export extends final "
-                "finally float for function goto if implements import in instanceof "
-                "int interface long native new package private protected public "
-                "return short static super switch synchronized this throw throws "
-                "transient try typeof var void volatile while with "
-                "ISODate ObjectId Mongo Date NumberInt Number NumberLong Timestamp _id null false true "
-                "UUID LUUID PYUUID CSUUID JUUID NUUID ";
+                "abstract async await boolean break byte case catch char class "
+                "const continue debugger default delete do double else enum export "
+                "extends false final finally float for function goto if implements "
+                "import in instanceof int interface let long native new null of "
+                "package private protected public return short static super switch "
+                "synchronized this throw throws transient true try typeof var void "
+                "volatile while with yield ";
+
+        // Set 2 (KeywordSet2 style): mongo-shell globals, BSON type constructors
+        // and the iconic collection / database / cursor methods.
+        if (set == 2)
+            return
+                "db rs sh "
+                "ObjectId ISODate Date Timestamp BinData UUID LUUID PYUUID CSUUID "
+                "JUUID NUUID NumberInt NumberLong NumberDecimal Number DBRef MinKey "
+                "MaxKey Mongo _id "
+                "find findOne findOneAndUpdate findOneAndReplace findOneAndDelete "
+                "aggregate insertOne insertMany updateOne updateMany deleteOne "
+                "deleteMany replaceOne countDocuments estimatedDocumentCount distinct "
+                "bulkWrite createIndex createIndexes dropIndex dropIndexes getIndexes "
+                "explain hint pretty sort limit skip getSiblingDB getCollection "
+                "getCollectionNames createCollection runCommand drop renameCollection "
+                "stats ";
 
         return 0;
     }
