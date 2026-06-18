@@ -15,6 +15,7 @@
 #include "docutaz/core/Event.h"
 #include "docutaz/core/Enums.h"
 #include "docutaz/core/mongodb/ReplicaSet.h"
+#include "docutaz/core/utils/Exporter.h"
 
 namespace Docutaz
 {
@@ -921,6 +922,50 @@ namespace Docutaz
         int resultIndex;
         MongoQueryInfo queryInfo;
         std::vector<MongoDocumentPtr> documents;
+    };
+
+    // Export a query's matching documents to a file (JSON/CSV). The worker
+    // re-runs the find from queryInfo (full documents, projection ignored) up to
+    // 'limit' (0 = all) and streams the result through Exporter to filePath.
+    class ExportRequest : public Event
+    {
+        R_EVENT
+
+    public:
+        ExportRequest(QObject *sender, const MongoQueryInfo &queryInfo,
+                      const ExportOptions &options, const std::string &filePath, long long limit) :
+            Event(sender),
+            _queryInfo(queryInfo),
+            _options(options),
+            _filePath(filePath),
+            _limit(limit) {}
+
+        MongoQueryInfo queryInfo() const { return _queryInfo; }
+        ExportOptions options() const { return _options; }
+        std::string filePath() const { return _filePath; }
+        long long limit() const { return _limit; }
+
+    private:
+        MongoQueryInfo _queryInfo;
+        ExportOptions _options;
+        std::string _filePath;
+        long long _limit;
+    };
+
+    class ExportResponse : public Event
+    {
+        R_EVENT
+
+        ExportResponse(QObject *sender, long long count, const std::string &filePath) :
+            Event(sender),
+            count(count),
+            filePath(filePath) {}
+
+        ExportResponse(QObject *sender, const EventError &error) :
+            Event(sender, error) {}
+
+        long long count = 0;
+        std::string filePath;
     };
 
     class AutocompleteRequest : public Event

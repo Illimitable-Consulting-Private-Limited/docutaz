@@ -23,6 +23,9 @@
 #include "docutaz/core/EventBus.h"
 #include "docutaz/core/mongodb/MongoClient.h"
 #include "docutaz/core/domain/MongoDocument.h"
+#include "docutaz/core/utils/Exporter.h"
+
+#include <fstream>
 #include "docutaz/core/domain/MongoQueryInfo.h"
 #include "docutaz/core/utils/BsonBridge.h"
 #include "docutaz/shell/bson/json.h"
@@ -497,6 +500,43 @@ namespace Docutaz
             executeQuery();
         } catch (const std::exception &ex) {
             reply(event->sender(), new ExecuteQueryResponse(this, EventError(ex.what())));
+            sendLog(this, LogEvent::RBM_ERROR, std::string(ex.what()));
+        }
+    }
+
+    void MongoWorker::handle(ExportRequest *event)
+    {
+        try {
+            // Re-run the query for full documents: keep the filter and sort, drop
+            // the projection (a copy/export materialises whole docs) and the page
+            // skip, and apply the export limit (0 = everything).
+            MongoQueryInfo qi = event->queryInfo();
+            qi._fields = mongo::BSONObj();
+            qi._skip = 0;
+            qi._limit = static_cast<int>(event->limit());
+            qi._batchSize = 0;
+
+            std::unique_ptr<MongoClient> client{getClient()};
+            std::vector<MongoDocumentPtr> docs = client->query(qi);
+            client->done();
+
+            std::vector<mongo::BSONObj> objs;
+            objs.reserve(docs.size());
+            for (const auto &d : docs)
+                objs.push_back(d->bsonObj());
+
+            std::ofstream out(event->filePath(), std::ios::binary);
+            if (!out)
+                throw std::runtime_error("Cannot open file for writing: " + event->filePath());
+            const size_t n = Exporter::write(objs, event->options(), out);
+            out.close();
+            if (!out)
+                throw std::runtime_error("Failed while writing: " + event->filePath());
+
+            reply(event->sender(),
+                  new ExportResponse(this, static_cast<long long>(n), event->filePath()));
+        } catch (const std::exception &ex) {
+            reply(event->sender(), new ExportResponse(this, EventError(ex.what())));
             sendLog(this, LogEvent::RBM_ERROR, std::string(ex.what()));
         }
     }

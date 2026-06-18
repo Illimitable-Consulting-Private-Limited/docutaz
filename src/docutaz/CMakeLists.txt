@@ -18,6 +18,7 @@ set(SOURCES
     core/QueryHistory.cpp
     core/HexUtils.cpp
     core/utils/BsonUtils.cpp
+    core/utils/Exporter.cpp
     core/settings/CredentialSettings.cpp
     core/settings/ConnectionSettings.cpp
     core/Event.cpp
@@ -70,6 +71,7 @@ set(SOURCES
     gui/dialogs/ConnectionDialog.cpp
     gui/dialogs/CopyCollectionDialog.cpp
     gui/dialogs/CopyResultsDialog.cpp
+    gui/dialogs/ExportResultsDialog.cpp
     gui/widgets/workarea/IndicatorLabel.cpp
     gui/dialogs/CreateCollectionDialog.cpp
     gui/dialogs/CreateDatabaseDialog.cpp

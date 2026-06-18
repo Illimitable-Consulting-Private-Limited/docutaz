@@ -3,7 +3,16 @@
 #include <QVBoxLayout>
 #include <Qsci/qscilexerjavascript.h>
 
+#include <QFileInfo>
+#include <QMessageBox>
+#include <QProgressDialog>
+#include <QPushButton>
+#include <QDesktopServices>
+#include <QUrl>
+
 #include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/EventBus.h"
+#include "docutaz/core/events/MongoEvents.h"
 #include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/utils/QtUtils.h"
@@ -11,8 +20,10 @@
 #include "docutaz/core/domain/App.h"
 #include "docutaz/core/domain/MongoShell.h"
 #include "docutaz/core/domain/MongoServer.h"
+#include "docutaz/core/mongodb/MongoWorker.h"
 #include "docutaz/core/domain/MongoAggregateInfo.h"
 #include "docutaz/gui/dialogs/CopyResultsDialog.h"
+#include "docutaz/gui/dialogs/ExportResultsDialog.h"
 
 #include "docutaz/gui/widgets/workarea/OutputWidget.h"
 #include "docutaz/gui/widgets/workarea/OutputItemHeaderWidget.h"
@@ -117,6 +128,8 @@ namespace Docutaz
             if (!_aggrInfo.isValid) {
                 _header->setCopyResultsEnabled(true);
                 VERIFY(connect(_header, SIGNAL(copyResultsRequested()), this, SLOT(copyResultsTo())));
+                _header->setExportEnabled(true);
+                VERIFY(connect(_header, SIGNAL(exportRequested()), this, SLOT(exportResults())));
             }
         }
         else if (_aggrInfo.isValid) {
@@ -272,6 +285,70 @@ namespace Docutaz
         // output) without disturbing the current editor.
         AppRegistry::instance().app()->openShell(
             server, QtUtils::toQString(s), srcDb, true, "Copy results");
+    }
+
+    void OutputItemContentWidget::exportResults()
+    {
+        if (!_queryInfo._info.isValid() || _aggrInfo.isValid || !_shell)
+            return;
+        if (_exportProgress)        // an export is already running for this result
+            return;
+
+        MongoServer *server = _shell->server();
+        ConnectionSettings *conn = server->connectionRecord();
+        const std::string db   = _queryInfo._info._ns.databaseName();
+        const std::string coll = _queryInfo._info._ns.collectionName();
+        const QString label = QString("%1  —  %2.%3")
+            .arg(QtUtils::toQString(conn->getReadableName()),
+                 QtUtils::toQString(db), QtUtils::toQString(coll));
+
+        ExportResultsDialog dlg(label, QtUtils::toQString(coll), this);
+        if (dlg.exec() != QDialog::Accepted)
+            return;
+
+        ExportOptions opts;
+        opts.format        = dlg.format();
+        opts.jsonArray     = dlg.jsonArray();
+        opts.flattenNested = dlg.flattenNested();
+        opts.uuidEncoding  = AppRegistry::instance().settingsManager()->uuidEncoding();
+        opts.timeZone      = AppRegistry::instance().settingsManager()->timeZone();
+
+        // Busy dialog (application-modal, no cancel) so the result widget can't be
+        // torn down while the worker streams to disk and replies back to it.
+        _exportProgress = new QProgressDialog("Exporting documents…", QString(), 0, 0, this);
+        _exportProgress->setWindowTitle("Export");
+        _exportProgress->setWindowModality(Qt::ApplicationModal);
+        _exportProgress->setCancelButton(nullptr);
+        _exportProgress->setMinimumDuration(0);
+        _exportProgress->show();
+
+        AppRegistry::instance().bus()->send(server->worker(),
+            new ExportRequest(this, _queryInfo, opts,
+                              QtUtils::toStdString(dlg.filePath()), dlg.limit()));
+    }
+
+    void OutputItemContentWidget::handle(ExportResponse *event)
+    {
+        if (_exportProgress) {
+            _exportProgress->close();
+            _exportProgress->deleteLater();
+            _exportProgress = nullptr;
+        }
+
+        if (event->isError()) {
+            QMessageBox::warning(this, "Export failed",
+                QtUtils::toQString(event->error().errorMessage()));
+            return;
+        }
+
+        const QString path = QtUtils::toQString(event->filePath);
+        QMessageBox box(QMessageBox::Information, "Export complete",
+            QString("Exported %1 document(s) to:\n%2").arg(event->count).arg(path),
+            QMessageBox::Ok, this);
+        QPushButton *openBtn = box.addButton("Open Folder", QMessageBox::ActionRole);
+        box.exec();
+        if (box.clickedButton() == openBtn)
+            QDesktopServices::openUrl(QUrl::fromLocalFile(QFileInfo(path).absolutePath()));
     }
 
     void OutputItemContentWidget::paging_leftClicked(int skip, int limit)

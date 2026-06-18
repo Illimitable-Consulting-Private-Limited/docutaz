@@ -8,6 +8,10 @@
 #include "docutaz/core/Enums.h"
 #include <vector>
 
+QT_BEGIN_NAMESPACE
+class QProgressDialog;
+QT_END_NAMESPACE
+
 namespace Docutaz
 {
     class FindFrame;
@@ -19,6 +23,7 @@ namespace Docutaz
     class MongoShell;
     class OutputItemHeaderWidget;
     class OutputWidget;
+    class ExportResponse;
 
     class OutputItemContentWidget : public QWidget
     {
@@ -69,6 +74,11 @@ namespace Docutaz
         // into a target connection/collection chosen via CopyResultsDialog. Opens
         // a new shell tab with the generated copy script and runs it.
         void copyResultsTo();
+        // Export this result's documents (re-run with its filter/sort) to a
+        // JSON/CSV file via ExportResultsDialog; runs async on the worker.
+        void exportResults();
+        // Worker reply for an export started by this widget.
+        void handle(ExportResponse *event);
         void jsonPartReady(const QString &json);
         void refresh(int skip, int batchSize);
         void paging_rightClicked(int skip, int batchSize);
@@ -78,6 +88,8 @@ namespace Docutaz
         void setup(double secs, bool multipleResults, bool tabbedResults, bool firstItem, bool lastItem);
         FindFrame *configureLogText();
         BsonTreeModel *configureModel();
+
+        QProgressDialog *_exportProgress = nullptr;
 
         FindFrame *_textView;
         BsonTreeView *_bsonTreeview;

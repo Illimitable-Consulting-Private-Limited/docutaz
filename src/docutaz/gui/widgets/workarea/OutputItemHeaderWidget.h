@@ -28,9 +28,11 @@ namespace Docutaz
         void showCustom();
         void applyDockUndockSettings(bool docking);
         void toggleOrientation(Qt::Orientation orientation);
-        // Show/hide the "Copy to…" action. Only meaningful for find-style results
-        // (a real collection query), so the content widget enables it.
+        // Show/hide the "Copy to…" / "Export…" actions. Only meaningful for
+        // find-style results (a real collection query), so the content widget
+        // enables them.
         void setCopyResultsEnabled(bool on);
+        void setExportEnabled(bool on);
 
     protected:
         virtual void mouseDoubleClickEvent(QMouseEvent *);
@@ -39,6 +41,7 @@ namespace Docutaz
         void restoredSize();
         void maximizedPart();
         void copyResultsRequested();
+        void exportRequested();
 
     public Q_SLOTS:        
         void setTime(const QString &time);
@@ -49,6 +52,7 @@ namespace Docutaz
         void updateDockButtonOnToggleOrientation() const;
 
         QPushButton *_copyButton;
+        QPushButton *_exportButton;
         QPushButton *_textButton;
         QPushButton *_treeButton;
         QPushButton *_tableButton;

@@ -54,6 +54,15 @@ namespace Docutaz
         _copyButton->hide();
         VERIFY(connect(_copyButton, SIGNAL(clicked()), this, SIGNAL(copyResultsRequested())));
 
+        // "Export…" — write this result's documents to a JSON/CSV file.
+        _exportButton = new QPushButton(this);
+        _exportButton->setIcon(QIcon(":/docutaz/icons/export_16x16.png"));
+        _exportButton->setToolTip("Export these query results to a JSON or CSV file");
+        _exportButton->setFixedSize(24, 24);
+        _exportButton->setFlat(true);
+        _exportButton->hide();
+        VERIFY(connect(_exportButton, SIGNAL(clicked()), this, SIGNAL(exportRequested())));
+
         // Text mode button
         _textButton = new QPushButton(this);
         _textButton->setIcon(GuiRegistry::instance().textIcon());
@@ -136,6 +145,7 @@ namespace Docutaz
         QSpacerItem *hSpacer = new QSpacerItem(2000, 24, QSizePolicy::Preferred, QSizePolicy::Minimum);
         layout->addSpacerItem(hSpacer);
         layout->addWidget(_copyButton, 0, Qt::AlignRight);
+        layout->addWidget(_exportButton, 0, Qt::AlignRight);
         layout->addWidget(_paging);
         layout->addWidget(createVerticalLine());
         layout->addSpacing(2);
@@ -184,6 +194,11 @@ namespace Docutaz
     void OutputItemHeaderWidget::setCopyResultsEnabled(bool on)
     {
         _copyButton->setVisible(on);
+    }
+
+    void OutputItemHeaderWidget::setExportEnabled(bool on)
+    {
+        _exportButton->setVisible(on);
     }
 
     void OutputItemHeaderWidget::mouseDoubleClickEvent(QMouseEvent *)
