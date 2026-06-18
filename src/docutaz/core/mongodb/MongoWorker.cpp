@@ -507,31 +507,66 @@ namespace Docutaz
     void MongoWorker::handle(ExportRequest *event)
     {
         try {
-            // Re-run the query for full documents: keep the filter and sort, drop
-            // the projection (a copy/export materialises whole docs) and the page
-            // skip, and apply the export limit (0 = everything).
-            MongoQueryInfo qi = event->queryInfo();
-            qi._fields = mongo::BSONObj();
-            qi._skip = 0;
-            qi._limit = static_cast<int>(event->limit());
-            qi._batchSize = 0;
+            std::vector<MongoDocumentPtr> docs;
+            const AggrInfo aggr = event->aggrInfo();
 
-            std::unique_ptr<MongoClient> client{getClient()};
-            std::vector<MongoDocumentPtr> docs = client->query(qi);
-            client->done();
+            if (aggr.isValid) {
+                // Aggregation export: re-run the pipeline and materialise its
+                // output. Refuse pipelines that write to a collection — re-running
+                // an $out/$merge would perform that write on the source.
+                for (mongo::BSONObjIterator it(aggr.pipeline); it.more();) {
+                    const mongo::BSONElement stageEl = it.next();
+                    if (stageEl.type() != mongo::Object)
+                        continue;
+                    const mongo::BSONObj stage = stageEl.embeddedObject();
+                    mongo::BSONObjIterator stageIt(stage);
+                    if (!stageIt.more())
+                        continue;
+                    const std::string op = stageIt.next().fieldName();
+                    if (op == "$out" || op == "$merge")
+                        throw std::runtime_error(
+                            "Export does not support aggregation pipelines that write to a "
+                            "collection (" + op + "). Remove that stage and export the results "
+                            "instead.");
+                }
+                MongoNamespace ns(event->queryInfo()._info._ns);
+                std::unique_ptr<MongoClient> client{getClient()};
+                docs = client->aggregate(ns, aggr.pipeline, static_cast<int>(event->limit()));
+                client->done();
+            } else {
+                // Find export: re-run the query. Unlike copy, export RESPECTS the
+                // projection (export what was queried); just reset paging and apply
+                // the export limit (0 = everything).
+                MongoQueryInfo qi = event->queryInfo();
+                qi._skip = 0;
+                qi._limit = static_cast<int>(event->limit());
+                qi._batchSize = 0;
+                std::unique_ptr<MongoClient> client{getClient()};
+                docs = client->query(qi);
+                client->done();
+            }
 
             std::vector<mongo::BSONObj> objs;
             objs.reserve(docs.size());
             for (const auto &d : docs)
                 objs.push_back(d->bsonObj());
 
-            std::ofstream out(event->filePath(), std::ios::binary);
-            if (!out)
-                throw std::runtime_error("Cannot open file for writing: " + event->filePath());
-            const size_t n = Exporter::write(objs, event->options(), out);
-            out.close();
-            if (!out)
-                throw std::runtime_error("Failed while writing: " + event->filePath());
+            size_t n = 0;
+            if (event->options().format == ExportFormat::Xlsx) {
+                // libxlsxwriter owns the file I/O.
+                std::string err;
+                n = Exporter::writeXlsxFile(objs, event->options(), event->filePath(), &err);
+                if (!err.empty())
+                    throw std::runtime_error(err);
+            } else {
+                std::ofstream out(event->filePath(), std::ios::binary);
+                if (!out)
+                    throw std::runtime_error("Cannot open file for writing: " + event->filePath());
+                n = Exporter::write(objs, event->options(), out);
+                out.close();
+                if (!out)
+                    throw std::runtime_error("Failed while writing: " + event->filePath());
+            }
 
             reply(event->sender(),
                   new ExportResponse(this, static_cast<long long>(n), event->filePath()));

@@ -36,6 +36,7 @@ namespace Docutaz
     CopyResultsDialog::CopyResultsDialog(ConnectionSettings *source, const QString &sourceDb,
                                          const QString &sourceCollection,
                                          const std::vector<ConnectionSettings *> &connections,
+                                         const QStringList &databaseNames,
                                          QWidget *parent)
         : QDialog(parent), _source(source), _sourceDb(sourceDb),
           _sourceCollection(sourceCollection), _connections(connections)
@@ -66,7 +67,16 @@ namespace Docutaz
         }
         _connectionCombo->setCurrentIndex(sourceIdx);
 
-        _dbEdit = new QLineEdit(sourceDb, this);
+        // Editable so the user can pick a known database or type a new one (the
+        // target db may not exist yet). Populated with the source connection's
+        // databases — the common case is copying within the same connection.
+        _dbCombo = new QComboBox(this);
+        _dbCombo->setEditable(true);
+        _dbCombo->addItems(databaseNames);
+        if (_dbCombo->findText(sourceDb) < 0 && !sourceDb.isEmpty())
+            _dbCombo->insertItem(0, sourceDb);
+        _dbCombo->setCurrentText(sourceDb);
+
         _collectionEdit = new QLineEdit(sourceCollection, this);
 
         _limitSpin = new QSpinBox(this);
@@ -93,7 +103,7 @@ namespace Docutaz
         form->addRow(sep);
 
         form->addRow("To connection:", _connectionCombo);
-        form->addRow("Target database:", _dbEdit);
+        form->addRow("Target database:", _dbCombo);
         form->addRow("Target collection:", _collectionEdit);
         form->addRow("Limit:", _limitSpin);
         form->addRow("", _dropCheck);
@@ -124,7 +134,7 @@ namespace Docutaz
         return _connectionCombo->currentData().value<ConnectionSettings *>();
     }
 
-    QString CopyResultsDialog::targetDatabase() const { return _dbEdit->text().trimmed(); }
+    QString CopyResultsDialog::targetDatabase() const { return _dbCombo->currentText().trimmed(); }
     QString CopyResultsDialog::targetCollection() const { return _collectionEdit->text().trimmed(); }
     int CopyResultsDialog::limit() const { return _limitSpin->value(); }
     bool CopyResultsDialog::dropFirst() const { return _dropCheck->isChecked(); }

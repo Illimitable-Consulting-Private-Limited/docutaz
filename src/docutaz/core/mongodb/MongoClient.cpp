@@ -5,6 +5,7 @@
 #include <mongocxx/exception/exception.hpp>
 #include <mongocxx/index_view.hpp>
 #include <mongocxx/options/find.hpp>
+#include <mongocxx/pipeline.hpp>
 #include <mongocxx/options/index.hpp>
 #include <memory>
 #include <mongocxx/options/replace.hpp>
@@ -410,6 +411,35 @@ std::vector<MongoDocumentPtr> MongoClient::query(const MongoQueryInfo &info)
     if (!info._sort.isEmpty())   findOpts.sort(toView(info._sort));
 
     auto cursor = _client[ns.databaseName()][ns.collectionName()].find(toView(info._query), findOpts);
+    for (auto& doc : cursor)
+        docs.push_back(std::make_shared<MongoDocument>(fromView(doc)));
+    return docs;
+}
+
+std::vector<MongoDocumentPtr> MongoClient::aggregate(const MongoNamespace &ns,
+                                                     const mongo::BSONObj &pipeline, int limit)
+{
+    std::vector<MongoDocumentPtr> docs;
+    if (ns.collectionName().empty() || ns.databaseName().empty())
+        return docs;
+
+    // The pipeline is a BSON array of stage documents. Keep the stage objects
+    // alive (embeddedObject() returns an owning copy here) for the duration of
+    // the call, since the views handed to append_stage reference their bytes.
+    std::vector<mongo::BSONObj> stages;
+    for (mongo::BSONObjIterator it(pipeline); it.more();) {
+        const mongo::BSONElement e = it.next();
+        if (e.type() == mongo::Object)
+            stages.push_back(e.embeddedObject());
+    }
+
+    mongocxx::pipeline p;
+    for (const auto &stage : stages)
+        p.append_stage(toView(stage));
+    if (limit > 0)
+        p.limit(limit);
+
+    auto cursor = _client[ns.databaseName()][ns.collectionName()].aggregate(p);
     for (auto& doc : cursor)
         docs.push_back(std::make_shared<MongoDocument>(fromView(doc)));
     return docs;

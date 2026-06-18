@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QDialog>
+#include <QStringList>
 #include <vector>
 
 QT_BEGIN_NAMESPACE
@@ -15,8 +16,9 @@ namespace Docutaz
     class ConnectionSettings;
 
     // Collects the target of a "copy query results" operation: which connection
-    // to write to, the destination db/collection (both editable; the collection
-    // may not exist yet), a row limit and whether to drop the target first.
+    // to write to, the destination database (a dropdown of the connection's
+    // databases, editable for a new one) and collection (may not exist yet), a
+    // row limit and whether to drop the target first.
     //
     // Safety: the dialog never writes anything itself — it only gathers choices.
     // It blocks accepting a target that needs an SSH tunnel (unsupported in v1,
@@ -31,6 +33,7 @@ namespace Docutaz
         CopyResultsDialog(ConnectionSettings *source, const QString &sourceDb,
                           const QString &sourceCollection,
                           const std::vector<ConnectionSettings *> &connections,
+                          const QStringList &databaseNames,
                           QWidget *parent = nullptr);
 
         ConnectionSettings *targetConnection() const;
@@ -50,7 +53,7 @@ namespace Docutaz
         std::vector<ConnectionSettings *> _connections;
 
         QComboBox *_connectionCombo;
-        QLineEdit *_dbEdit;
+        QComboBox *_dbCombo;        // editable: pick a known db or type a new one
         QLineEdit *_collectionEdit;
         QSpinBox  *_limitSpin;
         QCheckBox *_dropCheck;

@@ -122,14 +122,11 @@ namespace Docutaz
             _header->paging()->setSkip(_queryInfo._skip);
             if (!_queryInfo._limit)
                 _queryInfo._limit = 50;
-            // A real find against a collection — offer "Copy to…". Aggregations
-            // also carry a valid queryInfo namespace, so exclude them explicitly:
-            // their output is synthetic and isn't supported by the copy action.
+            // "Copy to…" is find-only: aggregations carry a valid queryInfo
+            // namespace too, but their output is synthetic, so exclude them.
             if (!_aggrInfo.isValid) {
                 _header->setCopyResultsEnabled(true);
                 VERIFY(connect(_header, SIGNAL(copyResultsRequested()), this, SLOT(copyResultsTo())));
-                _header->setExportEnabled(true);
-                VERIFY(connect(_header, SIGNAL(exportRequested()), this, SLOT(exportResults())));
             }
         }
         else if (_aggrInfo.isValid) {
@@ -138,6 +135,14 @@ namespace Docutaz
             _header->setCollection(QtUtils::toQString(_aggrInfo.collectionName));
             _header->paging()->setBatchSize(_aggrInfo.batchSize);
             _header->paging()->setSkip(_aggrInfo.skip);
+        }
+
+        // "Export…" works for both find and aggregation results (unlike copy):
+        // the worker re-runs the find — respecting its projection — or the
+        // aggregation pipeline, and writes the output to a file.
+        if (_queryInfo._info.isValid() || _aggrInfo.isValid) {
+            _header->setExportEnabled(true);
+            VERIFY(connect(_header, SIGNAL(exportRequested()), this, SLOT(exportResults())));
         }
 
         _header->setTime(QString("%1 sec.").arg(secs, 0, 'g', 3));
@@ -193,7 +198,8 @@ namespace Docutaz
         const std::string srcColl = _queryInfo._info._ns.collectionName();
 
         CopyResultsDialog dlg(srcConn, QtUtils::toQString(srcDb), QtUtils::toQString(srcColl),
-                              AppRegistry::instance().settingsManager()->connections(), this);
+                              AppRegistry::instance().settingsManager()->connections(),
+                              server->getDatabasesNames(), this);
         if (dlg.exec() != QDialog::Accepted)
             return;
 
@@ -222,6 +228,10 @@ namespace Docutaz
         // it writes through the current connection (getSiblingDB).
         const std::string srcCollExpr = "db.getSiblingDB(" + jsString(srcDb) +
                                         ").getCollection(" + jsString(srcColl) + ")";
+        // NOTE: top-level declarations use `var`, not const/let. Docutaz runs this
+        // through mongosh's REPL rewriter, which splits the script into separate
+        // statements; block-scoped const/let wouldn't be visible across them,
+        // whereas `var` is function-scoped and persists (see mongosh-async-rewriter).
         std::string s;
         s += "// Docutaz — copy query results\n";
         std::string dstColl;
@@ -230,15 +240,15 @@ namespace Docutaz
                       jsString(targetColl) + ")";
         } else {
             const std::string uri = ConnectionSettings::buildMongoUri(target);
-            s += "const __dst = connect(" + jsString(uri) + ");\n";
+            s += "var __dst = connect(" + jsString(uri) + ");\n";
             dstColl = "__dst.getSiblingDB(" + jsString(targetDb) + ").getCollection(" +
                       jsString(targetColl) + ")";
         }
-        s += "const __dstColl = " + dstColl + ";\n";
+        s += "var __dstColl = " + dstColl + ";\n";
         if (dropFirst)
             s += "__dstColl.drop();\n";
 
-        s += "let __cur = " + srcCollExpr + ".find(" + filter + ")";
+        s += "var __cur = " + srcCollExpr + ".find(" + filter + ")";
         if (!sort.empty())
             s += ".sort(" + sort + ")";
         if (_queryInfo._skip > 0)
@@ -249,7 +259,7 @@ namespace Docutaz
 
         // Insert unordered so a re-copy onto existing documents skips duplicates
         // instead of aborting at the first one; count what actually went in.
-        s += "let __buf = [], __n = 0, __dups = 0;\n";
+        s += "var __buf = [], __n = 0, __dups = 0;\n";
         s += "function __flush() {\n";
         s += "  if (!__buf.length) return;\n";
         s += "  try {\n";
@@ -267,8 +277,8 @@ namespace Docutaz
         if (copyIndexes) {
             // Recreate the source indexes that aren't already on the target. Keep
             // the index name/options; drop fields createIndex doesn't accept.
-            s += "const __have = new Set(__dstColl.getIndexes().map(function(ix) { return ix.name; }));\n";
-            s += "let __idx = 0;\n";
+            s += "var __have = new Set(__dstColl.getIndexes().map(function(ix) { return ix.name; }));\n";
+            s += "var __idx = 0;\n";
             s += srcCollExpr + ".getIndexes().forEach(function(ix) {\n";
             s += "  if (ix.name === \"_id_\" || __have.has(ix.name)) return;\n";
             s += "  const __o = Object.assign({}, ix);\n";
@@ -289,7 +299,7 @@ namespace Docutaz
 
     void OutputItemContentWidget::exportResults()
     {
-        if (!_queryInfo._info.isValid() || _aggrInfo.isValid || !_shell)
+        if (!_shell || !(_queryInfo._info.isValid() || _aggrInfo.isValid))
             return;
         if (_exportProgress)        // an export is already running for this result
             return;
@@ -297,10 +307,13 @@ namespace Docutaz
         MongoServer *server = _shell->server();
         ConnectionSettings *conn = server->connectionRecord();
         const std::string db   = _queryInfo._info._ns.databaseName();
-        const std::string coll = _queryInfo._info._ns.collectionName();
-        const QString label = QString("%1  —  %2.%3")
+        std::string coll = _queryInfo._info._ns.collectionName();
+        if (coll.empty())
+            coll = _aggrInfo.collectionName;
+        const QString label = QString("%1  —  %2.%3%4")
             .arg(QtUtils::toQString(conn->getReadableName()),
-                 QtUtils::toQString(db), QtUtils::toQString(coll));
+                 QtUtils::toQString(db), QtUtils::toQString(coll),
+                 _aggrInfo.isValid ? "  (aggregation)" : "");
 
         ExportResultsDialog dlg(label, QtUtils::toQString(coll), this);
         if (dlg.exec() != QDialog::Accepted)
@@ -323,7 +336,7 @@ namespace Docutaz
         _exportProgress->show();
 
         AppRegistry::instance().bus()->send(server->worker(),
-            new ExportRequest(this, _queryInfo, opts,
+            new ExportRequest(this, _queryInfo, _aggrInfo, opts,
                               QtUtils::toStdString(dlg.filePath()), dlg.limit()));
     }
 

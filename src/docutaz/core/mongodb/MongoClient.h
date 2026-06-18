@@ -62,6 +62,11 @@ namespace Docutaz
         void saveDocument(const mongo::BSONObj &obj, const MongoNamespace &ns);
         void removeDocuments(const MongoNamespace &ns, mongo::Query query, bool justOne = true);
         std::vector<MongoDocumentPtr> query(const MongoQueryInfo &info);
+        // Run an aggregation pipeline (BSON array of stages) and return the output
+        // documents. limit > 0 appends a final $limit stage (0 = all). Used by
+        // export; callers must reject write stages ($out/$merge) beforehand.
+        std::vector<MongoDocumentPtr> aggregate(const MongoNamespace &ns,
+                                                const mongo::BSONObj &pipeline, int limit);
 
         MongoCollectionInfo runCollStatsCommand(const std::string &ns);
         std::vector<MongoCollectionInfo> runCollStatsCommand(const std::vector<std::string> &namespaces);

@@ -924,29 +924,34 @@ namespace Docutaz
         std::vector<MongoDocumentPtr> documents;
     };
 
-    // Export a query's matching documents to a file (JSON/CSV). The worker
-    // re-runs the find from queryInfo (full documents, projection ignored) up to
-    // 'limit' (0 = all) and streams the result through Exporter to filePath.
+    // Export a query's results to a file (JSON/CSV/XLSX). The worker re-runs the
+    // query up to 'limit' (0 = all) and streams the result through Exporter to
+    // filePath. Unlike copy, export RESPECTS the projection. When aggrInfo is
+    // valid the worker re-runs that aggregation pipeline instead of a find (and
+    // refuses pipelines containing write stages — $out / $merge).
     class ExportRequest : public Event
     {
         R_EVENT
 
     public:
-        ExportRequest(QObject *sender, const MongoQueryInfo &queryInfo,
+        ExportRequest(QObject *sender, const MongoQueryInfo &queryInfo, const AggrInfo &aggrInfo,
                       const ExportOptions &options, const std::string &filePath, long long limit) :
             Event(sender),
             _queryInfo(queryInfo),
+            _aggrInfo(aggrInfo),
             _options(options),
             _filePath(filePath),
             _limit(limit) {}
 
         MongoQueryInfo queryInfo() const { return _queryInfo; }
+        AggrInfo aggrInfo() const { return _aggrInfo; }
         ExportOptions options() const { return _options; }
         std::string filePath() const { return _filePath; }
         long long limit() const { return _limit; }
 
     private:
         MongoQueryInfo _queryInfo;
+        AggrInfo _aggrInfo;
         ExportOptions _options;
         std::string _filePath;
         long long _limit;
