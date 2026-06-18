@@ -38,6 +38,7 @@ namespace Docutaz
         QString targetCollection() const;
         int limit() const;      // 0 == no limit
         bool dropFirst() const;
+        bool copyIndexes() const;
 
     public Q_SLOTS:
         void accept() override;
@@ -53,5 +54,6 @@ namespace Docutaz
         QLineEdit *_collectionEdit;
         QSpinBox  *_limitSpin;
         QCheckBox *_dropCheck;
+        QCheckBox *_indexCheck;
     };
 }

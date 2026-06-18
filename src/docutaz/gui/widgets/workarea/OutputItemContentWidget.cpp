@@ -183,18 +183,19 @@ namespace Docutaz
         ConnectionSettings *target = dlg.targetConnection();
         const std::string targetDb   = QtUtils::toStdString(dlg.targetDatabase());
         const std::string targetColl = QtUtils::toStdString(dlg.targetCollection());
-        const int  limit     = dlg.limit();     // 0 == no limit
-        const bool dropFirst = dlg.dropFirst();
-        const bool sameConn  = (target == srcConn) ||
+        const int  limit       = dlg.limit();     // 0 == no limit
+        const bool dropFirst   = dlg.dropFirst();
+        const bool copyIndexes = dlg.copyIndexes();
+        const bool sameConn    = (target == srcConn) ||
             (!target->uuid().isEmpty() && target->uuid() == srcConn->uuid());
 
         // Serialize the query to shell-executable (TenGen) JSON so types — ObjectId,
         // ISODate, NumberLong, … — round-trip as shell constructors mongosh accepts.
+        // The projection is intentionally NOT applied: it's a display setting, so a
+        // copy materialises the full source documents, not just the viewed fields.
         const auto enc = AppRegistry::instance().settingsManager()->uuidEncoding();
         const auto tz  = AppRegistry::instance().settingsManager()->timeZone();
         const std::string filter = BsonUtils::jsonString(_queryInfo._query, mongo::TenGen, 0, enc, tz);
-        const std::string proj   = _queryInfo._fields.isEmpty()
-            ? "" : BsonUtils::jsonString(_queryInfo._fields, mongo::TenGen, 0, enc, tz);
         const std::string sort   = _queryInfo._sort.isEmpty()
             ? "" : BsonUtils::jsonString(_queryInfo._sort, mongo::TenGen, 0, enc, tz);
 
@@ -202,6 +203,8 @@ namespace Docutaz
         // reads from the source collection, writes to the target. For a different
         // connection it opens a second connection via connect(); for the same one
         // it writes through the current connection (getSiblingDB).
+        const std::string srcCollExpr = "db.getSiblingDB(" + jsString(srcDb) +
+                                        ").getCollection(" + jsString(srcColl) + ")";
         std::string s;
         s += "// Docutaz — copy query results\n";
         std::string dstColl;
@@ -218,11 +221,7 @@ namespace Docutaz
         if (dropFirst)
             s += "__dstColl.drop();\n";
 
-        s += "let __cur = db.getSiblingDB(" + jsString(srcDb) + ").getCollection(" +
-             jsString(srcColl) + ").find(" + filter;
-        if (!proj.empty())
-            s += ", " + proj;
-        s += ")";
+        s += "let __cur = " + srcCollExpr + ".find(" + filter + ")";
         if (!sort.empty())
             s += ".sort(" + sort + ")";
         if (_queryInfo._skip > 0)
@@ -231,11 +230,39 @@ namespace Docutaz
             s += ".limit(" + std::to_string(limit) + ")";
         s += ";\n";
 
-        s += "let __buf = [], __n = 0;\n";
-        s += "__cur.forEach(function(__d) { __buf.push(__d); "
-             "if (__buf.length === 500) { __dstColl.insertMany(__buf); __n += __buf.length; __buf = []; } });\n";
-        s += "if (__buf.length) { __dstColl.insertMany(__buf); __n += __buf.length; }\n";
-        s += "print(\"Copied \" + __n + \" document(s) to " + targetDb + "." + targetColl + "\");\n";
+        // Insert unordered so a re-copy onto existing documents skips duplicates
+        // instead of aborting at the first one; count what actually went in.
+        s += "let __buf = [], __n = 0, __dups = 0;\n";
+        s += "function __flush() {\n";
+        s += "  if (!__buf.length) return;\n";
+        s += "  try {\n";
+        s += "    const __r = __dstColl.insertMany(__buf, { ordered: false });\n";
+        s += "    __n += (__r.insertedCount !== undefined ? __r.insertedCount : __buf.length);\n";
+        s += "  } catch (__e) {\n";
+        s += "    const __ins = (__e.result && __e.result.insertedCount) || __e.insertedCount || 0;\n";
+        s += "    __n += __ins; __dups += (__buf.length - __ins);\n";
+        s += "  }\n";
+        s += "  __buf = [];\n";
+        s += "}\n";
+        s += "__cur.forEach(function(__d) { __buf.push(__d); if (__buf.length === 500) __flush(); });\n";
+        s += "__flush();\n";
+
+        if (copyIndexes) {
+            // Recreate the source indexes that aren't already on the target. Keep
+            // the index name/options; drop fields createIndex doesn't accept.
+            s += "const __have = new Set(__dstColl.getIndexes().map(function(ix) { return ix.name; }));\n";
+            s += "let __idx = 0;\n";
+            s += srcCollExpr + ".getIndexes().forEach(function(ix) {\n";
+            s += "  if (ix.name === \"_id_\" || __have.has(ix.name)) return;\n";
+            s += "  const __o = Object.assign({}, ix);\n";
+            s += "  delete __o.key; delete __o.v; delete __o.ns;\n";
+            s += "  __dstColl.createIndex(ix.key, __o); __idx++;\n";
+            s += "});\n";
+            s += "print(\"Created \" + __idx + \" index(es) on the target.\");\n";
+        }
+
+        s += "print(\"Copied \" + __n + \" document(s) to " + targetDb + "." + targetColl +
+             "\" + (__dups ? (\" (\" + __dups + \" skipped: already present)\") : \"\"));\n";
 
         // Run in a new shell tab so the user sees exactly what executed (and its
         // output) without disturbing the current editor.

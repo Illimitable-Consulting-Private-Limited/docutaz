@@ -78,6 +78,12 @@ namespace Docutaz
         _dropCheck = new QCheckBox("Drop the target collection before copying", this);
         _dropCheck->setChecked(false);
 
+        _indexCheck = new QCheckBox("Copy indexes (skips any already on the target)", this);
+        _indexCheck->setChecked(false);
+        _indexCheck->setToolTip(
+            "Recreate the source collection's indexes on the target. A TTL index is "
+            "copied as-is, so copied data will expire per its expireAfterSeconds.");
+
         QFormLayout *form = new QFormLayout();
         form->addRow("From:", fromLabel);
 
@@ -91,6 +97,7 @@ namespace Docutaz
         form->addRow("Target collection:", _collectionEdit);
         form->addRow("Limit:", _limitSpin);
         form->addRow("", _dropCheck);
+        form->addRow("", _indexCheck);
 
         QLabel *note = new QLabel(
             "Documents matching the query are read from the source and inserted into "
@@ -121,6 +128,7 @@ namespace Docutaz
     QString CopyResultsDialog::targetCollection() const { return _collectionEdit->text().trimmed(); }
     int CopyResultsDialog::limit() const { return _limitSpin->value(); }
     bool CopyResultsDialog::dropFirst() const { return _dropCheck->isChecked(); }
+    bool CopyResultsDialog::copyIndexes() const { return _indexCheck->isChecked(); }
 
     void CopyResultsDialog::accept()
     {
