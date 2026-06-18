@@ -31,11 +31,13 @@ namespace Docutaz
         from->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
         _formatCombo = new QComboBox(this);
+        _formatCombo->setObjectName("exportFormat");
         _formatCombo->addItem("JSON (.json)",  static_cast<int>(ExportFormat::Json));
         _formatCombo->addItem("CSV (.csv)",    static_cast<int>(ExportFormat::Csv));
         _formatCombo->addItem("Excel (.xlsx)", static_cast<int>(ExportFormat::Xlsx));
 
         _pathEdit = new QLineEdit(this);
+        _pathEdit->setObjectName("exportPath");
         QPushButton *browse = new QPushButton("Browse…", this);
         QHBoxLayout *pathRow = new QHBoxLayout();
         pathRow->setContentsMargins(0, 0, 0, 0);
@@ -51,6 +53,7 @@ namespace Docutaz
         // JSON-only options
         _jsonGroup = new QGroupBox("JSON options", this);
         _jsonShapeCombo = new QComboBox(_jsonGroup);
+        _jsonShapeCombo->setObjectName("exportJsonShape");
         _jsonShapeCombo->addItem("Array  [ {…}, {…} ]");
         _jsonShapeCombo->addItem("One document per line (JSONL)");
         QFormLayout *jsonForm = new QFormLayout(_jsonGroup);
@@ -59,6 +62,7 @@ namespace Docutaz
         // Tabular options (CSV + Excel)
         _csvGroup = new QGroupBox("Table options (CSV / Excel)", this);
         _csvNestedCombo = new QComboBox(_csvGroup);
+        _csvNestedCombo->setObjectName("exportCsvNested");
         _csvNestedCombo->addItem("Nested objects/arrays as JSON text");
         _csvNestedCombo->addItem("Flatten nested objects (dot notation)");
         QFormLayout *csvForm = new QFormLayout(_csvGroup);

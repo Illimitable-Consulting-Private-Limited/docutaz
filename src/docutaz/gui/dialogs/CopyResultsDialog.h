@@ -54,6 +54,14 @@ namespace Docutaz
         bool dropFirst() const;
         bool copyIndexes() const;
 
+        // Non-interactive validation of the current selection. Returns an empty
+        // string when the inputs are acceptable, otherwise a user-facing reason
+        // (empty db/collection, copying a collection onto itself, SSH-tunnelled
+        // cross-connection target). Separated from accept() so it can be tested
+        // without a modal popup. The production/staging typed-confirmation is
+        // interactive and stays in accept().
+        QString validate() const;
+
     public Q_SLOTS:
         void accept() override;
 

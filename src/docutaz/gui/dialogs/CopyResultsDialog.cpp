@@ -56,6 +56,7 @@ namespace Docutaz
 
         // "To" — target connection (only open ones) / db / collection / limit.
         _connectionCombo = new QComboBox(this);
+        _connectionCombo->setObjectName("copyTargetConnection");
         int sourceIdx = 0;
         for (size_t i = 0; i < _targets.size(); ++i) {
             ConnectionSettings *c = _targets[i].connection;
@@ -70,9 +71,11 @@ namespace Docutaz
         // or type a new one (the target db may not exist yet). Filled in by
         // onConnectionChanged() to track the chosen connection.
         _dbCombo = new QComboBox(this);
+        _dbCombo->setObjectName("copyTargetDatabase");
         _dbCombo->setEditable(true);
 
         _collectionEdit = new QLineEdit(sourceCollection, this);
+        _collectionEdit->setObjectName("copyTargetCollection");
 
         _limitSpin = new QSpinBox(this);
         _limitSpin->setRange(0, 100000000);
@@ -161,20 +164,15 @@ namespace Docutaz
     bool CopyResultsDialog::dropFirst() const { return _dropCheck->isChecked(); }
     bool CopyResultsDialog::copyIndexes() const { return _indexCheck->isChecked(); }
 
-    void CopyResultsDialog::accept()
+    QString CopyResultsDialog::validate() const
     {
         ConnectionSettings *target = targetConnection();
         if (!target)
-            return;
-
-        if (targetDatabase().isEmpty()) {
-            QMessageBox::warning(this, "Copy Results", "Please enter a target database name.");
-            return;
-        }
-        if (targetCollection().isEmpty()) {
-            QMessageBox::warning(this, "Copy Results", "Please enter a target collection name.");
-            return;
-        }
+            return "No target connection is selected.";
+        if (targetDatabase().isEmpty())
+            return "Please enter a target database name.";
+        if (targetCollection().isEmpty())
+            return "Please enter a target collection name.";
 
         const bool sameConnection =
             target == _source || (!target->uuid().isEmpty() && target->uuid() == _source->uuid());
@@ -182,23 +180,28 @@ namespace Docutaz
         // Can't copy a collection onto itself: same connection + same db + same
         // collection would just re-insert into the source (duplicate-key errors).
         if (sameConnection && targetDatabase() == _sourceDb &&
-            targetCollection() == _sourceCollection) {
-            QMessageBox::warning(this, "Copy Results",
-                "The target is the same collection as the source. Choose a "
-                "different target collection (or a different database/connection).");
-            return;
-        }
+            targetCollection() == _sourceCollection)
+            return "The target is the same collection as the source. Choose a "
+                   "different target collection (or a different database/connection).";
 
-        // The copy script runs inside the source connection's shell, which can't
-        // route a second connection through the target's SSH tunnel. Block that
-        // combination rather than fail confusingly at run time.
-        if (!sameConnection && target->sshSettings() && target->sshSettings()->enabled()) {
-            QMessageBox::warning(this, "Copy Results",
-                "The selected target connection uses an SSH tunnel, which isn't "
-                "supported for copying yet. Pick a directly reachable target "
-                "(or the same connection as the source).");
+        // The copy connects to the target from the source's connection, which
+        // can't route through the target's SSH tunnel. Block that combination.
+        if (!sameConnection && target->sshSettings() && target->sshSettings()->enabled())
+            return "The selected target connection uses an SSH tunnel, which isn't "
+                   "supported for copying yet. Pick a directly reachable target "
+                   "(or the same connection as the source).";
+
+        return QString();
+    }
+
+    void CopyResultsDialog::accept()
+    {
+        const QString error = validate();
+        if (!error.isEmpty()) {
+            QMessageBox::warning(this, "Copy Results", error);
             return;
         }
+        ConnectionSettings *target = targetConnection();
 
         // Writing into a production/staging-tagged connection must be deliberate:
         // require the user to type its name to confirm.

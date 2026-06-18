@@ -143,6 +143,7 @@ if(DOCUTAZ_BUILD_TESTS)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  # MSVC: link the dynamic CRT
     FetchContent_MakeAvailable(googletest)
     add_subdirectory(src/docutaz-unit-tests)
+    add_subdirectory(src/docutaz-gui-tests)
 endif()
 
 # Show configuration summary
