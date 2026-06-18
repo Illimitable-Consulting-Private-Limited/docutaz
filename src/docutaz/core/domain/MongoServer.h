@@ -95,6 +95,11 @@ namespace Docutaz
          */
         ConnectionSettings *connectionRecord() const;
 
+        // Primary = the explorer's server for a connection (its database list is
+        // populated as the tree loads); Secondary = a per-tab shell clone (no
+        // loaded database list). Used to pick the right server for db listings.
+        ConnectionType connectionType() const { return _connectionType; }
+
         /**
          * @brief Loads databases of this server asynchronously.
          */

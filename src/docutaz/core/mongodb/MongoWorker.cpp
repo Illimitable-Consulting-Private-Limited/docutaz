@@ -576,6 +576,25 @@ namespace Docutaz
         }
     }
 
+    void MongoWorker::handle(CopyRequest *event)
+    {
+        try {
+            const MongoQueryInfo qi = event->source();
+            std::unique_ptr<MongoClient> client{getClient()};
+            const MongoClient::CopyResult r = client->copyDocuments(
+                MongoNamespace(qi._info._ns), qi._query, qi._sort,
+                static_cast<int>(event->limit()), event->sameConnection(), event->targetUri(),
+                event->targetDb(), event->targetCollection(), event->dropFirst(),
+                event->copyIndexes());
+            client->done();
+            reply(event->sender(), new CopyResponse(this, r.copied, r.skipped, r.indexes,
+                  event->targetDb() + "." + event->targetCollection()));
+        } catch (const std::exception &ex) {
+            reply(event->sender(), new CopyResponse(this, EventError(ex.what())));
+            sendLog(this, LogEvent::RBM_ERROR, std::string(ex.what()));
+        }
+    }
+
     namespace {
         // Index of the ')' matching the '(' at openIdx, tracking quoted strings;
         // -1 if unbalanced.

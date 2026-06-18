@@ -24,6 +24,7 @@ namespace Docutaz
     class OutputItemHeaderWidget;
     class OutputWidget;
     class ExportResponse;
+    class CopyResponse;
 
     class OutputItemContentWidget : public QWidget
     {
@@ -74,6 +75,8 @@ namespace Docutaz
         // into a target connection/collection chosen via CopyResultsDialog. Opens
         // a new shell tab with the generated copy script and runs it.
         void copyResultsTo();
+        // Worker reply for a copy started by this widget.
+        void handle(CopyResponse *event);
         // Export this result's documents (re-run with its filter/sort) to a
         // JSON/CSV file via ExportResultsDialog; runs async on the worker.
         void exportResults();
@@ -90,6 +93,7 @@ namespace Docutaz
         BsonTreeModel *configureModel();
 
         QProgressDialog *_exportProgress = nullptr;
+        QProgressDialog *_copyProgress = nullptr;
 
         FindFrame *_textView;
         BsonTreeView *_bsonTreeview;

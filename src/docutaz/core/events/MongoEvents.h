@@ -973,6 +973,70 @@ namespace Docutaz
         std::string filePath;
     };
 
+    // Copy documents matching a query from one collection into another (possibly
+    // on a different open connection). Runs in the worker via the driver — no
+    // shell script, no tab. Copies full documents (projection dropped), preserving
+    // _id and skipping duplicates; optionally drops the target and copies indexes.
+    class CopyRequest : public Event
+    {
+        R_EVENT
+
+    public:
+        CopyRequest(QObject *sender, const MongoQueryInfo &source, bool sameConnection,
+                    const std::string &targetUri, const std::string &targetDb,
+                    const std::string &targetCollection, long long limit, bool dropFirst,
+                    bool copyIndexes) :
+            Event(sender),
+            _source(source),
+            _sameConnection(sameConnection),
+            _targetUri(targetUri),
+            _targetDb(targetDb),
+            _targetCollection(targetCollection),
+            _limit(limit),
+            _dropFirst(dropFirst),
+            _copyIndexes(copyIndexes) {}
+
+        MongoQueryInfo source() const { return _source; }
+        bool sameConnection() const { return _sameConnection; }
+        std::string targetUri() const { return _targetUri; }
+        std::string targetDb() const { return _targetDb; }
+        std::string targetCollection() const { return _targetCollection; }
+        long long limit() const { return _limit; }
+        bool dropFirst() const { return _dropFirst; }
+        bool copyIndexes() const { return _copyIndexes; }
+
+    private:
+        MongoQueryInfo _source;
+        bool _sameConnection;
+        std::string _targetUri;
+        std::string _targetDb;
+        std::string _targetCollection;
+        long long _limit;
+        bool _dropFirst;
+        bool _copyIndexes;
+    };
+
+    class CopyResponse : public Event
+    {
+        R_EVENT
+
+        CopyResponse(QObject *sender, long long copied, long long skipped, int indexes,
+                     const std::string &targetNs) :
+            Event(sender),
+            copied(copied),
+            skipped(skipped),
+            indexes(indexes),
+            targetNs(targetNs) {}
+
+        CopyResponse(QObject *sender, const EventError &error) :
+            Event(sender, error) {}
+
+        long long copied = 0;
+        long long skipped = 0;
+        int indexes = 0;
+        std::string targetNs;
+    };
+
     class AutocompleteRequest : public Event
     {
         R_EVENT

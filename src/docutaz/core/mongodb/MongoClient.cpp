@@ -3,11 +3,13 @@
 #include <mongocxx/collection.hpp>
 #include <mongocxx/database.hpp>
 #include <mongocxx/exception/exception.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
 #include <mongocxx/index_view.hpp>
 #include <mongocxx/options/find.hpp>
 #include <mongocxx/pipeline.hpp>
 #include <mongocxx/options/index.hpp>
 #include <memory>
+#include <set>
 #include <mongocxx/options/replace.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/array.hpp>
@@ -443,6 +445,74 @@ std::vector<MongoDocumentPtr> MongoClient::aggregate(const MongoNamespace &ns,
     for (auto& doc : cursor)
         docs.push_back(std::make_shared<MongoDocument>(fromView(doc)));
     return docs;
+}
+
+MongoClient::CopyResult MongoClient::copyDocuments(
+    const MongoNamespace &srcNs, const mongo::BSONObj &filter, const mongo::BSONObj &sort,
+    int limit, bool sameConnection, const std::string &targetUri, const std::string &targetDb,
+    const std::string &targetColl, bool dropFirst, bool copyIndexes)
+{
+    CopyResult res;
+
+    // Resolve the target collection — same connection or a freshly opened client.
+    std::unique_ptr<mongocxx::client> ownClient;
+    mongocxx::collection target;
+    if (sameConnection) {
+        target = _client[targetDb][targetColl];
+    } else {
+        ownClient = std::make_unique<mongocxx::client>(mongocxx::uri{targetUri});
+        target = (*ownClient)[targetDb][targetColl];
+    }
+
+    if (dropFirst)
+        target.drop();
+
+    // Stream the matching documents from the source and insert them one by one so
+    // a duplicate _id is skipped (not aborting the whole copy) and counted exactly.
+    mongocxx::options::find fo;
+    if (limit > 0)        fo.limit(limit);
+    if (!sort.isEmpty())  fo.sort(toView(sort));
+    auto cursor = _client[srcNs.databaseName()][srcNs.collectionName()].find(toView(filter), fo);
+    for (auto &&doc : cursor) {
+        try {
+            target.insert_one(doc);
+            ++res.copied;
+        } catch (const mongocxx::operation_exception &e) {
+            if (std::string(e.what()).find("E11000") != std::string::npos)
+                ++res.skipped;     // duplicate key — already present
+            else
+                throw;
+        }
+    }
+
+    if (copyIndexes) {
+        std::set<std::string> existing;
+        for (auto &&ix : target.list_indexes()) {
+            if (auto n = ix["name"])
+                existing.insert(std::string(n.get_string().value));
+        }
+        for (auto &&ix : _client[srcNs.databaseName()][srcNs.collectionName()].list_indexes()) {
+            const auto nameEl = ix["name"];
+            const std::string name = nameEl ? std::string(nameEl.get_string().value) : std::string();
+            const auto keyEl = ix["key"];
+            if (name == "_id_" || name.empty() || existing.count(name) || !keyEl)
+                continue;
+            bsoncxx::builder::basic::document opts;
+            for (auto &&el : ix) {
+                const auto f = el.key();
+                if (f == "key" || f == "v" || f == "ns")
+                    continue;        // not accepted as createIndex options
+                opts.append(kvp(f, el.get_value()));
+            }
+            try {
+                target.create_index(keyEl.get_document().value, opts.extract());
+                ++res.indexes;
+            } catch (...) {
+                // best-effort: skip an index that can't be recreated
+            }
+        }
+    }
+    return res;
 }
 
 MongoCollectionInfo MongoClient::runCollStatsCommand(const std::string &ns)

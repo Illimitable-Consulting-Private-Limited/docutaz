@@ -6,6 +6,7 @@
 
 QT_BEGIN_NAMESPACE
 class QComboBox;
+class QLabel;
 class QLineEdit;
 class QSpinBox;
 class QCheckBox;
@@ -16,12 +17,16 @@ namespace Docutaz
     class ConnectionSettings;
 
     // Collects the target of a "copy query results" operation: which connection
-    // to write to, the destination database (a dropdown of the connection's
+    // to write to, the destination database (a dropdown of that connection's
     // databases, editable for a new one) and collection (may not exist yet), a
     // row limit and whether to drop the target first.
     //
+    // Only currently open connections are offered as targets — so the database
+    // dropdown can always list real databases, and the copy (which connects to
+    // the target from the source's shell) targets something already reachable.
+    //
     // Safety: the dialog never writes anything itself — it only gathers choices.
-    // It blocks accepting a target that needs an SSH tunnel (unsupported in v1,
+    // It blocks accepting a target that needs an SSH tunnel (unsupported here,
     // since the generated script runs inside the source connection's shell), and
     // requires a typed confirmation when the chosen target is tagged
     // production/staging so prod writes are always deliberate.
@@ -30,10 +35,16 @@ namespace Docutaz
         Q_OBJECT
 
     public:
+        // One selectable destination: an open connection and its databases.
+        struct CopyTarget
+        {
+            ConnectionSettings *connection = nullptr;
+            QStringList databases;
+        };
+
         CopyResultsDialog(ConnectionSettings *source, const QString &sourceDb,
                           const QString &sourceCollection,
-                          const std::vector<ConnectionSettings *> &connections,
-                          const QStringList &databaseNames,
+                          const std::vector<CopyTarget> &openTargets,
                           QWidget *parent = nullptr);
 
         ConnectionSettings *targetConnection() const;
@@ -46,11 +57,15 @@ namespace Docutaz
     public Q_SLOTS:
         void accept() override;
 
+    private Q_SLOTS:
+        // Repopulate the database dropdown from the selected target connection.
+        void onConnectionChanged();
+
     private:
         ConnectionSettings *_source;
         QString _sourceDb;
         QString _sourceCollection;
-        std::vector<ConnectionSettings *> _connections;
+        std::vector<CopyTarget> _targets;
 
         QComboBox *_connectionCombo;
         QComboBox *_dbCombo;        // editable: pick a known db or type a new one

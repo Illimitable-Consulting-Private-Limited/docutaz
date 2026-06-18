@@ -33,6 +33,8 @@ namespace Docutaz
     R_REGISTER_EVENT(ExecuteQueryResponse)
     R_REGISTER_EVENT(ExportRequest)
     R_REGISTER_EVENT(ExportResponse)
+    R_REGISTER_EVENT(CopyRequest)
+    R_REGISTER_EVENT(CopyResponse)
     R_REGISTER_EVENT(DocumentListLoadedEvent)
     R_REGISTER_EVENT(ExecuteScriptRequest)
     R_REGISTER_EVENT(ExecuteScriptResponse)

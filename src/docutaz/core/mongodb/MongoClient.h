@@ -68,6 +68,17 @@ namespace Docutaz
         std::vector<MongoDocumentPtr> aggregate(const MongoNamespace &ns,
                                                 const mongo::BSONObj &pipeline, int limit);
 
+        struct CopyResult { long long copied = 0; long long skipped = 0; int indexes = 0; };
+        // Copy documents matching (filter, sort, limit) from srcNs into a target
+        // collection. The target is on this same connection when sameConnection is
+        // true, otherwise a fresh client is opened to targetUri. Inserts preserve
+        // _id and skip duplicates (so a re-copy is safe). Optionally drops the
+        // target first and recreates the source's indexes (skipping existing ones).
+        CopyResult copyDocuments(const MongoNamespace &srcNs, const mongo::BSONObj &filter,
+                                 const mongo::BSONObj &sort, int limit, bool sameConnection,
+                                 const std::string &targetUri, const std::string &targetDb,
+                                 const std::string &targetColl, bool dropFirst, bool copyIndexes);
+
         MongoCollectionInfo runCollStatsCommand(const std::string &ns);
         std::vector<MongoCollectionInfo> runCollStatsCommand(const std::vector<std::string> &namespaces);
 

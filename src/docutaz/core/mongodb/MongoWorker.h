@@ -52,6 +52,7 @@ namespace Docutaz
         void handle(RemoveDocumentRequest *event);
         void handle(ExecuteQueryRequest *event);
         void handle(ExportRequest *event);
+        void handle(CopyRequest *event);
         void handle(ExecuteScriptRequest *event);
         // Fast path for plain `db.coll.find(...)` scripts: runs them through the
         // in-process driver (like paging does) instead of mongosh, avoiding the
