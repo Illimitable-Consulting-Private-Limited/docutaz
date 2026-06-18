@@ -10,6 +10,10 @@ namespace Docutaz
         void initStyle();
         void applyStyle(const QString &styleName);
         QStringList getSupportedStyles();
+        // Tint the application palette with the Docutaz brand accent (selection
+        // highlight + links) on top of whatever native light/dark palette the OS
+        // provides. Call once after the style is initialised.
+        void applyBrandAccent();
     }
 
     class AppStyle : public QProxyStyle

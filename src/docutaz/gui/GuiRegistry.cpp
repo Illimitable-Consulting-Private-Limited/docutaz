@@ -27,7 +27,7 @@ namespace Docutaz
         QPalette p = view->palette();
 //        p.setColor(QPalette::AlternateBase, QColor(243, 246, 250));
         p.setColor(QPalette::AlternateBase, QColor(245, 245, 245));
-        p.setColor(QPalette::Active, QPalette::Highlight, QColor(16, 108, 214));
+        p.setColor(QPalette::Active, QPalette::Highlight, QColor(17, 158, 102)); // Docutaz accent
         view->setPalette(p);
     #endif
     }

@@ -70,8 +70,10 @@ int main(int argc, char *argv[])
         settings->save();
     }
 
-    // Init GUI style
+    // Init GUI style, then tint the palette with the Docutaz brand accent
+    // (selection highlight + links) on top of the native light/dark palette.
     Docutaz::AppStyleUtils::initStyle();
+    Docutaz::AppStyleUtils::applyBrandAccent();
 
     Docutaz::MainWindow mainWindow;
     mainWindow.show();

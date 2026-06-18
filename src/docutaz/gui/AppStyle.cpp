@@ -1,6 +1,8 @@
 #include "docutaz/gui/AppStyle.h"
 
 #include <QApplication>
+#include <QColor>
+#include <QPalette>
 #include <QStyleFactory>
 
 #include "docutaz/core/AppRegistry.h"
@@ -33,6 +35,23 @@ namespace Docutaz
             AppRegistry::instance().settingsManager()->save();
             QString style = AppRegistry::instance().settingsManager()->currentStyle();
             applyStyle(style);
+        }
+
+        void applyBrandAccent()
+        {
+            // Docutaz accent green for the selection highlight; a slightly darker
+            // green (matching the website's link colour) for hyperlinks so they
+            // stay legible on a light background. Everything else is left to the
+            // native OS palette, so light/dark themes keep working.
+            const QColor highlight(17, 158, 102);   // #119E66
+            const QColor link(12, 122, 80);         // #0C7A50
+
+            QPalette pal = QApplication::palette();
+            pal.setColor(QPalette::Highlight, highlight);
+            pal.setColor(QPalette::HighlightedText, Qt::white);
+            pal.setColor(QPalette::Link, link);
+            pal.setColor(QPalette::LinkVisited, link.darker(115));
+            QApplication::setPalette(pal);
         }
     }
 

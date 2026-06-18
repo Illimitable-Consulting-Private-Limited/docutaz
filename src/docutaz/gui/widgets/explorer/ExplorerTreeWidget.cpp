@@ -13,7 +13,7 @@ namespace Docutaz
     #if defined(Q_OS_MAC)
         setAttribute(Qt::WA_MacShowFocusRect, false);
         QPalette palet = palette();
-        palet.setColor(QPalette::Active, QPalette::Highlight, QColor(16, 108, 214));
+        palet.setColor(QPalette::Active, QPalette::Highlight, QColor(17, 158, 102)); // Docutaz accent
         setPalette(palet);
     #endif
         setContextMenuPolicy(Qt::DefaultContextMenu);
