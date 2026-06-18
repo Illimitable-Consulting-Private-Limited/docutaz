@@ -13,6 +13,11 @@ Supports **MongoDB 8+** with a modern `mongosh`-based shell.
 - Connect to local or remote MongoDB instances (standalone, replica set, Atlas)
 - Browse databases, collections, and documents in a GUI explorer
 - Run multi-statement JavaScript queries in a full `mongosh` shell tab
+- Query editor with one-keystroke formatting, code folding, bracket-pair
+  colorization, auto-closing brackets, and Mongo-aware syntax highlighting
+- Copy query results into another open connection / database / collection — for
+  pulling a slice of data somewhere safe to debug
+- Export query and aggregation results to **JSON**, **CSV**, or **Excel (.xlsx)**
 - Insert, edit, and delete documents with a visual editor
 - Manage indexes, users, and collection structure
 - Page through large result sets with configurable batch sizes
