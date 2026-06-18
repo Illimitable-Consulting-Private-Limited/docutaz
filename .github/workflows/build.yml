@@ -112,7 +112,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests docutaz_gui_tests --parallel
 
       - name: Expose mongocxx libs for bundler
         # bin/bundle-linux.sh scans /usr/local/lib64; copy the CI-built shared
@@ -218,7 +218,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests docutaz_gui_tests --parallel
 
       - name: Expose mongocxx libs for bundler
         run: |
@@ -394,7 +394,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR;$env:GITHUB_WORKSPACE\mongocxx-prefix\lib\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix\cmake;$env:GITHUB_WORKSPACE\mongocxx-prefix;$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows"
 
       - name: Build
-        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests docutaz_gui_tests --parallel
 
       - name: Run unit tests
         shell: pwsh
@@ -409,6 +409,10 @@ jobs:
             "$env:GITHUB_WORKSPACE\mongocxx-prefix\bin;" +
             "$env:GITHUB_WORKSPACE\vcpkg-deps\x64-windows\bin;" +
             $env:PATH
+          # docutaz_gui_tests creates a QApplication and needs the offscreen
+          # platform plugin; it runs from the build tree (not the deployed app),
+          # so point Qt at the install's platform plugins explicitly.
+          $env:QT_QPA_PLATFORM_PLUGIN_PATH = "$env:QT_ROOT_DIR\plugins\platforms"
           ctest --test-dir build --output-on-failure
 
       - name: Read version
@@ -611,7 +615,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="$QT_PREFIX;$(brew --prefix qscintilla2);$(brew --prefix);${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz docutaz_unit_tests --parallel
+        run: cmake --build build --target docutaz docutaz_unit_tests docutaz_gui_tests --parallel
 
       - name: Run unit tests
         run: |
@@ -619,6 +623,11 @@ jobs:
           # from Homebrew. Point the dynamic loader at all of them so ctest can
           # launch it (the build-tree rpath usually suffices; this makes it robust).
           export DYLD_FALLBACK_LIBRARY_PATH="${{ github.workspace }}/mongocxx-prefix/lib:$QT_PREFIX/lib:$(brew --prefix qscintilla2)/lib:$(brew --prefix)/lib:${DYLD_FALLBACK_LIBRARY_PATH:-}"
+          # docutaz_gui_tests creates a QApplication and needs the offscreen
+          # platform plugin; it runs from the build tree, so point Qt at the
+          # directory holding libqoffscreen.dylib in the Qt install.
+          off=$(find -L "$QT_PREFIX" -name libqoffscreen.dylib 2>/dev/null | head -1)
+          [ -n "$off" ] && export QT_QPA_PLATFORM_PLUGIN_PATH="$(dirname "$off")"
           ctest --test-dir build --output-on-failure
 
       - name: Read version
