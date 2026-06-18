@@ -156,82 +156,8 @@ namespace Docutaz
 
     std::string MongoWorker::buildConnectionUri() const
     {
-        const bool isSrv = _connSettings->isSrv();
-        std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
-        const CredentialSettings *cred = _connSettings->primaryCredential();
-        if (cred && !cred->userName().empty())
-            uri += ConnectionSettings::percentEncodeUserInfo(cred->userName()) + ":" +
-                   ConnectionSettings::percentEncodeUserInfo(cred->userPassword()) + "@";
-
-        if (isSrv) {
-            // DNS seed list: just the SRV hostname, no port. The driver resolves
-            // the real hosts (and replica-set name + TLS) from DNS.
-            uri += _connSettings->serverHost();
-        } else if (_connSettings->isReplicaSet()) {
-            const auto &members = _connSettings->replicaSetSettings()->members();
-            for (int i = 0; i < static_cast<int>(members.size()); ++i) {
-                if (i) uri += ",";
-                uri += members[i];
-            }
-        } else {
-            uri += _connSettings->serverHost() + ":" +
-                   std::to_string(_connSettings->serverPort());
-        }
-        uri += "/" + _connSettings->defaultDatabase();
-
-        std::vector<std::string> opts;
-        if (cred && !cred->userName().empty()) {
-            // For an SRV/Atlas connection let the driver negotiate the auth
-            // mechanism (it picks SCRAM-SHA-256). Forcing a mechanism here — the
-            // URI import defaults to SCRAM-SHA-1 — makes Atlas auth fail.
-            if (!isSrv) {
-                const std::string mech = cred->mechanism();
-                opts.push_back("authMechanism=" + (mech.empty() ? "SCRAM-SHA-256" : mech));
-            }
-            if (!cred->databaseName().empty())
-                opts.push_back("authSource=" + cred->databaseName());
-        }
-        if (_connSettings->isReplicaSet()) {
-            // Prefer user-entered name; fall back to cached discovered name.
-            // Omit entirely when both are empty so the driver auto-discovers.
-            const std::string& entered = _connSettings->replicaSetSettings()->setNameUserEntered();
-            const std::string& cached  = _connSettings->replicaSetSettings()->cachedSetName();
-            const std::string& name = !entered.empty() ? entered : cached;
-            if (!name.empty())
-                opts.push_back("replicaSet=" + name);
-        }
-        if (_connSettings->sslSettings() && _connSettings->sslSettings()->sslEnabled()) {
-            opts.push_back("tls=true");
-            if (!_connSettings->sslSettings()->caFile().empty())
-                opts.push_back("tlsCAFile=" + _connSettings->sslSettings()->caFile());
-            if (!_connSettings->sslSettings()->pemKeyFile().empty())
-                opts.push_back("tlsCertificateKeyFile=" +
-                               _connSettings->sslSettings()->pemKeyFile());
-            if (_connSettings->sslSettings()->allowInvalidCertificates())
-                opts.push_back("tlsAllowInvalidCertificates=true");
-        }
-        // Fail fast on unreachable servers. Without an explicit timeout the
-        // driver waits the default 30s (serverSelectionTimeoutMS), freezing the
-        // worker on a bad connection.
-        const int timeoutMs = (_mongoTimeoutSec > 0 ? static_cast<int>(_mongoTimeoutSec) : 10) * 1000;
-        opts.push_back("serverSelectionTimeoutMS=" + std::to_string(timeoutMs));
-        opts.push_back("connectTimeoutMS=" + std::to_string(timeoutMs));
-        // For a single (non-replica-set) host, connect directly. This disables
-        // SDAM topology monitoring, whose background monitor threads otherwise
-        // keep retrying an unreachable host and linger across failed attempts.
-        // NOT for SRV: a seed list resolves to multiple hosts / a replica set, so
-        // directConnection would defeat discovery.
-        if (!_connSettings->isReplicaSet() && !isSrv)
-            opts.push_back("directConnection=true");
-
-        if (!opts.empty()) {
-            uri += "?";
-            for (size_t i = 0; i < opts.size(); ++i) {
-                if (i) uri += "&";
-                uri += opts[i];
-            }
-        }
-        return uri;
+        const int timeoutSec = _mongoTimeoutSec > 0 ? static_cast<int>(_mongoTimeoutSec) : 10;
+        return ConnectionSettings::buildMongoUri(_connSettings, timeoutSec);
     }
 
     ReplicaSet MongoWorker::getReplicaSetInfo() const

@@ -5,9 +5,14 @@
 
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
+#include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/utils/QtUtils.h"
+#include "docutaz/core/utils/BsonUtils.h"
+#include "docutaz/core/domain/App.h"
 #include "docutaz/core/domain/MongoShell.h"
+#include "docutaz/core/domain/MongoServer.h"
 #include "docutaz/core/domain/MongoAggregateInfo.h"
+#include "docutaz/gui/dialogs/CopyResultsDialog.h"
 
 #include "docutaz/gui/widgets/workarea/OutputWidget.h"
 #include "docutaz/gui/widgets/workarea/OutputItemHeaderWidget.h"
@@ -106,6 +111,9 @@ namespace Docutaz
             _header->paging()->setSkip(_queryInfo._skip);
             if (!_queryInfo._limit)
                 _queryInfo._limit = 50;
+            // A real find against a collection — offer "Copy to…".
+            _header->setCopyResultsEnabled(true);
+            VERIFY(connect(_header, SIGNAL(copyResultsRequested()), this, SLOT(copyResultsTo())));
         }
         else if (_aggrInfo.isValid) {
             _initialLimit = 0;
@@ -133,6 +141,106 @@ namespace Docutaz
         VERIFY(connect(_header, SIGNAL(restoredSize()), this, SIGNAL(restoredSize())));
 
         refreshOutputItem();
+    }
+
+    namespace
+    {
+        // Emit a double-quoted JS string literal for an identifier (db/collection
+        // name, URI) so names with quotes/backslashes can't break the script.
+        std::string jsString(const std::string &s)
+        {
+            std::string out = "\"";
+            for (char c : s) {
+                switch (c) {
+                    case '\\': out += "\\\\"; break;
+                    case '"':  out += "\\\""; break;
+                    case '\n': out += "\\n";  break;
+                    case '\r': out += "\\r";  break;
+                    case '\t': out += "\\t";  break;
+                    default:   out += c;      break;
+                }
+            }
+            out += "\"";
+            return out;
+        }
+    }
+
+    void OutputItemContentWidget::copyResultsTo()
+    {
+        if (!_queryInfo._info.isValid() || !_shell)
+            return;
+
+        MongoServer *server = _shell->server();
+        ConnectionSettings *srcConn = server->connectionRecord();
+        const std::string srcDb   = _queryInfo._info._ns.databaseName();
+        const std::string srcColl = _queryInfo._info._ns.collectionName();
+
+        CopyResultsDialog dlg(srcConn, QtUtils::toQString(srcDb), QtUtils::toQString(srcColl),
+                              AppRegistry::instance().settingsManager()->connections(), this);
+        if (dlg.exec() != QDialog::Accepted)
+            return;
+
+        ConnectionSettings *target = dlg.targetConnection();
+        const std::string targetDb   = QtUtils::toStdString(dlg.targetDatabase());
+        const std::string targetColl = QtUtils::toStdString(dlg.targetCollection());
+        const int  limit     = dlg.limit();     // 0 == no limit
+        const bool dropFirst = dlg.dropFirst();
+        const bool sameConn  = (target == srcConn) ||
+            (!target->uuid().isEmpty() && target->uuid() == srcConn->uuid());
+
+        // Serialize the query to shell-executable (TenGen) JSON so types — ObjectId,
+        // ISODate, NumberLong, … — round-trip as shell constructors mongosh accepts.
+        const auto enc = AppRegistry::instance().settingsManager()->uuidEncoding();
+        const auto tz  = AppRegistry::instance().settingsManager()->timeZone();
+        const std::string filter = BsonUtils::jsonString(_queryInfo._query, mongo::TenGen, 0, enc, tz);
+        const std::string proj   = _queryInfo._fields.isEmpty()
+            ? "" : BsonUtils::jsonString(_queryInfo._fields, mongo::TenGen, 0, enc, tz);
+        const std::string sort   = _queryInfo._sort.isEmpty()
+            ? "" : BsonUtils::jsonString(_queryInfo._sort, mongo::TenGen, 0, enc, tz);
+
+        // Build the copy script. It runs inside the source connection's shell:
+        // reads from the source collection, writes to the target. For a different
+        // connection it opens a second connection via connect(); for the same one
+        // it writes through the current connection (getSiblingDB).
+        std::string s;
+        s += "// Docutaz — copy query results\n";
+        std::string dstColl;
+        if (sameConn) {
+            dstColl = "db.getSiblingDB(" + jsString(targetDb) + ").getCollection(" +
+                      jsString(targetColl) + ")";
+        } else {
+            const std::string uri = ConnectionSettings::buildMongoUri(target);
+            s += "const __dst = connect(" + jsString(uri) + ");\n";
+            dstColl = "__dst.getSiblingDB(" + jsString(targetDb) + ").getCollection(" +
+                      jsString(targetColl) + ")";
+        }
+        s += "const __dstColl = " + dstColl + ";\n";
+        if (dropFirst)
+            s += "__dstColl.drop();\n";
+
+        s += "let __cur = db.getSiblingDB(" + jsString(srcDb) + ").getCollection(" +
+             jsString(srcColl) + ").find(" + filter;
+        if (!proj.empty())
+            s += ", " + proj;
+        s += ")";
+        if (!sort.empty())
+            s += ".sort(" + sort + ")";
+        if (_queryInfo._skip > 0)
+            s += ".skip(" + std::to_string(_queryInfo._skip) + ")";
+        if (limit > 0)
+            s += ".limit(" + std::to_string(limit) + ")";
+        s += ";\n";
+
+        s += "let __buf = [], __n = 0;\n";
+        s += "__cur.forEach(function(__d) { __buf.push(__d); "
+             "if (__buf.length === 500) { __dstColl.insertMany(__buf); __n += __buf.length; __buf = []; } });\n";
+        s += "if (__buf.length) { __dstColl.insertMany(__buf); __n += __buf.length; }\n";
+        s += "print(\"Copied \" + __n + \" document(s) to " + targetDb + "." + targetColl + "\");\n";
+
+        // Run in a new shell tab so the user sees exactly what executed (and its
+        // output) without disturbing the current editor.
+        AppRegistry::instance().app()->openShell(
+            server, QtUtils::toQString(s), srcDb, true, "Copy results");
     }
 
     void OutputItemContentWidget::paging_leftClicked(int skip, int limit)

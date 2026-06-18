@@ -262,6 +262,82 @@ namespace Docutaz
         return std::string(encoded.constData(), static_cast<size_t>(encoded.size()));
     }
 
+    std::string ConnectionSettings::buildMongoUri(const ConnectionSettings *conn, int timeoutSec)
+    {
+        const bool isSrv = conn->isSrv();
+        std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
+        const CredentialSettings *cred = conn->primaryCredential();
+        if (cred && !cred->userName().empty())
+            uri += percentEncodeUserInfo(cred->userName()) + ":" +
+                   percentEncodeUserInfo(cred->userPassword()) + "@";
+
+        if (isSrv) {
+            // DNS seed list: just the SRV hostname, no port. The driver resolves
+            // the real hosts (and replica-set name + TLS) from DNS.
+            uri += conn->serverHost();
+        } else if (conn->isReplicaSet()) {
+            const auto &members = conn->replicaSetSettings()->members();
+            for (int i = 0; i < static_cast<int>(members.size()); ++i) {
+                if (i) uri += ",";
+                uri += members[i];
+            }
+        } else {
+            uri += conn->serverHost() + ":" + std::to_string(conn->serverPort());
+        }
+        uri += "/" + conn->defaultDatabase();
+
+        std::vector<std::string> opts;
+        if (cred && !cred->userName().empty()) {
+            // For an SRV/Atlas connection let the driver negotiate the auth
+            // mechanism (it picks SCRAM-SHA-256). Forcing a mechanism here — the
+            // URI import defaults to SCRAM-SHA-1 — makes Atlas auth fail.
+            if (!isSrv) {
+                const std::string mech = cred->mechanism();
+                opts.push_back("authMechanism=" + (mech.empty() ? "SCRAM-SHA-256" : mech));
+            }
+            if (!cred->databaseName().empty())
+                opts.push_back("authSource=" + cred->databaseName());
+        }
+        if (conn->isReplicaSet()) {
+            // Prefer user-entered name; fall back to cached discovered name.
+            // Omit entirely when both are empty so the driver auto-discovers.
+            const std::string& entered = conn->replicaSetSettings()->setNameUserEntered();
+            const std::string& cached  = conn->replicaSetSettings()->cachedSetName();
+            const std::string& name = !entered.empty() ? entered : cached;
+            if (!name.empty())
+                opts.push_back("replicaSet=" + name);
+        }
+        if (conn->sslSettings() && conn->sslSettings()->sslEnabled()) {
+            opts.push_back("tls=true");
+            if (!conn->sslSettings()->caFile().empty())
+                opts.push_back("tlsCAFile=" + conn->sslSettings()->caFile());
+            if (!conn->sslSettings()->pemKeyFile().empty())
+                opts.push_back("tlsCertificateKeyFile=" + conn->sslSettings()->pemKeyFile());
+            if (conn->sslSettings()->allowInvalidCertificates())
+                opts.push_back("tlsAllowInvalidCertificates=true");
+        }
+        // Fail fast on unreachable servers. Without an explicit timeout the driver
+        // waits the default 30s (serverSelectionTimeoutMS), freezing on a bad host.
+        const int timeoutMs = (timeoutSec > 0 ? timeoutSec : 10) * 1000;
+        opts.push_back("serverSelectionTimeoutMS=" + std::to_string(timeoutMs));
+        opts.push_back("connectTimeoutMS=" + std::to_string(timeoutMs));
+        // For a single (non-replica-set) host, connect directly. This disables
+        // SDAM topology monitoring, whose background monitor threads otherwise keep
+        // retrying an unreachable host. NOT for SRV: a seed list resolves to
+        // multiple hosts / a replica set, so directConnection would defeat it.
+        if (!conn->isReplicaSet() && !isSrv)
+            opts.push_back("directConnection=true");
+
+        if (!opts.empty()) {
+            uri += "?";
+            for (size_t i = 0; i < opts.size(); ++i) {
+                if (i) uri += "&";
+                uri += opts[i];
+            }
+        }
+        return uri;
+    }
+
     std::string ConnectionSettings::getFullAddress() const
     {
         // An SRV seed list has no meaningful port — appending :27017 would be

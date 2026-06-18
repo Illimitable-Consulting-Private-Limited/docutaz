@@ -69,6 +69,7 @@ set(SOURCES
     gui/dialogs/ConnectionDiagnosticDialog.cpp
     gui/dialogs/ConnectionDialog.cpp
     gui/dialogs/CopyCollectionDialog.cpp
+    gui/dialogs/CopyResultsDialog.cpp
     gui/widgets/workarea/IndicatorLabel.cpp
     gui/dialogs/CreateCollectionDialog.cpp
     gui/dialogs/CreateDatabaseDialog.cpp

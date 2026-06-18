@@ -173,6 +173,15 @@ namespace Docutaz
         // ':', '/', '?', '#', '[', ']', '@', '%', etc. doesn't corrupt the URI.
         static std::string percentEncodeUserInfo(const std::string &component);
 
+        // Build a mongosh/driver connection URI (scheme, userinfo, host(s) or SRV
+        // name, default db and auth/TLS/replica-set/timeout options) for the given
+        // connection. Shared by the worker (to connect its own server) and the
+        // "copy results" feature (to reach an arbitrary target connection).
+        // timeoutSec drives serverSelection/connect timeouts. Note: this does NOT
+        // account for an SSH tunnel — callers routing through one must rewrite the
+        // host/port themselves.
+        static std::string buildMongoUri(const ConnectionSettings *conn, int timeoutSec = 10);
+
     private:
         CredentialSettings *findCredential(const std::string &databaseName) const;
 

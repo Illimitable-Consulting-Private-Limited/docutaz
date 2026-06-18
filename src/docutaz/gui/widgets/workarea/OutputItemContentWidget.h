@@ -65,6 +65,10 @@ namespace Docutaz
         void showCustom();
 
     private Q_SLOTS:
+        // Copy this result's documents (the same query, re-run against the source)
+        // into a target connection/collection chosen via CopyResultsDialog. Opens
+        // a new shell tab with the generated copy script and runs it.
+        void copyResultsTo();
         void jsonPartReady(const QString &json);
         void refresh(int skip, int batchSize);
         void paging_rightClicked(int skip, int batchSize);

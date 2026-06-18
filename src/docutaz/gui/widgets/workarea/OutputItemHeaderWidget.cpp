@@ -42,6 +42,15 @@ namespace Docutaz
         auto const* outputWidget = qobject_cast<OutputWidget*>(outputItemContentWidget->parentWidget());
         _orientation = outputWidget->getOrientation();
 
+        // "Copy to…" — copy this result's documents into another connection /
+        // collection for local debugging. Hidden until enabled for find results.
+        _copyButton = new QPushButton(this);
+        _copyButton->setText("Copy to…");
+        _copyButton->setToolTip("Copy these query results into another connection / collection");
+        _copyButton->setFlat(true);
+        _copyButton->hide();
+        VERIFY(connect(_copyButton, SIGNAL(clicked()), this, SIGNAL(copyResultsRequested())));
+
         // Text mode button
         _textButton = new QPushButton(this);
         _textButton->setIcon(GuiRegistry::instance().textIcon());
@@ -123,6 +132,7 @@ namespace Docutaz
         layout->addWidget(_timeIndicator);
         QSpacerItem *hSpacer = new QSpacerItem(2000, 24, QSizePolicy::Preferred, QSizePolicy::Minimum);
         layout->addSpacerItem(hSpacer);
+        layout->addWidget(_copyButton, 0, Qt::AlignRight);
         layout->addWidget(_paging);
         layout->addWidget(createVerticalLine());
         layout->addSpacing(2);
@@ -166,6 +176,11 @@ namespace Docutaz
       
         if(tabbedResults && !QtUtils::isDarkPalette(this))
             setStyleSheet("background-color: white");
+    }
+
+    void OutputItemHeaderWidget::setCopyResultsEnabled(bool on)
+    {
+        _copyButton->setVisible(on);
     }
 
     void OutputItemHeaderWidget::mouseDoubleClickEvent(QMouseEvent *)
