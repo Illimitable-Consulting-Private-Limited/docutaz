@@ -5,6 +5,10 @@
 
 #include <mongo/bson/bsonobj.h>
 
+#include <QDir>
+
+#include <cstdio>
+#include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -104,6 +108,29 @@ TEST(Exporter, CsvScalarTypeMapping)
     EXPECT_TRUE(contains(s, "507f1f77bcf86cd799439011")); // ObjectId as plain hex
     EXPECT_TRUE(contains(s, "true"));                     // bool plain
     EXPECT_TRUE(contains(s, "42"));                       // number plain
+}
+
+TEST(Exporter, XlsxWritesValidWorkbook)
+{
+    ExportOptions o; o.format = ExportFormat::Xlsx;
+    const std::string path =
+        (QDir::tempPath() + "/docutaz_export_test.xlsx").toStdString();
+    std::remove(path.c_str());
+
+    std::string err;
+    const size_t n = Exporter::writeXlsxFile(
+        {doc(R"({"_id":1,"name":"x"})"), doc(R"({"_id":2,"name":"y"})")}, o, path, &err);
+    EXPECT_TRUE(err.empty()) << err;
+    EXPECT_EQ(2u, n);
+
+    std::ifstream f(path, std::ios::binary);
+    ASSERT_TRUE(f.good());
+    char sig[2] = {0, 0};
+    f.read(sig, 2);
+    EXPECT_EQ('P', sig[0]);   // .xlsx is a ZIP container
+    EXPECT_EQ('K', sig[1]);
+    f.close();
+    std::remove(path.c_str());
 }
 
 TEST(Exporter, EmptyInput)

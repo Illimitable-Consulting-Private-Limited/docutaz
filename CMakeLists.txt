@@ -113,6 +113,15 @@ if(QSCINTILLA_INCLUDE_DIR AND EXISTS "${QSCINTILLA_INCLUDE_DIR}/Qsci/qsciglobal.
 endif()
 
 add_subdirectory(src/docutaz/ssh)
+
+# libxlsxwriter (BSD-2) — vendored in-tree for .xlsx export. Self-contained: it
+# bundles minizip and links the system zlib (already a dependency), so it needs
+# no Qt-private headers. Build just the static lib (the `xlsxwriter` target).
+set(BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(BUILD_FUZZERS OFF CACHE BOOL "" FORCE)
+add_subdirectory(third_party/libxlsxwriter)
+
 add_subdirectory(src/docutaz)
 
 # Unit tests (and the GoogleTest dependency they need) are optional. They are

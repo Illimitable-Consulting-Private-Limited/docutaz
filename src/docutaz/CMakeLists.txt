@@ -165,6 +165,7 @@ target_link_libraries(docutaz_core
         Qt6::Xml
         Qt6::PrintSupport
         qscintilla
+        xlsxwriter
         mongo::mongocxx_shared
         mongo::bsoncxx_shared
         # ssl/crypto are the imported targets created by our own

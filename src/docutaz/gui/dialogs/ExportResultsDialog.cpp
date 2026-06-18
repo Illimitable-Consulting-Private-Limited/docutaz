@@ -31,8 +31,9 @@ namespace Docutaz
         from->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
         _formatCombo = new QComboBox(this);
-        _formatCombo->addItem("JSON (.json)", static_cast<int>(ExportFormat::Json));
-        _formatCombo->addItem("CSV (.csv)",  static_cast<int>(ExportFormat::Csv));
+        _formatCombo->addItem("JSON (.json)",  static_cast<int>(ExportFormat::Json));
+        _formatCombo->addItem("CSV (.csv)",    static_cast<int>(ExportFormat::Csv));
+        _formatCombo->addItem("Excel (.xlsx)", static_cast<int>(ExportFormat::Xlsx));
 
         _pathEdit = new QLineEdit(this);
         QPushButton *browse = new QPushButton("Browse…", this);
@@ -55,8 +56,8 @@ namespace Docutaz
         QFormLayout *jsonForm = new QFormLayout(_jsonGroup);
         jsonForm->addRow("Shape:", _jsonShapeCombo);
 
-        // CSV-only options
-        _csvGroup = new QGroupBox("CSV options", this);
+        // Tabular options (CSV + Excel)
+        _csvGroup = new QGroupBox("Table options (CSV / Excel)", this);
         _csvNestedCombo = new QComboBox(_csvGroup);
         _csvNestedCombo->addItem("Nested objects/arrays as JSON text");
         _csvNestedCombo->addItem("Flatten nested objects (dot notation)");
@@ -93,14 +94,18 @@ namespace Docutaz
 
     QString ExportResultsDialog::defaultExtension() const
     {
-        return format() == ExportFormat::Csv ? "csv" : "json";
+        switch (format()) {
+            case ExportFormat::Csv:  return "csv";
+            case ExportFormat::Xlsx: return "xlsx";
+            default:                 return "json";
+        }
     }
 
     void ExportResultsDialog::onFormatChanged()
     {
         const bool isJson = format() == ExportFormat::Json;
         _jsonGroup->setVisible(isJson);
-        _csvGroup->setVisible(!isJson);
+        _csvGroup->setVisible(!isJson);   // CSV + Excel share the nested option
 
         // Keep the file path's extension in sync with the chosen format. If the
         // user hasn't typed a path yet, seed one from the collection name.
@@ -119,8 +124,12 @@ namespace Docutaz
 
     void ExportResultsDialog::onBrowse()
     {
-        const QString filter = format() == ExportFormat::Csv ? "CSV files (*.csv)"
-                                                             : "JSON files (*.json)";
+        QString filter;
+        switch (format()) {
+            case ExportFormat::Csv:  filter = "CSV files (*.csv)"; break;
+            case ExportFormat::Xlsx: filter = "Excel files (*.xlsx)"; break;
+            default:                 filter = "JSON files (*.json)"; break;
+        }
         const QString start = _pathEdit->text().trimmed().isEmpty()
             ? _baseName + "." + defaultExtension()
             : _pathEdit->text().trimmed();
