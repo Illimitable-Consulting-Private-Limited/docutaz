@@ -1,6 +1,7 @@
 #include "docutaz/gui/widgets/workarea/OutputItemHeaderWidget.h"
 
 #include <QHBoxLayout>
+#include <QIcon>
 #include <QLabel>
 #include <QPushButton>
 #include <QSplitter>
@@ -43,10 +44,12 @@ namespace Docutaz
         _orientation = outputWidget->getOrientation();
 
         // "Copy to…" — copy this result's documents into another connection /
-        // collection for local debugging. Hidden until enabled for find results.
+        // collection for local debugging. A flat icon button matching the
+        // view-mode buttons; hidden until enabled for find results.
         _copyButton = new QPushButton(this);
-        _copyButton->setText("Copy to…");
+        _copyButton->setIcon(QIcon(":/docutaz/icons/copy_16x16.png"));
         _copyButton->setToolTip("Copy these query results into another connection / collection");
+        _copyButton->setFixedSize(24, 24);
         _copyButton->setFlat(true);
         _copyButton->hide();
         VERIFY(connect(_copyButton, SIGNAL(clicked()), this, SIGNAL(copyResultsRequested())));

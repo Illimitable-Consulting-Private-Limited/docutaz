@@ -111,9 +111,13 @@ namespace Docutaz
             _header->paging()->setSkip(_queryInfo._skip);
             if (!_queryInfo._limit)
                 _queryInfo._limit = 50;
-            // A real find against a collection — offer "Copy to…".
-            _header->setCopyResultsEnabled(true);
-            VERIFY(connect(_header, SIGNAL(copyResultsRequested()), this, SLOT(copyResultsTo())));
+            // A real find against a collection — offer "Copy to…". Aggregations
+            // also carry a valid queryInfo namespace, so exclude them explicitly:
+            // their output is synthetic and isn't supported by the copy action.
+            if (!_aggrInfo.isValid) {
+                _header->setCopyResultsEnabled(true);
+                VERIFY(connect(_header, SIGNAL(copyResultsRequested()), this, SLOT(copyResultsTo())));
+            }
         }
         else if (_aggrInfo.isValid) {
             _initialLimit = 0;
@@ -167,7 +171,7 @@ namespace Docutaz
 
     void OutputItemContentWidget::copyResultsTo()
     {
-        if (!_queryInfo._info.isValid() || !_shell)
+        if (!_queryInfo._info.isValid() || _aggrInfo.isValid || !_shell)
             return;
 
         MongoServer *server = _shell->server();
