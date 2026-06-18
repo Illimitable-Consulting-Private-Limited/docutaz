@@ -160,7 +160,9 @@ namespace Docutaz
     std::string MongoWorker::buildConnectionUri() const
     {
         const int timeoutSec = _mongoTimeoutSec > 0 ? static_cast<int>(_mongoTimeoutSec) : 10;
-        return ConnectionSettings::buildMongoUri(_connSettings, timeoutSec);
+        // Bound socket reads by the shell timeout so a stalled driver query can't
+        // wedge the worker thread forever (the UI would stay stuck "executing").
+        return ConnectionSettings::buildMongoUri(_connSettings, timeoutSec, _shellTimeoutSec);
     }
 
     ReplicaSet MongoWorker::getReplicaSetInfo() const

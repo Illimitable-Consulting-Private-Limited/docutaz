@@ -177,10 +177,13 @@ namespace Docutaz
         // name, default db and auth/TLS/replica-set/timeout options) for the given
         // connection. Shared by the worker (to connect its own server) and the
         // "copy results" feature (to reach an arbitrary target connection).
-        // timeoutSec drives serverSelection/connect timeouts. Note: this does NOT
-        // account for an SSH tunnel — callers routing through one must rewrite the
-        // host/port themselves.
-        static std::string buildMongoUri(const ConnectionSettings *conn, int timeoutSec = 10);
+        // timeoutSec drives serverSelection/connect timeouts. socketTimeoutSec, when
+        // > 0, bounds individual socket reads (socketTimeoutMS) so a stalled query
+        // can't block the worker thread forever — it errors out instead. Note: this
+        // does NOT account for an SSH tunnel — callers routing through one must
+        // rewrite the host/port themselves.
+        static std::string buildMongoUri(const ConnectionSettings *conn, int timeoutSec = 10,
+                                         int socketTimeoutSec = 0);
 
     private:
         CredentialSettings *findCredential(const std::string &databaseName) const;

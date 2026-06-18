@@ -29,3 +29,19 @@ TEST(connection_uri, userinfo_reserved_chars_are_encoded)
     EXPECT_EQ(ConnectionSettings::percentEncodeUserInfo("p@ss:w/rd"),
               std::string("p%40ss%3Aw%2Frd"));
 }
+
+// socketTimeoutMS bounds individual socket reads so a stalled driver query can't
+// wedge the worker thread forever. It must be present (in ms) when a socket
+// timeout is requested, and absent when it isn't.
+TEST(connection_uri, socket_timeout_option)
+{
+    ConnectionSettings c(false);
+    c.setServerHost("localhost");
+    c.setServerPort(27017);
+
+    const std::string withTimeout = ConnectionSettings::buildMongoUri(&c, 10, 15);
+    EXPECT_NE(withTimeout.find("socketTimeoutMS=15000"), std::string::npos);
+
+    const std::string noTimeout = ConnectionSettings::buildMongoUri(&c, 10, 0);
+    EXPECT_EQ(noTimeout.find("socketTimeoutMS"), std::string::npos);
+}

@@ -262,7 +262,8 @@ namespace Docutaz
         return std::string(encoded.constData(), static_cast<size_t>(encoded.size()));
     }
 
-    std::string ConnectionSettings::buildMongoUri(const ConnectionSettings *conn, int timeoutSec)
+    std::string ConnectionSettings::buildMongoUri(const ConnectionSettings *conn, int timeoutSec,
+                                                  int socketTimeoutSec)
     {
         const bool isSrv = conn->isSrv();
         std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
@@ -321,6 +322,12 @@ namespace Docutaz
         const int timeoutMs = (timeoutSec > 0 ? timeoutSec : 10) * 1000;
         opts.push_back("serverSelectionTimeoutMS=" + std::to_string(timeoutMs));
         opts.push_back("connectTimeoutMS=" + std::to_string(timeoutMs));
+        // Bound individual socket reads so a stalled query/cursor on the driver
+        // fast-path can't block the worker thread indefinitely (it would leave the
+        // UI latched in the "executing" state with no recovery). Matches the shell
+        // timeout, which already caps queries run through mongosh.
+        if (socketTimeoutSec > 0)
+            opts.push_back("socketTimeoutMS=" + std::to_string(socketTimeoutSec * 1000));
         // For a single (non-replica-set) host, connect directly. This disables
         // SDAM topology monitoring, whose background monitor threads otherwise keep
         // retrying an unreachable host. NOT for SRV: a seed list resolves to
