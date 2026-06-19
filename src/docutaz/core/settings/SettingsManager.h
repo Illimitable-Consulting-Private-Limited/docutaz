@@ -4,6 +4,7 @@
 #include <QVariantMap>
 #include <QSet>
 #include <QDir>
+#include <QtGlobal>
 
 #include <vector>
 #include <cstdlib>
@@ -14,23 +15,41 @@ namespace Docutaz
 {
     class ConnectionSettings;
     struct ConfigFileAndImportFunction;
-        
-    // Current cache directory
-    auto const CacheDir = QString("%1/.Docutaz/%2/cache/").arg(QDir::homePath())
-                                                          .arg(PROJECT_VERSION);
-    // Current config file
-    auto const ConfigFilePath = QString("%1/.Docutaz/%2/docutaz.json").arg(QDir::homePath())
-                                                                      .arg(PROJECT_VERSION);
-    // Current config file directory
-    auto const ConfigDir = QString("%1/.Docutaz/%2/").arg(QDir::homePath())
-                                                     .arg(PROJECT_VERSION);
+
+    // Base directory for all Docutaz user data. Honors $DOCUTAZ_CONFIG_DIR
+    // (used by tests, and handy for sandboxed installs); otherwise ~/.Docutaz.
+    // Note: the config is intentionally NOT version-scoped — a single persistent
+    // location so settings survive app updates (see migrateFromPreviousLayout()).
+    inline QString configBaseDir()
+    {
+        const QByteArray override = qgetenv("DOCUTAZ_CONFIG_DIR");
+        if (!override.isEmpty())
+            return QString::fromLocal8Bit(override);
+        return QString("%1/.Docutaz").arg(QDir::homePath());
+    }
+    // Config file directory (trailing slash kept for QDir::mkpath/log parity)
+    inline QString configDir()      { return configBaseDir() + QStringLiteral("/"); }
+    // The single config file
+    inline QString configFilePath() { return configBaseDir() + QStringLiteral("/docutaz.json"); }
+    // Cache directory
+    inline QString cacheDir()       { return configBaseDir() + QStringLiteral("/cache/"); }
+
+    // On-disk config schema version. Bumped ONLY on an incompatible change to the
+    // stored format; drives migrateMap(). 1 = robo "1.0", 2 = "2.0", 3 = first
+    // single-directory Docutaz layout.
+    inline constexpr int CurrentConfigSchema = 3;
+
+    // License-text revision, independent of the app version. The EULA is shown
+    // only until this exact token has been accepted, so app updates do not
+    // re-prompt; bump it only when the license text itself changes.
+    inline constexpr char CurrentEulaVersion[] = "1";
 
 /* ----------------------------- SettingsManager ------------------------------ */
 
     /**
      * @brief SettingsManager gives you access to all settings, that is used
-     *        by Docutaz. It can load() and save() them. Config file usually
-     *        located here: ~/.Docutaz/<version>/docutaz.json
+     *        by Docutaz. It can load() and save() them. Config file located
+     *        here: ~/.Docutaz/docutaz.json
      *
      *        You can access this manager via:
      *        AppRegistry::instance().settingsManager()
@@ -45,7 +64,7 @@ namespace Docutaz
 
         /**
          * @brief Creates SettingsManager for config file in default location
-         *        (usually ~/.Docutaz/<version>/docutaz.json)
+         *        (~/.Docutaz/docutaz.json)
          */
         SettingsManager();
 
@@ -196,6 +215,23 @@ namespace Docutaz
          * Load connection settings from previous versions of Robomongo
          */
         void importFromOldVersion();
+
+        // First-run-on-this-layout helper: if no single-directory config exists
+        // yet, copy the newest legacy per-version config
+        // (~/.Docutaz/<X.Y.Z>/docutaz.json) into configFilePath() so settings
+        // carry across updates. Copies (never moves) so older builds still work.
+        void migrateFromPreviousLayout();
+
+        // Determine the schema version of a loaded config map (reads
+        // "schemaVersion", inferring from the legacy "version" string if absent).
+        static int detectSchema(QVariantMap const& map);
+
+        // Migrate a loaded config map forward to CurrentConfigSchema in place.
+        static void migrateMap(QVariantMap& map, int fromSchema);
+
+        // The config was written by a newer build than this one (post-downgrade);
+        // back it up and load best-effort rather than reinterpreting it.
+        void guardDowngrade(int schema) const;
 
         // Imports connections from oldConfigFilePath into current config file
         bool importFromFile(QString const& oldConfigFilePath);

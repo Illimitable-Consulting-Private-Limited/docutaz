@@ -27,6 +27,7 @@ set(SOURCES_TEST
     ${DOCUTAZ_SRC_DIR}/core/utils/Exporter_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/mongodb/MongoClient_connection_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/settings/ConnectionSettings_test.cpp
+    ${DOCUTAZ_SRC_DIR}/core/settings/SettingsManager_test.cpp
     ${DOCUTAZ_SRC_DIR}/gui/GuiResources_test.cpp
     ${DOCUTAZ_SRC_DIR}/gui/editors/JsBeautifier_test.cpp
 )

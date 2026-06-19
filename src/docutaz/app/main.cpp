@@ -77,15 +77,17 @@ int main(int argc, char *argv[])
     app.setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
 
-    // EULA License Agreement
+    // License agreement. Keyed on the license-text revision (CurrentEulaVersion),
+    // NOT the app version, so a routine update never re-prompts; it only shows
+    // again if the license text itself changes (and the bump moves the token).
     auto const& settings { Docutaz::AppRegistry::instance().settingsManager() };
-    if (!settings->acceptedEulaVersions().contains(PROJECT_VERSION)) {
+    if (!settings->acceptedEulaVersions().contains(QString::fromLatin1(Docutaz::CurrentEulaVersion))) {
         Docutaz::EulaDialog eulaDialog;
         if (QDialog::Rejected == eulaDialog.exec()) {
             rbm_ssh_cleanup();
             return 1;
         }
-        settings->addAcceptedEulaVersion(PROJECT_VERSION);
+        settings->addAcceptedEulaVersion(QString::fromLatin1(Docutaz::CurrentEulaVersion));
         settings->save();
     }
 

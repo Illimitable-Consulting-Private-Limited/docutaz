@@ -11,6 +11,7 @@
 #include <QJsonParseError>
 #include <QXmlStreamReader>
 #include <QDirIterator>
+#include <QVersionNumber>
 
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/CredentialSettings.h"
@@ -68,7 +69,7 @@ namespace Docutaz
     
     /**
      * Creates SettingsManager for config file in default location
-     * ~/.Docutaz/<version>/docutaz.json
+     * ~/.Docutaz/docutaz.json
      */
     SettingsManager::SettingsManager() :
         _version(SchemaVersion),
@@ -86,10 +87,16 @@ namespace Docutaz
         _textFontPointSize(-1),
         _mongoTimeoutSec(10),
         _shellTimeoutSec(15),
-        _imported(false)        
+        _imported(false)
     {
-        if (!QDir().mkpath(ConfigDir))
-            LOG_MSG("ERROR: Could not create settings path: " + ConfigDir, mongo::logger::LogSeverity::Error());
+        // First launch on the single-directory layout: pull settings forward
+        // from the newest legacy per-version directory so connections, prefs and
+        // the accepted EULA survive the upgrade. No-op once a config exists here.
+        if (!QFile::exists(configFilePath()))
+            migrateFromPreviousLayout();
+
+        if (!QDir().mkpath(configDir()))
+            LOG_MSG("ERROR: Could not create settings path: " + configDir(), mongo::logger::LogSeverity::Error());
 
         DocutazCrypt::initKey();
         if (!load()) {  // if load fails (probably due to non-existing config. file or directory)
@@ -97,7 +104,7 @@ namespace Docutaz
             load();     // try loading again for the purpose of import from previous Robomongo versions
         }
 
-        LOG_MSG("SettingsManager initialized in " + ConfigFilePath, mongo::logger::LogSeverity::Info(), false);
+        LOG_MSG("SettingsManager initialized in " + configFilePath(), mongo::logger::LogSeverity::Info(), false);
     }
 
     SettingsManager::~SettingsManager()
@@ -111,10 +118,10 @@ namespace Docutaz
      */
     bool SettingsManager::load()
     {
-        if (!QFile::exists(ConfigFilePath))
+        if (!QFile::exists(configFilePath()))
             return false;
 
-        QFile f(ConfigFilePath);
+        QFile f(configFilePath());
         if (!f.open(QIODevice::ReadOnly))
             return false;
 
@@ -136,16 +143,16 @@ namespace Docutaz
     {
         QVariantMap const& map = convertToMap();
 
-        QFile f(ConfigFilePath);
+        QFile f(configFilePath());
         if (!f.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-            LOG_MSG("ERROR: Could not write settings to: " + ConfigFilePath, mongo::logger::LogSeverity::Error());
+            LOG_MSG("ERROR: Could not write settings to: " + configFilePath(), mongo::logger::LogSeverity::Error());
             return false;
         }
 
         const QByteArray json = QJsonDocument::fromVariant(map).toJson(QJsonDocument::Indented);
         const bool ok = f.write(json) == json.size();
 
-        LOG_MSG("Settings saved to: " + ConfigFilePath, mongo::logger::LogSeverity::Info());
+        LOG_MSG("Settings saved to: " + configFilePath(), mongo::logger::LogSeverity::Info());
 
         return ok;
     }
@@ -165,6 +172,15 @@ namespace Docutaz
      */
     void SettingsManager::loadFromMap(QVariantMap &map)
     {
+        // 0. Schema versioning. Migrate an older config forward (or, after a
+        //    downgrade, guard one written by a newer build) before reading any
+        //    fields, so the rest of this function always sees the current shape.
+        int const schema = detectSchema(map);
+        if (schema > CurrentConfigSchema)
+            guardDowngrade(schema);
+        else if (schema < CurrentConfigSchema)
+            migrateMap(map, schema);
+
         // 1. Load version
         _version = map.value("version").toString();
 
@@ -295,8 +311,10 @@ namespace Docutaz
     {
         QVariantMap map;
 
-        // 1. Save schema version
+        // 1. Save schema version (human-readable string + the integer that
+        //    drives migration; see CurrentConfigSchema / migrateMap).
         map.insert("version", SchemaVersion);
+        map.insert("schemaVersion", CurrentConfigSchema);
 
         // 2. Save UUID encoding
         map.insert("uuidEncoding", _uuidEncoding);
@@ -431,6 +449,81 @@ namespace Docutaz
                 return;
             }
         }
+    }
+
+    void SettingsManager::migrateFromPreviousLayout()
+    {
+        // Older Docutaz builds wrote ~/.Docutaz/<X.Y.Z>/docutaz.json (one dir per
+        // release). Find the newest such config and copy it to the new single
+        // location so the upgrade preserves everything. Copy (not move) leaves
+        // the old dirs intact, so reinstalling an older build still finds them.
+        QDir base(configBaseDir());
+        if (!base.exists())
+            return;
+
+        QVersionNumber best;
+        QString bestFile;
+        for (const QString& name : base.entryList(QDir::Dirs | QDir::NoDotAndDotDot)) {
+            const QVersionNumber v = QVersionNumber::fromString(name);
+            if (v.isNull())
+                continue;   // skip "cache" and any non-version directory
+            const QString candidate = base.filePath(name + "/docutaz.json");
+            if (!QFile::exists(candidate))
+                continue;
+            if (bestFile.isEmpty() || best < v) {
+                best = v;
+                bestFile = candidate;
+            }
+        }
+
+        if (bestFile.isEmpty())
+            return;   // genuine first run — importFromOldVersion() handles Robo 3T
+
+        QDir().mkpath(configDir());
+        if (QFile::copy(bestFile, configFilePath()))
+            LOG_MSG("Migrated settings from previous version: " + bestFile, mongo::logger::LogSeverity::Info());
+        else
+            LOG_MSG("WARNING: could not migrate settings from " + bestFile, mongo::logger::LogSeverity::Warning());
+    }
+
+    int SettingsManager::detectSchema(QVariantMap const& map)
+    {
+        if (map.contains("schemaVersion"))
+            return map.value("schemaVersion").toInt();
+        // Legacy configs only carry the "version" string ("1.0" / "2.0").
+        return map.value("version").toString().startsWith("1.") ? 1 : 2;
+    }
+
+    void SettingsManager::migrateMap(QVariantMap& map, int fromSchema)
+    {
+        // --- to schema 3: single-directory layout ---
+        if (fromSchema < 3) {
+            // The license text did not change with the layout move, so a prior
+            // per-version EULA acceptance counts as accepting the current text.
+            // This is what stops the upgrade from re-prompting existing users
+            // while still letting a future CurrentEulaVersion bump re-prompt.
+            QStringList eula = map.value("acceptedEulaVersions").toStringList();
+            if (!eula.isEmpty() && !eula.contains(QString::fromLatin1(CurrentEulaVersion))) {
+                eula.append(QString::fromLatin1(CurrentEulaVersion));
+                map.insert("acceptedEulaVersions", eula);
+            }
+        }
+
+        map.insert("schemaVersion", CurrentConfigSchema);
+    }
+
+    void SettingsManager::guardDowngrade(int schema) const
+    {
+        // A newer build already rewrote this config in a schema we don't know.
+        // Don't reinterpret/overwrite it silently — back it up so the user can
+        // recover, then load best-effort (every field read below defaults
+        // gracefully when missing/unrecognized).
+        const QString backup = configFilePath() + QString(".from-schema-%1.bak").arg(schema);
+        if (!QFile::exists(backup))
+            QFile::copy(configFilePath(), backup);
+        LOG_MSG(QString("Config schema %1 is newer than this build's %2; backed up to %3 and loading best-effort.")
+                    .arg(schema).arg(CurrentConfigSchema).arg(backup),
+                mongo::logger::LogSeverity::Warning());
     }
 
     bool SettingsManager::importConnectionsFrom_0_8_5()
