@@ -1,0 +1,65 @@
+name: Flatpak
+
+# Builds the Flatpak from the manifest in packaging/flatpak/ and uploads the
+# resulting bundle as an artifact. This continuously verifies the manifest (and
+# that the app actually builds + links against the KDE runtime) so a driver/
+# mongosh bump or a packaging change can't silently break Flathub.
+#
+# It does NOT build the committed manifest verbatim — that one pins the docutaz
+# module to the published git tag (so it stays Flathub-submittable). CI instead
+# generates a variant whose docutaz source is the checked-out tree (dir ../..),
+# so it tests the current commit. The dependency modules are unchanged.
+#
+# Matches the project's CI model: automatic on main + PRs to main, manual
+# (workflow_dispatch) for develop. Paths-filtered so doc-only changes skip it.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packaging/flatpak/**'
+      - 'install/linux/**'
+      - 'cmake/DocutazInstall.cmake'
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - '.github/workflows/flatpak.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'packaging/flatpak/**'
+      - 'install/linux/**'
+      - 'cmake/DocutazInstall.cmake'
+      - 'CMakeLists.txt'
+      - 'src/**'
+      - '.github/workflows/flatpak.yml'
+  workflow_dispatch:
+
+# The flatpak-github-actions actions still ship Node 20; force them onto Node 24
+# (same approach as pages.yml). Drop once they release Node 24 majors.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  flatpak:
+    name: Build Flatpak (x86_64)
+    runs-on: ubuntu-24.04
+    container:
+      # KDE 6.8 runtime/SDK preinstalled — must match runtime-version in the
+      # manifest. Privileged is required for the build sandbox.
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      options: --privileged
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate CI manifest (build the checked-out tree)
+        run: |
+          python3 packaging/flatpak/ci-manifest.py \
+            packaging/flatpak/in.illimitable.Docutaz.yaml \
+            packaging/flatpak/in.illimitable.Docutaz.ci.yaml
+
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: docutaz.flatpak
+          manifest-path: packaging/flatpak/in.illimitable.Docutaz.ci.yaml
+          # Cache the dependency builds; keyed on the committed manifest so the
+          # cache only invalidates when a dependency (not app code) changes.
+          cache-key: flatpak-builder-${{ hashFiles('packaging/flatpak/in.illimitable.Docutaz.yaml') }}
