@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AppStream metadata for the Flatpak / Linux desktop integration.
+     The component id matches the .desktop file id (in.illimitable.Docutaz).
+     Validate with: appstreamcli validate in.illimitable.Docutaz.metainfo.xml -->
+<component type="desktop-application">
+  <id>in.illimitable.Docutaz</id>
+
+  <name>Docutaz</name>
+  <summary>Cross-platform MongoDB management GUI</summary>
+
+  <!-- License of THIS metadata file; the program license is separate. -->
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <developer id="in.illimitable">
+    <name>Illimitable Consulting Private Limited</name>
+  </developer>
+
+  <description>
+    <p>
+      Docutaz is a cross-platform desktop GUI for MongoDB 8 and newer, built for
+      developers who work with documents. It runs queries through MongoDB's
+      official mongosh shell, which is bundled with the Flatpak.
+    </p>
+    <p>Features:</p>
+    <ul>
+      <li>Connect to local or remote MongoDB instances, replica sets and authenticated deployments</li>
+      <li>Browse databases, collections and documents in tree, table or raw text view</li>
+      <li>Run multi-statement JavaScript queries with the built-in mongosh shell</li>
+      <li>Insert, edit and delete documents with a full-featured visual editor</li>
+      <li>Manage indexes, users and collection structure</li>
+      <li>Export query and aggregation results to JSON, CSV or XLSX</li>
+      <li>Inline syntax checking flags unbalanced brackets and missing commas before you run</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">in.illimitable.Docutaz.desktop</launchable>
+
+  <!-- Flathub requires at least one screenshot with a reachable image URL.
+       Replace these with real application screenshots before submitting to
+       Flathub (the build does not need them; the reviewer does). -->
+  <screenshots>
+    <screenshot type="default">
+      <caption>Querying a collection in Docutaz</caption>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/tab.png</image>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://illimitable-consulting-private-limited.github.io/docutaz/</url>
+  <url type="bugtracker">https://github.com/Illimitable-Consulting-Private-Limited/docutaz/issues</url>
+  <url type="vcs-browser">https://github.com/Illimitable-Consulting-Private-Limited/docutaz</url>
+
+  <categories>
+    <category>Development</category>
+    <category>Database</category>
+  </categories>
+
+  <keywords>
+    <keyword>MongoDB</keyword>
+    <keyword>Database</keyword>
+    <keyword>NoSQL</keyword>
+    <keyword>Query</keyword>
+    <keyword>mongosh</keyword>
+  </keywords>
+
+  <!-- No nudity, violence, etc. An empty oars-1.1 rating means "no concerns". -->
+  <content_rating type="oars-1.1" />
+
+  <!-- Keep the newest entry's version in sync with the built tag; the release
+       automation can prepend new entries here. -->
+  <releases>
+    <release version="2.3.0" date="2026-06-19">
+      <description>
+        <ul>
+          <li>Inline syntax checking in the query editor (brackets and missing commas)</li>
+          <li>Clickable install-guide link in the Linux pre-flight dependency dialog</li>
+          <li>Various GUI fixes</li>
+        </ul>
+      </description>
+    </release>
+  </releases>
+</component>

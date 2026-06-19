@@ -670,6 +670,7 @@ QString MongoshEngine::findMongosh() {
     };
 #else
     candidates = QStringList{
+        "/app/bin/mongosh",            // bundled inside the Flatpak (/app prefix)
         "/usr/bin/mongosh",
         "/usr/local/bin/mongosh",
         "/opt/mongosh/bin/mongosh",

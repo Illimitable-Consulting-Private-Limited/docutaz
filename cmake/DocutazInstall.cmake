@@ -9,6 +9,32 @@
 #
 
 
+# Flatpak path: install only our own artifacts into the flatpak-builder-provided
+# /app prefix and bundle nothing — the org.kde.Platform runtime supplies Qt,
+# ICU, OpenSSL and friends. Everything from `else()` to end-of-file is the
+# self-contained tarball/installer path used by every non-Flatpak build.
+if(DOCUTAZ_FLATPAK)
+    # GUI binary straight into /app/bin. No preflight launcher: the runtime
+    # guarantees the libraries the GUI links against, so it can never be killed
+    # by the loader before main().
+    install(TARGETS docutaz RUNTIME DESTINATION bin)
+
+    install(FILES "${CMAKE_SOURCE_DIR}/install/linux/in.illimitable.Docutaz.desktop"
+            DESTINATION share/applications)
+    install(FILES "${CMAKE_SOURCE_DIR}/install/linux/in.illimitable.Docutaz.metainfo.xml"
+            DESTINATION share/metainfo)
+    foreach(_sz 16 32 48 64 128 256)
+        install(FILES "${CMAKE_SOURCE_DIR}/install/linux/icons/${_sz}x${_sz}/in.illimitable.Docutaz.png"
+                DESTINATION "share/icons/hicolor/${_sz}x${_sz}/apps")
+    endforeach()
+
+    install(FILES
+                "${CMAKE_SOURCE_DIR}/LICENSE"
+                "${CMAKE_SOURCE_DIR}/COPYRIGHT"
+                "${CMAKE_SOURCE_DIR}/CHANGELOG"
+            DESTINATION share/doc/docutaz)
+else()
+
 # Temporary change
 set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install"
     CACHE STRING "Install path prefix, prepended onto install directories"
@@ -157,3 +183,5 @@ elseif(SYSTEM_WINDOWS)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION .)
     include(InstallRequiredSystemLibraries)
 endif()
+
+endif()  # DOCUTAZ_FLATPAK

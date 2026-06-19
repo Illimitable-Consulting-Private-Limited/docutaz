@@ -124,6 +124,12 @@ add_subdirectory(third_party/libxlsxwriter)
 
 add_subdirectory(src/docutaz)
 
+# Flatpak builds install into the /app prefix and rely on the org.kde.Platform
+# runtime for Qt/ICU/OpenSSL, so they must NOT bundle host libraries or pin the
+# install prefix (see cmake/DocutazInstall.cmake). Off for tarball/installer
+# builds; the Flatpak manifest passes -DDOCUTAZ_FLATPAK=ON.
+option(DOCUTAZ_FLATPAK "Install layout for Flatpak (/app prefix, runtime-provided Qt/SSL, no bundled host libs)" OFF)
+
 # Unit tests (and the GoogleTest dependency they need) are optional. They are
 # not part of release builds; CI configures with -DDOCUTAZ_BUILD_TESTS=OFF.
 option(DOCUTAZ_BUILD_TESTS "Build unit tests" ON)
