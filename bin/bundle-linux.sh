@@ -104,8 +104,10 @@ cp "$ICON_SRC/logo-20x20.png"   "$BUNDLE_DIR/icons/docutaz-20x20.png"
 echo "    bundled icons"
 
 # ── Bundle .desktop file ──────────────────────────────────────────────────────
-cp "$REPO_ROOT/install/linux/docutaz.desktop" "$BUNDLE_DIR/docutaz.desktop"
-echo "    bundled docutaz.desktop"
+# Named by the reverse-DNS app id (matches StartupWMClass / Wayland app_id set
+# via QApplication::setDesktopFileName, and the Flatpak app id).
+cp "$REPO_ROOT/install/linux/in.illimitable.Docutaz.desktop" "$BUNDLE_DIR/in.illimitable.Docutaz.desktop"
+echo "    bundled in.illimitable.Docutaz.desktop"
 
 # ── Write launcher script ─────────────────────────────────────────────────────
 cat > "$BUNDLE_DIR/docutaz.sh" <<'LAUNCHER'
@@ -131,14 +133,17 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 
 ICON_DIR="$HOME/.local/share/icons/hicolor"
 APPS_DIR="$HOME/.local/share/applications"
+APP_ID="in.illimitable.Docutaz"
 
 mkdir -p "$ICON_DIR/256x256/apps" "$ICON_DIR/20x20/apps" "$APPS_DIR"
 
-cp "$DIR/icons/docutaz-256x256.png" "$ICON_DIR/256x256/apps/docutaz.png"
-cp "$DIR/icons/docutaz-20x20.png"   "$ICON_DIR/20x20/apps/docutaz.png"
+# Icons are installed under the app id so the Icon= key and the Wayland app_id
+# resolve to them.
+cp "$DIR/icons/docutaz-256x256.png" "$ICON_DIR/256x256/apps/$APP_ID.png"
+cp "$DIR/icons/docutaz-20x20.png"   "$ICON_DIR/20x20/apps/$APP_ID.png"
 
 # Write .desktop with the absolute path to this install's launcher
-sed "s|Exec=docutaz|Exec=$DIR/docutaz.sh|g" "$DIR/docutaz.desktop" > "$APPS_DIR/docutaz.desktop"
+sed "s|Exec=docutaz|Exec=$DIR/docutaz.sh|g" "$DIR/$APP_ID.desktop" > "$APPS_DIR/$APP_ID.desktop"
 
 # Refresh icon cache if gtk-update-icon-cache is available
 if command -v gtk-update-icon-cache &>/dev/null; then
@@ -157,9 +162,9 @@ chmod +x "$BUNDLE_DIR/install-desktop.sh"
 cat > "$BUNDLE_DIR/uninstall-desktop.sh" <<'UNINSTALL'
 #!/usr/bin/env bash
 # Removes Docutaz desktop registration (icons + .desktop file).
-rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/docutaz.png"
-rm -f "$HOME/.local/share/icons/hicolor/20x20/apps/docutaz.png"
-rm -f "$HOME/.local/share/applications/docutaz.desktop"
+rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/in.illimitable.Docutaz.png"
+rm -f "$HOME/.local/share/icons/hicolor/20x20/apps/in.illimitable.Docutaz.png"
+rm -f "$HOME/.local/share/applications/in.illimitable.Docutaz.desktop"
 if command -v update-desktop-database &>/dev/null; then
     update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
 fi

@@ -36,11 +36,15 @@ int main(int argc, char *argv[])
     // window to its .desktop entry and show the launcher/taskbar icon.
     // On Wayland the icon comes from the .desktop file matched by app_id
     // (= desktopFileName), NOT from setWindowIcon(); without this the icon
-    // never appears under Wayland compositors.
+    // never appears under Wayland compositors. The desktop-file name is the
+    // reverse-DNS app id (in.illimitable.Docutaz) so it matches the installed
+    // in.illimitable.Docutaz.desktop and the Flatpak app id. On X11 Qt builds
+    // WM_CLASS as <applicationName>\0<desktopFileName>, so StartupWMClass in the
+    // .desktop must equal this same id.
     QApplication::setApplicationName("Docutaz");
     QApplication::setApplicationDisplayName("Docutaz");
     QApplication::setOrganizationName("Docutaz");
-    QApplication::setDesktopFileName("docutaz");
+    QApplication::setDesktopFileName("in.illimitable.Docutaz");
 
 #ifdef Q_OS_WIN
     // Give the process a stable, explicit AppUserModelID. Without one Windows
