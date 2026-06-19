@@ -605,6 +605,7 @@ namespace Docutaz
         AppRegistry::instance().bus()->subscribe(this, ScriptExecutingEvent::Type);
         AppRegistry::instance().bus()->subscribe(this, QueryWidgetUpdatedEvent::Type);
         AppRegistry::instance().bus()->subscribe(this, OperationFailedEvent::Type);
+        AppRegistry::instance().bus()->subscribe(this, MongoshSettingsChangedEvent::Type);
 
         restoreWindowSettings();
 
@@ -1137,6 +1138,11 @@ namespace Docutaz
     {
         _stopAction->setDisabled(true);
         _executeAction->setDisabled(false);
+    }
+
+    void MainWindow::handle(MongoshSettingsChangedEvent *)
+    {
+        updateMongoshIndicator();
     }
 
     void MainWindow::handle(OperationFailedEvent *event)

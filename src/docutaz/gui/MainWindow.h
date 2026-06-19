@@ -20,6 +20,7 @@ namespace Docutaz
     class OperationFailedEvent;
 
     class QueryWidgetUpdatedEvent;
+    class MongoshSettingsChangedEvent;
     class WorkAreaTabWidget;
     class ConnectionMenu;
     class App;
@@ -80,6 +81,7 @@ namespace Docutaz
         void handle(ScriptExecutedEvent *event);
         void handle(QueryWidgetUpdatedEvent *event);
         void handle(OperationFailedEvent *event);
+        void handle(MongoshSettingsChangedEvent *event);
 
     protected:
         void keyPressEvent(QKeyEvent *event) override;

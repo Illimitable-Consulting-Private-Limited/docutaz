@@ -1274,6 +1274,20 @@ namespace Docutaz
     };
 
     /**
+     * @brief Published when mongosh-related settings (notably the mongosh path)
+     * change, so the various "mongosh not detected" indicators can re-evaluate
+     * detection no matter which screen the user changed the path from.
+     */
+    class MongoshSettingsChangedEvent : public Event
+    {
+        R_EVENT
+
+    public:
+        MongoshSettingsChangedEvent(QObject *sender) :
+            Event(sender) { }
+    };
+
+    /**
      * @brief Establish SSH Connection
      */
 

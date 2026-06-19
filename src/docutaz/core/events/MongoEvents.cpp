@@ -69,6 +69,7 @@ namespace Docutaz
     R_REGISTER_EVENT(DropFunctionRequest)
     R_REGISTER_EVENT(DropFunctionResponse)
     R_REGISTER_EVENT(QueryWidgetUpdatedEvent)
+    R_REGISTER_EVENT(MongoshSettingsChangedEvent)
     R_REGISTER_EVENT(EstablishSshConnectionRequest)
     R_REGISTER_EVENT(EstablishSshConnectionResponse)
     R_REGISTER_EVENT(ListenSshConnectionRequest)

@@ -13,6 +13,8 @@ QT_END_NAMESPACE
 
 namespace Docutaz
 {
+    class MongoshSettingsChangedEvent;
+
     class WelcomeTab : public QWidget
     {
         Q_OBJECT
@@ -20,6 +22,11 @@ namespace Docutaz
         explicit WelcomeTab(QScrollArea* parent = nullptr);
         QScrollArea* getParent() const { return _parent; }
         void resize();
+
+    public Q_SLOTS:
+        // Re-evaluate the card when the mongosh path is changed from anywhere
+        // (e.g. the status-bar nudge), so it clears even while this tab is open.
+        void handle(MongoshSettingsChangedEvent* event);
 
     protected:
         // Apply the logo pixmap as soon as the tab is shown, and keep it scaled

@@ -14,6 +14,9 @@
 
 #include "docutaz/core/engine/MongoshEngine.h"
 #include "docutaz/core/utils/QtUtils.h"
+#include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/EventBus.h"
+#include "docutaz/core/events/MongoEvents.h"
 #include "docutaz/gui/dialogs/PreferencesDialog.h"
 
 namespace Docutaz
@@ -153,6 +156,12 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
     layout->addStretch();
     setLayout(layout);
 
+    AppRegistry::instance().bus()->subscribe(this, MongoshSettingsChangedEvent::Type);
+    refreshMongoshCard();
+}
+
+void WelcomeTab::handle(MongoshSettingsChangedEvent*)
+{
     refreshMongoshCard();
 }
 

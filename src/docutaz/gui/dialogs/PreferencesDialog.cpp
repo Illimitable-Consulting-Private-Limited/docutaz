@@ -15,6 +15,8 @@
 #include "docutaz/gui/utils/ComboBoxUtils.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/EventBus.h"
+#include "docutaz/core/events/MongoEvents.h"
 #include "docutaz/core/settings/SettingsManager.h"
 
 namespace Docutaz
@@ -143,6 +145,11 @@ namespace Docutaz
         AppStyleUtils::applyStyle(_stylesComboBox->currentText());
         AppRegistry::instance().settingsManager()->setMongoshPath(_mongoshPathEdit->text().trimmed());
         Docutaz::AppRegistry::instance().settingsManager()->save();
+
+        // Notify the "mongosh not detected" indicators (status bar + Welcome
+        // card) so they re-evaluate detection regardless of which screen this
+        // dialog was opened from.
+        AppRegistry::instance().bus()->publish(new MongoshSettingsChangedEvent(this));
 
         return BaseClass::accept();
     }
