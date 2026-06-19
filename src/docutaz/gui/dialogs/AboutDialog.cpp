@@ -22,6 +22,8 @@ namespace
         "<h3>" PROJECT_NAME_TITLE " " PROJECT_VERSION
             " (Build " BUILD_NUMBER + QString(" - ") + MONTH + "/" + YEAR + ")</h3>"
         "A cross-platform MongoDB management tool for developers who work with documents.<br/>"
+        "<a href=\"https://github.com/Illimitable-Consulting-Private-Limited/docutaz\">"
+            "github.com/Illimitable-Consulting-Private-Limited/docutaz</a><br/>"
         "<br/>"
         "Copyright 2026-" + YEAR + " " PROJECT_COMPANYNAME ". All rights reserved.<br/>"
         "<br/>"
