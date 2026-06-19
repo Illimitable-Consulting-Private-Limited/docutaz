@@ -88,19 +88,21 @@ modules:
         sha256: 39cbb5010b27eb00b4e947ad5e7d368acd966cd773834a10923d4f008f85b0a2
 
   # ── QScintilla (Qt6 edition) — not in the runtime ───────────────────────────
-  # Riverbank ships only a qmake .pro. It installs under the runtime's Qt prefix
-  # (/app/usr/... via INSTALL_ROOT), so we relocate the lib/headers/feature into
-  # /app where Docutaz's CMake looks. This module is the most likely to need
-  # adjustment on the first flatpak-builder run.
+  # Riverbank ships only a qmake .pro that installs under the runtime's Qt prefix
+  # (/app/usr/lib/<triplet> via INSTALL_ROOT). We FLATTEN the lib into /app/lib —
+  # which the app's rpath ($ORIGIN/../lib) and the default Flatpak ld path both
+  # cover — and move the headers into /app/include. (A plain copy that kept the
+  # multiarch subdir links at build time but is unfindable at runtime, since that
+  # subdir is not on the library path.) CMake consumers don't need the qmake
+  # mkspecs feature, so it is dropped.
   - name: qscintilla
     buildsystem: qmake
     subdir: src
     make-install-args:
       - INSTALL_ROOT=/app
     post-install:
-      - 'cp -a /app/usr/lib/. /app/lib/ 2>/dev/null || true'
+      - "find /app/usr/lib -name 'libqscintilla2_qt6.so*' -exec cp -a {} /app/lib/ \\;"
       - 'cp -a /app/usr/include/. /app/include/ 2>/dev/null || true'
-      - 'cp -a /app/usr/mkspecs/. /app/mkspecs/ 2>/dev/null || true'
       - 'rm -rf /app/usr'
     sources:
       - type: archive
