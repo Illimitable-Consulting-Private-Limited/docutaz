@@ -42,7 +42,11 @@ int main(int argc, char *argv[])
     // WM_CLASS as <applicationName>\0<desktopFileName>, so StartupWMClass in the
     // .desktop must equal this same id.
     QApplication::setApplicationName("Docutaz");
-    QApplication::setApplicationDisplayName("Docutaz");
+    // Deliberately NOT setting applicationDisplayName: Qt appends it to every
+    // top-level window title, which turned the main window's "Docutaz - 2.3"
+    // into "Docutaz - 2.3 - Docutaz". The app titles its own windows, so the
+    // fallback it would provide isn't needed. (WM_CLASS uses applicationName,
+    // and the Windows taskbar identity uses the explicit AUMID below.)
     QApplication::setOrganizationName("Docutaz");
     QApplication::setDesktopFileName("in.illimitable.Docutaz");
 
