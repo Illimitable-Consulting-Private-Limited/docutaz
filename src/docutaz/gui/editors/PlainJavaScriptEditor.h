@@ -2,6 +2,9 @@
 
 #include <Qsci/qsciscintilla.h>
 
+#include <QString>
+#include <QVector>
+
 class QContextMenuEvent;
 
 namespace Docutaz
@@ -33,6 +36,9 @@ namespace Docutaz
         void wheelEvent(QWheelEvent *e);
         void keyPressEvent(QKeyEvent *e);
         void contextMenuEvent(QContextMenuEvent *e) override;
+        // Show the syntax-error message as a tooltip when the cursor hovers a
+        // squiggled range.
+        bool event(QEvent *e) override;
 
     private Q_SLOTS:
         void updateLineNumbersMarginWidth();
@@ -57,5 +63,16 @@ namespace Docutaz
         bool _ignoreTabKey;
         int _lineNumberMarginWidth;
         int _lineNumberDigitWidth;
+
+        // A structural syntax problem found by updateSyntaxIndicators(): a byte
+        // range in the UTF-8 buffer (Scintilla positions) plus the message shown
+        // on hover. Recomputed on every text change.
+        struct SyntaxError
+        {
+            int pos;
+            int len;
+            QString message;
+        };
+        QVector<SyntaxError> _syntaxErrors;
     };
 }

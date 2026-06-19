@@ -4,10 +4,13 @@
 #include <QApplication>
 #include <QKeyEvent>
 #include <QContextMenuEvent>
+#include <QHelpEvent>
+#include <QToolTip>
 #include <QMenu>
 #include <QAction>
 #include <algorithm>
 #include <cctype>
+#include <vector>
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/gui/GuiRegistry.h"
@@ -24,6 +27,9 @@ namespace
     // Indicator (just past the bracket cycle) used to highlight mongo
     // $-operators and field paths: $match, $group, "$amount", ...
     constexpr int kDollarIndicator = kBpcFirstIndicator + kBpcLevels; // 23
+    // Red squiggle drawn under structural syntax errors (unbalanced brackets,
+    // a missing comma between literals). One past the $-operator indicator.
+    constexpr int kErrorIndicator = kDollarIndicator + 1;             // 24
     constexpr int kBpcMaxBytes = 200000;
 
     // Whether a '/' here starts a regex literal rather than a division, inferred
@@ -153,6 +159,13 @@ namespace Docutaz
         // apart from the orange mongo keywords and the green strings they live in.
         SendScintilla(SCI_INDICSETSTYLE, (unsigned long)kDollarIndicator, (long)INDIC_TEXTFORE);
         SendScintilla(SCI_INDICSETFORE, (unsigned long)kDollarIndicator, sciColor(QColor("#FF79C6")));
+
+        // Syntax errors: a red squiggle under the offending character. The
+        // message is shown on hover (see event()). Drawn under the text so it
+        // never hides the glyph.
+        SendScintilla(SCI_INDICSETSTYLE, (unsigned long)kErrorIndicator, (long)INDIC_SQUIGGLE);
+        SendScintilla(SCI_INDICSETFORE, (unsigned long)kErrorIndicator, sciColor(QColor("#FF3B30")));
+        SendScintilla(SCI_INDICSETUNDER, (unsigned long)kErrorIndicator, (long)true);
 
         VERIFY(connect(this, SIGNAL(textChanged()), this, SLOT(updateSyntaxIndicators())));
 
@@ -440,12 +453,13 @@ namespace Docutaz
         const QByteArray bytes = text().toUtf8();
         const int n = bytes.size();
 
-        // Clear the previous bracket + $-operator indicators over the whole
-        // document first (indices kBpcFirstIndicator .. kDollarIndicator).
-        for (int ind = kBpcFirstIndicator; ind <= kDollarIndicator; ++ind) {
+        // Clear the previous bracket + $-operator + error indicators over the
+        // whole document first (indices kBpcFirstIndicator .. kErrorIndicator).
+        for (int ind = kBpcFirstIndicator; ind <= kErrorIndicator; ++ind) {
             SendScintilla(SCI_SETINDICATORCURRENT, (unsigned long)ind);
             SendScintilla(SCI_INDICATORCLEARRANGE, (unsigned long)0, (long)n);
         }
+        _syntaxErrors.clear();
         if (n == 0 || n > kBpcMaxBytes)
             return;
 
@@ -460,8 +474,22 @@ namespace Docutaz
             SendScintilla(SCI_SETINDICATORCURRENT, (unsigned long)kDollarIndicator);
             SendScintilla(SCI_INDICATORFILLRANGE, (unsigned long)pos, (long)len);
         };
+        auto addError = [&](int pos, int len, const QString &msg) {
+            _syntaxErrors.push_back({pos, len, msg});
+        };
 
-        int depth = 0;
+        // Bracket stack used for the structural checks. Each open bracket records
+        // its byte position (for the "unclosed" report) and its kind, which tells
+        // the missing-comma check whether the container is a comma-separated list
+        // ('[' array literal, '{' object literal, '(' call/group) as opposed to
+        // member indexing or a statement block (where adjacency is legal).
+        enum Kind { Paren, ArrayLit, Index, ObjLit, Block };
+        struct Frame { char open; int pos; Kind kind; };
+        std::vector<Frame> stack;
+        auto closerFor = [](char open) -> char {
+            return open == '(' ? ')' : open == '[' ? ']' : '}';
+        };
+
         char prevSig = 0;
         int i = 0;
         while (i < n) {
@@ -505,12 +533,74 @@ namespace Docutaz
                 prevSig = s[i - 1];
                 continue;
             }
-            // brackets
-            if (c == '(' || c == '[' || c == '{') { paintBracket(i, depth); depth++; prevSig = c; i++; continue; }
-            if (c == ')' || c == ']' || c == '}') { if (depth > 0) depth--; paintBracket(i, depth); prevSig = c; i++; continue; }
+            // opening brackets
+            if (c == '(' || c == '[' || c == '{') {
+                // Missing-comma check: an object/array literal opening right after
+                // a closed literal ('}{' or ']{') inside a comma-separated list
+                // is a missing separator — the exact "forgot a comma between
+                // pipeline stages" mistake. Restricted to '{' after '}'/']' so we
+                // never flag legal member access ('{...}[i]', '[...][i]') or a
+                // block following a paren ('function(){ }').
+                if (c == '{' && (prevSig == '}' || prevSig == ']') && !stack.empty()) {
+                    const Kind k = stack.back().kind;
+                    if (k == ArrayLit || k == ObjLit || k == Paren)
+                        addError(i, 1, tr("Missing ',' before '{'"));
+                }
+                Kind kind;
+                if (c == '(')      kind = Paren;
+                else if (c == '[') kind = bpcRegexAllowed(prevSig) ? ArrayLit : Index;
+                else               kind = bpcRegexAllowed(prevSig) ? ObjLit : Block;
+                paintBracket(i, (int)stack.size());
+                stack.push_back({c, i, kind});
+                prevSig = c; i++; continue;
+            }
+            // closing brackets
+            if (c == ')' || c == ']' || c == '}') {
+                if (stack.empty()) {
+                    addError(i, 1, tr("Unexpected '%1'").arg(QChar(c)));
+                    paintBracket(i, 0);
+                } else {
+                    const char open = stack.back().open;
+                    if (closerFor(open) != c)
+                        addError(i, 1, tr("Mismatched '%1' — expected '%2'")
+                                           .arg(QChar(c)).arg(QChar(closerFor(open))));
+                    stack.pop_back();
+                    paintBracket(i, (int)stack.size());
+                }
+                prevSig = c; i++; continue;
+            }
             if (!std::isspace((unsigned char)c)) prevSig = c;
             i++;
         }
+
+        // Anything still open at end-of-buffer was never closed.
+        for (const Frame &f : stack)
+            addError(f.pos, 1, tr("Unclosed '%1'").arg(QChar(f.open)));
+
+        // Paint the red squiggles.
+        SendScintilla(SCI_SETINDICATORCURRENT, (unsigned long)kErrorIndicator);
+        for (const SyntaxError &e : _syntaxErrors)
+            SendScintilla(SCI_INDICATORFILLRANGE, (unsigned long)e.pos, (long)e.len);
+    }
+
+    bool DocutazScintilla::event(QEvent *e)
+    {
+        if (e->type() == QEvent::ToolTip) {
+            auto *help = static_cast<QHelpEvent *>(e);
+            const long pos = SendScintilla(SCI_POSITIONFROMPOINTCLOSE,
+                                           (unsigned long)help->pos().x(),
+                                           (long)help->pos().y());
+            if (pos >= 0) {
+                for (const SyntaxError &err : _syntaxErrors) {
+                    if (pos >= err.pos && pos < err.pos + err.len) {
+                        QToolTip::showText(help->globalPos(), err.message, this);
+                        return true;
+                    }
+                }
+            }
+            // Not over an error — let the base class show whatever it would.
+        }
+        return QsciScintilla::event(e);
     }
 
     void DocutazScintilla::setAppropriateBraceMatching() {
