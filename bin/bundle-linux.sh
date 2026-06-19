@@ -21,10 +21,19 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="${1:-$REPO_ROOT/build}"
 BINARY="$BUILD_DIR/src/docutaz/docutaz"
+# Tiny glibc-only launcher (see src/docutaz/app/preflight.c). Shipped as the
+# top-level `docutaz`; it checks the host libraries and execs the GUI binary.
+STUB="$BUILD_DIR/src/docutaz/docutaz-preflight"
 
 if [[ ! -x "$BINARY" ]]; then
     echo "ERROR: binary not found at $BINARY"
     echo "       Build first: cd build && ninja docutaz -j\$(nproc)"
+    exit 1
+fi
+
+if [[ ! -x "$STUB" ]]; then
+    echo "ERROR: preflight launcher not found at $STUB"
+    echo "       Build first: cd build && ninja docutaz_preflight -j\$(nproc)"
     exit 1
 fi
 
@@ -49,10 +58,17 @@ echo ""
 # ── Clean previous bundle ────────────────────────────────────────────────────
 rm -rf "$BUNDLE_DIR"
 mkdir -p "$BUNDLE_DIR/lib" \
+         "$BUNDLE_DIR/libexec" \
          "$BUNDLE_DIR/icons"
 
-# ── Copy binary ──────────────────────────────────────────────────────────────
-cp "$BINARY" "$BUNDLE_DIR/docutaz"
+# ── Copy binaries ─────────────────────────────────────────────────────────────
+# The GUI binary goes in libexec/ (named docutaz-bin) so users don't run it
+# directly and bypass the dependency check; the top-level `docutaz` they launch
+# is the glibc-only preflight launcher, which verifies the host libraries and
+# then exec()s libexec/docutaz-bin.
+cp "$BINARY" "$BUNDLE_DIR/libexec/docutaz-bin"
+cp "$STUB"   "$BUNDLE_DIR/docutaz"
+chmod +x "$BUNDLE_DIR/libexec/docutaz-bin" "$BUNDLE_DIR/docutaz"
 
 # ── Bundle non-standard shared libraries (mongo-cxx-driver) ──────────────────
 # These are not available in distro package managers and must be bundled.
@@ -84,6 +100,24 @@ for lib in "${MONGO_LIBS[@]}"; do
     fi
 done
 
+# ── Generate the runtime dependency manifest for the preflight launcher ──────
+# List the SYSTEM shared libraries the GUI binary hard-links (its DT_NEEDED
+# entries), minus the ones we bundle ourselves (mongo driver) and the C runtime/
+# loader (always present). The launcher dlopen-probes each at startup and tells
+# the user how to install whatever is missing instead of crashing. Deriving the
+# list from the actual binary keeps it correct as dependencies change.
+list_needed() {
+    if command -v readelf &>/dev/null; then
+        readelf -d "$1" | awk -F'[][]' '/NEEDED/ {print $2}'
+    else
+        objdump -p "$1" | awk '/NEEDED/ {print $2}'
+    fi
+}
+list_needed "$BINARY" \
+    | grep -Ev '^(libmongocxx|libbsoncxx|libmongoc2|libbson2|libc\.so|libm\.so|libdl\.so|libpthread\.so|librt\.so|ld-linux)' \
+    | sort -u > "$BUNDLE_DIR/libexec/required-libs.txt"
+echo "    generated libexec/required-libs.txt ($(wc -l < "$BUNDLE_DIR/libexec/required-libs.txt") libs to verify)"
+
 # ── Qt plugins: deliberately NOT bundled (use the host's) ────────────────────
 # We do not bundle the Qt6 core libraries (libQt6Core/Gui/Widgets/...) — they
 # come from the host's Qt6 install (see README requirements). A Qt plugin must
@@ -109,12 +143,15 @@ echo "    bundled icons"
 cp "$REPO_ROOT/install/linux/in.illimitable.Docutaz.desktop" "$BUNDLE_DIR/in.illimitable.Docutaz.desktop"
 echo "    bundled in.illimitable.Docutaz.desktop"
 
-# ── Write launcher script ─────────────────────────────────────────────────────
+# ── Write launcher script (compatibility shim) ───────────────────────────────
+# The real launcher is now the compiled `docutaz` (the preflight binary), which
+# sets up the library path itself. This shim is kept only so older instructions
+# / muscle memory ("./docutaz.sh") still work — it just forwards to ./docutaz.
 cat > "$BUNDLE_DIR/docutaz.sh" <<'LAUNCHER'
 #!/usr/bin/env bash
-# Launcher for Docutaz — sets LD_LIBRARY_PATH to bundled libs and runs the binary.
+# Compatibility shim — runs ./docutaz (the launcher does dependency checks and
+# sets the library path). Prefer running ./docutaz directly.
 DIR="$(cd "$(dirname "$0")" && pwd)"
-export LD_LIBRARY_PATH="$DIR/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 exec "$DIR/docutaz" "$@"
 LAUNCHER
 chmod +x "$BUNDLE_DIR/docutaz.sh"
@@ -142,8 +179,9 @@ mkdir -p "$ICON_DIR/256x256/apps" "$ICON_DIR/20x20/apps" "$APPS_DIR"
 cp "$DIR/icons/docutaz-256x256.png" "$ICON_DIR/256x256/apps/$APP_ID.png"
 cp "$DIR/icons/docutaz-20x20.png"   "$ICON_DIR/20x20/apps/$APP_ID.png"
 
-# Write .desktop with the absolute path to this install's launcher
-sed "s|Exec=docutaz|Exec=$DIR/docutaz.sh|g" "$DIR/$APP_ID.desktop" > "$APPS_DIR/$APP_ID.desktop"
+# Write .desktop with the absolute path to this install's launcher (the
+# preflight `docutaz`, which checks deps then execs the GUI in libexec/).
+sed "s|Exec=docutaz|Exec=$DIR/docutaz|g" "$DIR/$APP_ID.desktop" > "$APPS_DIR/$APP_ID.desktop"
 
 # Refresh icon cache if gtk-update-icon-cache is available
 if command -v gtk-update-icon-cache &>/dev/null; then
@@ -192,11 +230,14 @@ Install these from your package manager before running:
 
 Running
 -------
-  bash docutaz.sh
+  ./docutaz
 
-Or make the launcher executable once and run directly:
-  chmod +x docutaz.sh
-  ./docutaz.sh
+If any required system library above is missing, ./docutaz won't crash — it
+prints exactly which libraries are missing and the command to install them
+(and shows a dialog when launched from the desktop menu). Once the libraries
+are installed, run it again.
+
+(./docutaz.sh still works as a compatibility shim; it just runs ./docutaz.)
 
 Desktop integration (launcher icon, app menu, Wayland icon)
 ------------------------------------------------------------
@@ -227,4 +268,4 @@ echo "==> Done: $TARBALL  ($SIZE)"
 echo ""
 echo "    Share this file with colleagues."
 echo "    They extract it, run:  bash install-desktop.sh  (once)"
-echo "    Then launch with:      bash docutaz.sh"
+echo "    Then launch with:      ./docutaz"

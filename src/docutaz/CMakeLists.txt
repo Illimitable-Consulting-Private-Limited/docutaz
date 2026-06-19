@@ -305,6 +305,25 @@ elseif(SYSTEM_LINUX)
     # DT_RPATH (not DT_RUNPATH) propagates to transitive deps so libmongoc2/libbson2
     # are found without LD_LIBRARY_PATH or system ldconfig changes.
     target_link_options(docutaz PRIVATE "LINKER:--disable-new-dtags")
+
+    # Tiny glibc-only preflight launcher. In the Linux tarball this is shipped as
+    # the top-level `docutaz`, while the GUI binary above is relocated to
+    # libexec/docutaz-bin (see bin/bundle-linux.sh). Because Qt6/QScintilla/SSL/
+    # libssh2 are host-provided and hard-linked into the GUI, a missing one makes
+    # the loader kill the GUI before main(); this launcher depends only on glibc,
+    # so it always starts, verifies those libs, and either reports how to install
+    # them or exec()s the GUI. Not used under Flatpak (the runtime provides them).
+    add_executable(docutaz_preflight app/preflight.c)
+    target_link_libraries(docutaz_preflight PRIVATE ${CMAKE_DL_LIBS})
+    # Keep it glibc-only: skip Qt autogen (no moc/uic/rcc) and link with the C
+    # driver so libstdc++/libgcc_s are not pulled in. The launcher must start
+    # even on a system that is missing C++/Qt runtime libraries.
+    set_target_properties(docutaz_preflight PROPERTIES
+        OUTPUT_NAME "docutaz-preflight"
+        AUTOMOC OFF
+        AUTOUIC OFF
+        AUTORCC OFF
+        LINKER_LANGUAGE C)
 endif()
 
 # Install

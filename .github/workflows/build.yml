@@ -112,7 +112,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz docutaz_unit_tests docutaz_gui_tests --parallel
+        run: cmake --build build --target docutaz docutaz_preflight docutaz_unit_tests docutaz_gui_tests --parallel
 
       - name: Expose mongocxx libs for bundler
         # bin/bundle-linux.sh scans /usr/local/lib64; copy the CI-built shared
@@ -140,7 +140,7 @@ jobs:
           # offscreen avoids needing an X server on the runner.
           tar xzf docutaz-*-linux-x86_64.tar.gz
           dir=$(echo docutaz-*-linux-x86_64/)
-          out=$(cd "$dir" && QT_QPA_PLATFORM=offscreen ./docutaz.sh --version)
+          out=$(cd "$dir" && QT_QPA_PLATFORM=offscreen ./docutaz --version)
           echo "$out"
           echo "$out" | grep -q "Docutaz" || { echo "ERROR: binary did not launch / print version"; exit 1; }
 
@@ -218,7 +218,7 @@ jobs:
             -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
-        run: cmake --build build --target docutaz docutaz_unit_tests docutaz_gui_tests --parallel
+        run: cmake --build build --target docutaz docutaz_preflight docutaz_unit_tests docutaz_gui_tests --parallel
 
       - name: Expose mongocxx libs for bundler
         run: |
@@ -237,7 +237,7 @@ jobs:
         run: |
           tar xzf docutaz-*-linux-aarch64.tar.gz
           dir=$(echo docutaz-*-linux-aarch64/)
-          out=$(cd "$dir" && QT_QPA_PLATFORM=offscreen ./docutaz.sh --version)
+          out=$(cd "$dir" && QT_QPA_PLATFORM=offscreen ./docutaz --version)
           echo "$out"
           echo "$out" | grep -q "Docutaz" || { echo "ERROR: binary did not launch / print version"; exit 1; }
 

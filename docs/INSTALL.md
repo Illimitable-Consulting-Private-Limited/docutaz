@@ -49,10 +49,13 @@ OpenSSL and libssh2 come from your distribution.
    ```sh
    tar xzf docutaz-<version>-linux-x86_64.tar.gz   # or ...-aarch64.tar.gz
    cd docutaz-<version>-linux-x86_64
-   ./docutaz.sh
+   ./docutaz
    ```
-   Use the `./docutaz.sh` launcher (not the bare `docutaz` binary) — it points
-   the loader at the bundled driver libraries.
+   `./docutaz` is a small launcher that points the loader at the bundled driver
+   libraries and verifies the system libraries above are installed. If any are
+   missing it tells you exactly which ones and how to install them (rather than
+   crashing), so install those and run it again. (`./docutaz.sh` still works as a
+   compatibility shim.)
 3. **Launcher icon & app-menu entry (recommended):**
    ```sh
    ./install-desktop.sh
@@ -115,8 +118,10 @@ DLLs are all included). **64-bit Intel/AMD only** — arm64 isn't available yet.
 
 - **Shell won't start / "mongosh not found":** confirm `mongosh --version` works
   in a terminal, or set the full path in **Options → Preferences → mongosh path**.
-- **Linux — "error while loading shared libraries":** install the runtime
-  packages listed above, and launch via `./docutaz.sh` (not the bare binary).
+- **Linux — missing libraries:** launch via `./docutaz`; it lists any missing
+  runtime libraries and the install command. Install the packages listed above
+  and run it again. (If you run `libexec/docutaz-bin` directly you bypass this
+  check and get the raw loader error "error while loading shared libraries".)
 - **Windows — app won't start / missing DLL:** install the latest
   [Microsoft Visual C++ Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe).
 - **macOS — "damaged / can't be opened":** remove the quarantine flag with the
