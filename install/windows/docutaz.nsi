@@ -90,6 +90,11 @@ FunctionEnd
 ; ---------------------------------------------------------------------------
 Section "Install"
   SetRegView 64
+  ; Per-machine install (elevated): write shortcuts to the All Users / Public
+  ; Desktop and Start menu. With the default "current" context, $DESKTOP /
+  ; $SMPROGRAMS would resolve to the *elevating* account's profile (e.g. a
+  ; separate Admin user), so the logged-in user would never see the shortcut.
+  SetShellVarContext all
   SetOutPath "$INSTDIR"
 
   ; Clean any previous install in-place first so renamed/removed DLLs across
@@ -147,6 +152,8 @@ FunctionEnd
 
 Section "Uninstall"
   SetRegView 64
+  ; Match the install context so the All Users shortcuts are the ones removed.
+  SetShellVarContext all
   Delete "$SMPROGRAMS\${APP_NAME}.lnk"
   Delete "$DESKTOP\${APP_NAME}.lnk"
 
