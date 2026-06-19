@@ -32,6 +32,8 @@
 #include <sys/wait.h>
 
 #define DIALOG_TITLE "Docutaz \xE2\x80\x94 missing dependencies"
+#define INSTALL_URL \
+    "https://github.com/Illimitable-Consulting-Private-Limited/docutaz/blob/main/docs/INSTALL.md#linux-x86_64-and-arm64"
 
 /* Per-distro install commands. The Debian/Fedora package names are kept in sync
  * with docs/INSTALL.md; Arch/openSUSE are best-effort. We always print all of
@@ -104,20 +106,88 @@ static int run_cmd(char *const argv[])
     return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 }
 
-/* Show msg graphically via whichever dialog tool is installed. */
+/* Run argv[0], capturing up to n-1 bytes of its stdout into out (NUL-terminated).
+ * Same return convention as run_cmd (127 == not found / failed). */
+static int run_capture(char *const argv[], char *out, size_t n)
+{
+    int fds[2];
+    if (pipe(fds) != 0)
+        return -1;
+    pid_t pid = fork();
+    if (pid < 0) {
+        close(fds[0]);
+        close(fds[1]);
+        return -1;
+    }
+    if (pid == 0) {
+        dup2(fds[1], STDOUT_FILENO);
+        close(fds[0]);
+        close(fds[1]);
+        execvp(argv[0], argv);
+        _exit(127);
+    }
+    close(fds[1]);
+    ssize_t r = read(fds[0], out, n - 1);
+    out[r > 0 ? (size_t)r : 0] = '\0';
+    close(fds[0]);
+    int status = 0;
+    if (waitpid(pid, &status, 0) < 0)
+        return -1;
+    return WIFEXITED(status) ? WEXITSTATUS(status) : -1;
+}
+
+/* Open the install guide in the user's browser, detached; best effort. */
+static void open_url(const char *url)
+{
+    pid_t pid = fork();
+    if (pid == 0) {
+        char *argv[] = { "xdg-open", (char *)url, NULL };
+        execvp(argv[0], argv);
+        _exit(127);
+    }
+    if (pid > 0)
+        waitpid(pid, NULL, WNOHANG);
+}
+
+/* Show msg graphically via whichever dialog tool is installed, with an
+ * "Open install guide" button that launches INSTALL_URL in a browser (plain
+ * URL text inside the box keeps it copy-pasteable too). zenity -> kdialog ->
+ * xmessage; a tool that isn't installed (exit 127) falls through to the next. */
 static void show_gui(const char *msg)
 {
+    static const char *OPEN_LABEL = "Open install guide";
+
+    /* zenity: extra-button is reported on stdout (exit code can't distinguish
+     * it from a normal close), so capture stdout to detect the click. */
     char *zenity[] = { "zenity", "--error", "--no-wrap",
-                       "--title", (char *)DIALOG_TITLE, "--text", (char *)msg, NULL };
-    if (run_cmd(zenity) != 127)
+                       "--title", (char *)DIALOG_TITLE, "--text", (char *)msg,
+                       "--ok-label", "Close",
+                       "--extra-button", (char *)OPEN_LABEL, NULL };
+    char out[64];
+    if (run_capture(zenity, out, sizeof(out)) != 127) {
+        if (strncmp(out, OPEN_LABEL, strlen(OPEN_LABEL)) == 0)
+            open_url(INSTALL_URL);
         return;
+    }
+
+    /* kdialog: yes/no with relabelled buttons; "yes" (exit 0) == open guide. */
     char *kdialog[] = { "kdialog", "--title", (char *)DIALOG_TITLE,
-                        "--error", (char *)msg, NULL };
-    if (run_cmd(kdialog) != 127)
+                        "--warningyesno", (char *)msg,
+                        "--yes-label", (char *)OPEN_LABEL,
+                        "--no-label", "Close", NULL };
+    int rc = run_cmd(kdialog);
+    if (rc != 127) {
+        if (rc == 0)
+            open_url(INSTALL_URL);
         return;
+    }
+
+    /* xmessage: each button maps to its declared exit code. */
     char *xmessage[] = { "xmessage", "-center", "-title", (char *)DIALOG_TITLE,
+                         "-buttons", "Open install guide:10,Close:0",
                          (char *)msg, NULL };
-    run_cmd(xmessage);
+    if (run_cmd(xmessage) == 10)
+        open_url(INSTALL_URL);
 }
 
 int main(int argc, char *argv[])
@@ -181,21 +251,30 @@ int main(int argc, char *argv[])
                  d == DISTRO_ARCH   ? SEL : NOSEL, ARCH_CMD,
                  d == DISTRO_SUSE   ? SEL : NOSEL, SUSE_CMD);
 
-        char msg[8192];
-        snprintf(msg, sizeof(msg),
+        char body[8192];
+        snprintf(body, sizeof(body),
                  "Docutaz can't start: required system libraries are missing.\n\n"
                  "Missing:\n%s\n"
                  "These come from Qt 6, QScintilla (Qt 6), OpenSSL 3 and libssh2.\n"
                  "Install them with your package manager, then run Docutaz again\n"
                  "(\">\" marks your detected distribution):\n\n"
                  "%s\n"
-                 "See README.txt / docs/INSTALL.md for details.\n",
+                 "Full instructions (also in README.txt / docs/INSTALL.md):\n",
                  missing, cmds);
 
-        if (isatty(STDERR_FILENO))
-            fputs(msg, stderr);
-        else
-            show_gui(msg);
+        if (isatty(STDERR_FILENO)) {
+            fputs(body, stderr);
+            /* OSC 8 hyperlink: clickable in modern terminals, shown as a plain
+             * URL on those that don't understand the escape. */
+            fprintf(stderr, "\033]8;;%s\033\\%s\033]8;;\033\\\n",
+                    INSTALL_URL, INSTALL_URL);
+        } else {
+            /* GUI box: keep the URL as readable/copyable text; the dialog adds
+             * an "Open install guide" button that launches it. */
+            char gmsg[8192 + 512];
+            snprintf(gmsg, sizeof(gmsg), "%s%s\n", body, INSTALL_URL);
+            show_gui(gmsg);
+        }
         return 1;
     }
 
