@@ -1,0 +1,78 @@
+name: Update Homebrew Cask
+
+# Bump the Docutaz cask in our own tap whenever a *full* GitHub Release is
+# published. Like the Winget workflow this fires on `released` (not drafts or
+# pre-releases), so it only runs once the macOS arm64 zip asset is attached.
+#
+# One-time setup is required before this works — see packaging/homebrew/README.md:
+#   1. Create the tap repo
+#      Illimitable-Consulting-Private-Limited/homebrew-docutaz and seed it with
+#      Casks/docutaz.rb (copy packaging/homebrew/docutaz.rb).
+#   2. Create a classic PAT with `repo` scope that can push to that tap, and add
+#      it as the HOMEBREW_TAP_TOKEN repository secret.
+
+on:
+  release:
+    types: [released]
+  # Manual fallback: a `release` event runs the workflow as it existed in the
+  # tagged commit. workflow_dispatch runs the file from the selected branch
+  # (use main), letting us (re)publish an already-released tag to the tap.
+  workflow_dispatch:
+    inputs:
+      release-tag:
+        description: "Existing release tag to publish to the tap (e.g. v2.4.0)"
+        required: true
+        type: string
+
+jobs:
+  bump-cask:
+    name: Bump cask in tap
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve tag and version
+        id: v
+        run: |
+          tag="${{ github.event.release.tag_name || inputs.release-tag }}"
+          echo "tag=$tag"          >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}"  >> "$GITHUB_OUTPUT"
+
+      - name: Download macOS asset and compute sha256
+        id: sha
+        run: |
+          tag="${{ steps.v.outputs.tag }}"
+          ver="${{ steps.v.outputs.version }}"
+          asset="docutaz-${ver}-macos-arm64.zip"
+          url="https://github.com/${{ github.repository }}/releases/download/${tag}/${asset}"
+          echo "Downloading $url"
+          curl -fL -o "$asset" "$url"
+          echo "sha256=$(sha256sum "$asset" | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+      - name: Check out tap
+        uses: actions/checkout@v6
+        with:
+          repository: Illimitable-Consulting-Private-Limited/homebrew-docutaz
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: tap
+
+      - name: Rewrite version + sha256 in the cask
+        run: |
+          ver="${{ steps.v.outputs.version }}"
+          sha="${{ steps.sha.outputs.sha256 }}"
+          cask="tap/Casks/docutaz.rb"
+          # Touch only the version/sha lines; leave URL, caveats, etc. intact.
+          sed -i -E "s/^( *version )\"[^\"]*\"/\1\"${ver}\"/"      "$cask"
+          sed -i -E "s/^( *sha256 )\"[0-9a-f]*\"/\1\"${sha}\"/"    "$cask"
+          echo "---- updated cask ----"; cat "$cask"
+
+      - name: Commit and push to tap
+        run: |
+          cd tap
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/docutaz.rb
+          if git diff --cached --quiet; then
+            echo "Cask already up to date — nothing to push."
+            exit 0
+          fi
+          git commit -m "docutaz ${{ steps.v.outputs.version }}"
+          git push

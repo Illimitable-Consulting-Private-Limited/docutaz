@@ -643,6 +643,14 @@ jobs:
           ver="${{ steps.ver.outputs.version }}"
           cd build/src/docutaz
           "$QT_PREFIX/bin/macdeployqt" Docutaz.app
+          # Ad-hoc code signature. We have no Apple Developer ID ($99/yr), so this
+          # is NOT notarized — but an arm64 bundle MUST carry at least an ad-hoc
+          # signature or macOS kills it on launch with SIGKILL ("code signature
+          # invalid"). --deep re-signs the bundled Qt/QScintilla/mongocxx dylibs
+          # macdeployqt relocated into Contents/Frameworks. Users still clear the
+          # quarantine flag at install time (the Homebrew cask uses --no-quarantine).
+          codesign --force --deep --sign - Docutaz.app
+          codesign --verify --verbose Docutaz.app
           zip -r "../../../docutaz-${ver}-macos-arm64.zip" Docutaz.app
 
       - name: Smoke test (packaged binary launches)
