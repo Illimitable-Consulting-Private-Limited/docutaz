@@ -3,6 +3,10 @@
 #include <cstdio>
 #include <locale.h>
 
+#ifdef Q_OS_WIN
+#include <shobjidl.h>
+#endif
+
 #include <mongocxx/instance.hpp>
 
 #include "docutaz/core/AppRegistry.h"
@@ -37,6 +41,17 @@ int main(int argc, char *argv[])
     QApplication::setApplicationDisplayName("Docutaz");
     QApplication::setOrganizationName("Docutaz");
     QApplication::setDesktopFileName("docutaz");
+
+#ifdef Q_OS_WIN
+    // Give the process a stable, explicit AppUserModelID. Without one Windows
+    // derives the taskbar identity from the executable path, which drifts
+    // across version upgrades/new install locations and is one of the things
+    // that makes the taskbar lose the app icon (falling back to the generic
+    // blank-page icon). A fixed CompanyName.AppName id keeps taskbar grouping,
+    // pinning and the icon stable across updates. Must be set before the first
+    // window is shown.
+    SetCurrentProcessExplicitAppUserModelID(L"Illimitable.Docutaz");
+#endif
 
     // On Unix/Linux Qt uses the system locale by default, which can break
     // POSIX float/string conversions. Reset to "C" locale.

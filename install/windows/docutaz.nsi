@@ -32,6 +32,8 @@ Unicode true
 !define APP_NAME      "Docutaz"
 !define PUBLISHER     "Illimitable Consulting Private Limited"
 !define EXE_NAME      "docutaz.exe"
+; Must match SetCurrentProcessExplicitAppUserModelID() in src/docutaz/app/main.cpp.
+!define AUMID         "Illimitable.Docutaz"
 !define ABOUT_URL     "https://illimitable-consulting-private-limited.github.io/docutaz/"
 !define UNINST_KEY    "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
 
@@ -106,6 +108,18 @@ Section "Install"
   ; Start-menu + Desktop shortcuts.
   CreateShortCut "$SMPROGRAMS\${APP_NAME}.lnk" "$INSTDIR\${EXE_NAME}"
   CreateShortCut "$DESKTOP\${APP_NAME}.lnk"    "$INSTDIR\${EXE_NAME}"
+
+  ; Stamp both shortcuts with the same AppUserModelID the running process sets,
+  ; so the taskbar matches the pinned shortcut to the live window and keeps the
+  ; icon stable across upgrades. NSIS has no built-in for this shell property, so
+  ; a small bundled PowerShell helper sets it. Extracted to the temp plugins dir
+  ; (auto-cleaned) and run best-effort — a failure must not abort the install.
+  InitPluginsDir
+  File "/oname=$PLUGINSDIR\set-shortcut-aumid.ps1" "set-shortcut-aumid.ps1"
+  nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\set-shortcut-aumid.ps1" -LnkPath "$SMPROGRAMS\${APP_NAME}.lnk" -AppId "${AUMID}"'
+  Pop $0
+  nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\set-shortcut-aumid.ps1" -LnkPath "$DESKTOP\${APP_NAME}.lnk" -AppId "${AUMID}"'
+  Pop $0
 
   ; Uninstaller + Add/Remove Programs registration.
   WriteUninstaller "$INSTDIR\uninstall.exe"
