@@ -289,7 +289,7 @@ elseif(SYSTEM_MACOSX)
         OUTPUT_NAME "Docutaz"
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/install/macosx/Info.plist.in"
         MACOSX_BUNDLE_BUNDLE_NAME "Docutaz"
-        MACOSX_BUNDLE_GUI_IDENTIFIER "com.docutaz.docutaz"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "in.illimitable.Docutaz"
         MACOSX_BUNDLE_INFO_STRING "Docutaz ${PROJECT_VERSION}. Copyright Docutaz, 2026 - ${CURRENT_YEAR}"
         MACOSX_BUNDLE_SHORT_VERSION "${PROJECT_VERSION}"
         MACOSX_BUNDLE_LONG_VERSION "${PROJECT_VERSION}"
