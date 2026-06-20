@@ -18,9 +18,10 @@
 
   <description>
     <p>
-      Docutaz is a cross-platform desktop GUI for MongoDB 8 and newer, built for
-      developers who work with documents. It runs queries through MongoDB's
-      official mongosh shell, which is bundled with the Flatpak.
+      Docutaz is a cross-platform desktop GUI for MongoDB, built for developers
+      who work with documents. It runs queries through MongoDB's official mongosh
+      shell, which is bundled with the Flatpak. It is built and tested against
+      MongoDB 8.x and works with earlier supported releases.
     </p>
     <p>Features:</p>
     <ul>

@@ -1,7 +1,7 @@
 # Docutaz
 
-A cross-platform MongoDB management tool for developers.  
-Supports **MongoDB 8+** with a modern `mongosh`-based shell.
+A cross-platform MongoDB management tool for developers, with a modern `mongosh`-based shell.  
+Built and tested against **MongoDB 8.x**; earlier supported server versions (roughly 4.2+, per the bundled driver and your mongosh) generally work but aren't officially tested.
 
 > **Pronounced:** dok · you · taz  
 > *Dotaz* is the Czech word for *query*. Combined with *doc* (document), it captures in one word what MongoDB stores (documents) and what you do with them (query).
@@ -45,7 +45,7 @@ The sections below are for **building from source**.
 ### Runtime
 - **mongosh** 2.x or later — must be on your `PATH` or configured in Preferences  
   Install from [mongodb.com/try/download/shell](https://www.mongodb.com/try/download/shell)
-- **MongoDB** 8.0+ (older versions may work but are untested)
+- **MongoDB** — built and tested against 8.x; earlier supported versions (roughly 4.2+) generally work but aren't officially tested
 
 ### Build dependencies
 | Dependency | Version | Notes |

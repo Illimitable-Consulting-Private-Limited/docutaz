@@ -26,7 +26,9 @@ Then make sure Docutaz can find it: either keep `mongosh` on your `PATH`
 (check with `mongosh --version`), **or** set its full path in Docutaz under
 **Options → Preferences → "mongosh path"** (leave empty to auto-detect).
 
-You'll also need a **MongoDB 8.0+** server to connect to (local or remote).
+You'll also need a **MongoDB** server to connect to (local or remote). Docutaz is built and
+tested against MongoDB 8.x; earlier supported server versions (roughly 4.2+, per the bundled
+driver and your mongosh) generally work but aren't officially tested.
 
 ---
 
