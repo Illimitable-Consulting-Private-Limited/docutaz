@@ -555,13 +555,51 @@ namespace Docutaz
         // ('[' array literal, '{' object literal, '(' call/group) as opposed to
         // member indexing or a statement block (where adjacency is legal).
         enum Kind { Paren, ArrayLit, Index, ObjLit, Block };
-        struct Frame { char open; int pos; Kind kind; };
+        // checkKeys is set only for an object literal opened in clear *value*
+        // position (after '(' '[' ',' ':') — a real query object such as
+        // find({…}), a pipeline stage or a nested value. It gates the key/value
+        // checks so they never fire on statement blocks, getters, methods or
+        // shorthand, where the same punctuation is legal.
+        struct Frame { char open; int pos; Kind kind; bool checkKeys; };
         std::vector<Frame> stack;
         auto closerFor = [](char open) -> char {
             return open == '(' ? ')' : open == '[' ? ']' : '}';
         };
 
         char prevSig = 0;
+
+        // Helpers for the object key/value checks. inObjKeyPos(): the next token
+        // begins a member of a checkable object (we're right after '{' or ',').
+        // nextSig(): index of the next significant char at/after k, skipping
+        // whitespace and comments. checkObjKey(): the key spanning [ks,ke) must be
+        // followed by ':'. A string key requires it unconditionally; for an
+        // identifier/$ key we only complain when the follow can never start a
+        // method or shorthand (a literal, or a '{'/'[' value), so { foo },
+        // { foo() {} } and { get x() {} } stay quiet.
+        auto inObjKeyPos = [&]() -> bool {
+            return !stack.empty() && stack.back().kind == ObjLit && stack.back().checkKeys &&
+                   (prevSig == '{' || prevSig == ',');
+        };
+        auto nextSig = [&](int k) -> int {
+            while (k < n) {
+                const char d = s[k];
+                if (d == ' ' || d == '\t' || d == '\r' || d == '\n') { k++; continue; }
+                if (d == '/' && k + 1 < n && s[k + 1] == '/') { k += 2; while (k < n && s[k] != '\n') k++; continue; }
+                if (d == '/' && k + 1 < n && s[k + 1] == '*') { k += 2; while (k + 1 < n && !(s[k] == '*' && s[k + 1] == '/')) k++; k = std::min(n, k + 2); continue; }
+                return k;
+            }
+            return n;
+        };
+        auto checkObjKey = [&](int ks, int ke, bool literal) {
+            const int j = nextSig(ke);
+            const char fc = (j < n) ? s[j] : 0;
+            const bool missing = literal
+                ? (fc != ':')
+                : (fc == '"' || fc == '\'' || fc == '{' || fc == '[' || std::isdigit((unsigned char)fc));
+            if (missing)
+                addError(ks, ke - ks, tr("Missing ':' after key"));
+        };
+
         int i = 0;
         while (i < n) {
             const char c = s[i];
@@ -587,6 +625,8 @@ namespace Docutaz
             // is a quoted operator key or an aggregation field path ("$amount"):
             // highlight the $-token, then skip the rest of the string.
             if (c == '"' || c == '\'' || c == '`') {
+                const bool keyPos = inObjKeyPos();
+                const int strStart = i;
                 const char q = c; i++;
                 if (i < n && s[i] == '$') {
                     const int ds = i; i++;
@@ -594,15 +634,39 @@ namespace Docutaz
                     paintDollar(ds, i - ds);
                 }
                 while (i < n) { if (s[i] == '\\') { i += 2; continue; } if (s[i] == q) { i++; break; } i++; }
+                // A quoted key ("field": …) must be followed by a colon. Template
+                // literals are skipped — `x` is not a valid bare object key.
+                if (keyPos && q != '`') checkObjKey(strStart, i, /*literal=*/true);
                 prevSig = q; continue;
             }
             // bare $-operator / field key, e.g. { $match: ... }, $sum
             if (c == '$') {
+                const bool keyPos = inObjKeyPos();
                 const int ds = i; i++;
                 while (i < n && isDollarChar(s[i])) i++;
                 paintDollar(ds, i - ds);
+                if (keyPos) checkObjKey(ds, i, /*literal=*/false);
                 prevSig = s[i - 1];
                 continue;
+            }
+            // bare identifier in key position, e.g. { field: … }. checkObjKey
+            // verifies a colon follows, while letting the legal shorthand
+            // ({ foo }), method ({ foo() {} }) and accessor ({ get x() {} })
+            // forms pass.
+            if (inObjKeyPos() && (std::isalpha((unsigned char)c) || c == '_')) {
+                const int ks = i; i++;
+                while (i < n && (std::isalnum((unsigned char)s[i]) || s[i] == '_' || s[i] == '$')) i++;
+                checkObjKey(ks, i, /*literal=*/false);
+                prevSig = s[i - 1]; continue;
+            }
+            // a key/value colon inside a checkable object with nothing before the
+            // next separator is an empty value: { foo: } or { a: , b: 1 }.
+            if (c == ':' && !stack.empty() && stack.back().kind == ObjLit && stack.back().checkKeys) {
+                const int j = nextSig(i + 1);
+                const char fc = (j < n) ? s[j] : 0;
+                if (fc == 0 || fc == ',' || fc == '}' || fc == ']' || fc == ')')
+                    addError(i, 1, tr("Missing value after ':'"));
+                prevSig = ':'; i++; continue;
             }
             // opening brackets
             if (c == '(' || c == '[' || c == '{') {
@@ -621,8 +685,15 @@ namespace Docutaz
                 if (c == '(')      kind = Paren;
                 else if (c == '[') kind = bpcRegexAllowed(prevSig) ? ArrayLit : Index;
                 else               kind = bpcRegexAllowed(prevSig) ? ObjLit : Block;
+                // Only an object literal opened in value position is key-checked;
+                // a '{' at statement start (a block) stays unchecked. '=' covers
+                // `x = { … }`; '>' is excluded so an arrow body `() => { … }`
+                // (a block) is never treated as an object.
+                const bool ck = (kind == ObjLit) &&
+                    (prevSig == '(' || prevSig == '[' || prevSig == ',' ||
+                     prevSig == ':' || prevSig == '=');
                 paintBracket(i, (int)stack.size());
-                stack.push_back({c, i, kind});
+                stack.push_back({c, i, kind, ck});
                 prevSig = c; i++; continue;
             }
             // closing brackets
