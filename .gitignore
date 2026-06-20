@@ -112,5 +112,8 @@ $RECYCLE.BIN/
 # Distribution tarballs
 docutaz-*.tar.gz
 
+# Locally built Flatpak bundle (also produced in CI as a release asset)
+*.flatpak
+
 # Generated in CI from the Flatpak manifest (see packaging/flatpak/ci-manifest.py)
 packaging/flatpak/in.illimitable.Docutaz.ci.yaml
