@@ -1,15 +1,19 @@
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
 
 #include <QPainter>
+#include <QPainterPath>
+#include <QImage>
 #include <QApplication>
 #include <QKeyEvent>
 #include <QContextMenuEvent>
 #include <QHelpEvent>
 #include <QToolTip>
+#include <QStringList>
 #include <QMenu>
 #include <QAction>
 #include <algorithm>
 #include <cctype>
+#include <set>
 #include <vector>
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
@@ -31,6 +35,15 @@ namespace
     // a missing comma between literals). One past the $-operator indicator.
     constexpr int kErrorIndicator = kDollarIndicator + 1;             // 24
     constexpr int kBpcMaxBytes = 200000;
+
+    // Marker number for the warning triangle in the error margin (margin 1).
+    // Must stay below SC_MARKNUM_FOLDEREND (25, where the fold markers begin)
+    // and not collide with QsciScintilla::markerDefine() allocations — which
+    // this editor never uses, so 0 is safe.
+    constexpr int kErrorMarker = 0;
+    // Width reserved for the error margin (logical px). Always shown so the
+    // text doesn't reflow horizontally when an error appears or clears.
+    constexpr int kErrorMarginWidth = 18;
 
     // Whether a '/' here starts a regex literal rather than a division, inferred
     // from the previous significant character (coarse but adequate: it only
@@ -95,7 +108,6 @@ namespace Docutaz
         setIndentationsUseTabs(false);
         setIndentationWidth(indentationWidth);
         setUtf8(true);
-        setMarginWidth(1, 0);
         setCaretForegroundColor(caretForegroundColor);
         setMatchedBraceForegroundColor(matchedBraceForegroundColor); //1AB0A6
         setMatchedBraceBackgroundColor(marginsBackgroundColor);
@@ -132,6 +144,16 @@ namespace Docutaz
             SendScintilla(SCI_MARKERSETFORE, (unsigned long)marker, sciColor(QColor(173, 176, 178)));
             SendScintilla(SCI_MARKERSETBACK, (unsigned long)marker, sciColor(QColor(53, 56, 58)));
         }
+
+        // ---- Error margin (index 1) ----
+        // A dedicated symbol margin that shows a warning triangle on lines with
+        // a syntax error. It is SEPARATE from the fold margin (index 2), so an
+        // error marker and a fold glyph can appear on the same line side by side
+        // without overlapping. The mask is restricted to our marker bit alone.
+        defineErrorMarker();
+        SendScintilla(SCI_SETMARGINTYPEN, (unsigned long)1, (long)SC_MARGIN_SYMBOL);
+        SendScintilla(SCI_SETMARGINMASKN, (unsigned long)1, (long)(1 << kErrorMarker));
+        setMarginWidth(1, kErrorMarginWidth);
 
         // Faint vertical indentation guides.
         setIndentationGuides(true);
@@ -445,6 +467,52 @@ namespace Docutaz
         return true;
     }
 
+    void DocutazScintilla::defineErrorMarker()
+    {
+        // Draw the glyph into a QImage and hand it to QScintilla's native
+        // markerDefine(QImage) — it converts the pixels to Scintilla's RGBA
+        // layout and derives the HiDPI scale from the image's devicePixelRatio,
+        // which a hand-rolled SCI_MARKERDEFINERGBAIMAGE call gets wrong. We size
+        // the backing store in device pixels (logical * dpr) and tag it with the
+        // ratio so it displays at ~14 logical px, crisp on any display.
+        const qreal dpr = devicePixelRatioF() > 0.0 ? devicePixelRatioF() : 1.0;
+        const qreal S = 14.0;  // logical size
+        QImage img(qRound(S * dpr), qRound(S * dpr), QImage::Format_ARGB32_Premultiplied);
+        img.setDevicePixelRatio(dpr);
+        img.fill(Qt::transparent);
+
+        QPainter p(&img);
+        p.setRenderHint(QPainter::Antialiasing, true);
+
+        // Rounded warning triangle, amber fill with a darker outline. Painted in
+        // logical coordinates (0..S) since the image carries a device ratio.
+        const qreal m = S * 0.06;
+        QPolygonF tri;
+        tri << QPointF(S / 2.0, m)
+            << QPointF(S - m, S - m)
+            << QPointF(m, S - m);
+        QPainterPath path;
+        path.addPolygon(tri);
+        path.closeSubpath();
+        QPen pen(QColor("#8A6D00"), std::max(1.0, S * 0.07));
+        pen.setJoinStyle(Qt::RoundJoin);
+        p.setPen(pen);
+        p.setBrush(QColor("#FFC400"));
+        p.drawPath(path);
+
+        // Exclamation mark: a rounded bar over a dot, in a near-black ink.
+        const qreal cx = S / 2.0;
+        const qreal barW = S * 0.11;
+        p.setPen(Qt::NoPen);
+        p.setBrush(QColor("#2A2100"));
+        p.drawRoundedRect(QRectF(cx - barW / 2.0, S * 0.38, barW, S * 0.24),
+                          barW / 2.0, barW / 2.0);
+        p.drawEllipse(QPointF(cx, S * 0.72), barW * 0.6, barW * 0.6);
+        p.end();
+
+        markerDefine(img, kErrorMarker);
+    }
+
     void DocutazScintilla::updateSyntaxIndicators()
     {
         // Scintilla positions are byte offsets into the UTF-8 buffer; brackets
@@ -460,6 +528,9 @@ namespace Docutaz
             SendScintilla(SCI_INDICATORCLEARRANGE, (unsigned long)0, (long)n);
         }
         _syntaxErrors.clear();
+        // Drop the error-margin markers here too, so the early-return paths
+        // (empty / oversized buffer) leave a clean margin.
+        markerDeleteAll(kErrorMarker);
         if (n == 0 || n > kBpcMaxBytes)
             return;
 
@@ -581,6 +652,15 @@ namespace Docutaz
         SendScintilla(SCI_SETINDICATORCURRENT, (unsigned long)kErrorIndicator);
         for (const SyntaxError &e : _syntaxErrors)
             SendScintilla(SCI_INDICATORFILLRANGE, (unsigned long)e.pos, (long)e.len);
+
+        // Place one warning marker per affected line in the error margin. A set
+        // dedupes lines that hold more than one error (e.g. an unclosed bracket
+        // plus a later mismatch).
+        std::set<int> errLines;
+        for (const SyntaxError &e : _syntaxErrors)
+            errLines.insert((int)SendScintilla(SCI_LINEFROMPOSITION, (unsigned long)e.pos));
+        for (int line : errLines)
+            markerAdd(line, kErrorMarker);
     }
 
     bool DocutazScintilla::event(QEvent *e)
@@ -596,6 +676,23 @@ namespace Docutaz
                         QToolTip::showText(help->globalPos(), err.message, this);
                         return true;
                     }
+                }
+            } else if (help->pos().x() < marginWidth(0) + marginWidth(1) &&
+                       !_syntaxErrors.isEmpty()) {
+                // Hovering the gutter (POSITIONFROMPOINTCLOSE returned -1): if it's
+                // over the error margin, show every message on that line. Use the
+                // non-CLOSE variant so the y-coordinate still maps to a line.
+                const long lpos = SendScintilla(SCI_POSITIONFROMPOINT,
+                                                (unsigned long)help->pos().x(),
+                                                (long)help->pos().y());
+                const int line = (int)SendScintilla(SCI_LINEFROMPOSITION, (unsigned long)lpos);
+                QStringList msgs;
+                for (const SyntaxError &err : _syntaxErrors)
+                    if ((int)SendScintilla(SCI_LINEFROMPOSITION, (unsigned long)err.pos) == line)
+                        msgs << err.message;
+                if (!msgs.isEmpty()) {
+                    QToolTip::showText(help->globalPos(), msgs.join(QLatin1Char('\n')), this);
+                    return true;
                 }
             }
             // Not over an error — let the base class show whatever it would.

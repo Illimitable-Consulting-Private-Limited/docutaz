@@ -51,6 +51,10 @@ namespace Docutaz
     private:
         void setLineNumbers(bool displayNumbers);
         void toggleLineNumbers();
+        // Build the amber warning-triangle marker shown in the error margin
+        // (margin 1) on lines that have a syntax error. Drawn programmatically
+        // as an RGBA image so it stays crisp on HiDPI displays.
+        void defineErrorMarker();
         // Auto-close brackets and quotes. Returns true (and accepts the event)
         // when it fully handled the key: inserting a matching closer, typing
         // over an existing one, wrapping a selection, or removing an empty pair
