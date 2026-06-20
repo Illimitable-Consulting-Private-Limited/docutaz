@@ -90,6 +90,15 @@
   <!-- Keep the newest entry's version in sync with the built tag; the release
        automation can prepend new entries here. -->
   <releases>
+    <release version="2.4.0" date="2026-06-20">
+      <description>
+        <ul>
+          <li>Inline syntax checking now flags missing object values and missing key colons</li>
+          <li>A warning marker in the editor gutter marks every line with a syntax error</li>
+          <li>Various GUI fixes</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.3.0" date="2026-06-19">
       <description>
         <ul>

@@ -140,6 +140,6 @@ modules:
       #                 path: ../..
       - type: git
         url: https://github.com/Illimitable-Consulting-Private-Limited/docutaz.git
-        tag: v2.3.0
+        tag: v2.4.0
         # Flathub requires a commit alongside the tag; fill in at submission time:
-        # commit: <40-char sha of v2.3.0>
+        # commit: <40-char sha of v2.4.0>
