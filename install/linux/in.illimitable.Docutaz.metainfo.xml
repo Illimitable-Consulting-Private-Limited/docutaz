@@ -36,13 +36,30 @@
 
   <launchable type="desktop-id">in.illimitable.Docutaz.desktop</launchable>
 
-  <!-- Flathub requires at least one screenshot with a reachable image URL.
-       Replace these with real application screenshots before submitting to
-       Flathub (the build does not need them; the reviewer does). -->
+  <!-- Screenshots are referenced by HTTPS URL; Flathub downloads and re-hosts
+       them at build time. Before submitting to Flathub, capture each shot and
+       drop the PNG into site/ with the matching filename below (so it publishes
+       to the Pages URL). Capture rules: the Docutaz window ONLY (no desktop
+       wallpaper, no other windows, no mouse cursor), with real data shown, all
+       shots the same aspect ratio (≈1280x720, max ~1600px wide). Adjust the
+       captions to match what you actually capture. The first (type="default")
+       is the featured image. -->
   <screenshots>
     <screenshot type="default">
-      <caption>Querying a collection in Docutaz</caption>
-      <image>https://illimitable-consulting-private-limited.github.io/docutaz/tab.png</image>
+      <caption>Browsing databases and collections with query results</caption>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-explorer.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Editing a document in the visual editor</caption>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-editor.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Exporting results to JSON, CSV or XLSX</caption>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-export.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Formatting a query or an aggregation</caption>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-format.png</image>
     </screenshot>
   </screenshots>
 
