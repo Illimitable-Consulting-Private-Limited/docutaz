@@ -34,6 +34,11 @@ driver and your mongosh) generally work but aren't officially tested.
 
 ## Linux (x86_64 and arm64)
 
+Two ways to install: a portable **tarball** (any distro, x86_64 or arm64) or a
+**Flatpak** bundle (x86_64).
+
+### Tarball (x86_64 and arm64)
+
 The Linux tarball bundles the MongoDB C/C++ driver libraries; Qt 6, QScintilla,
 OpenSSL and libssh2 come from your distribution.
 
@@ -66,6 +71,33 @@ OpenSSL and libssh2 come from your distribution.
    `~/.local/share/`, so Docutaz shows up in your application menu — and the
    icon displays correctly on **Wayland**, where it comes from the desktop
    entry rather than the window. To undo it later: `./uninstall-desktop.sh`.
+
+### Flatpak (x86_64)
+
+Docutaz ships a single-file Flatpak bundle on the
+[Releases page](https://github.com/Illimitable-Consulting-Private-Limited/docutaz/releases).
+It is **not on Flathub**: Flathub requires every component to be built from
+source, which isn't practical for the bundled MongoDB `mongosh` shell (a large
+Node/TypeScript app), so the bundle is distributed directly instead.
+
+1. Download `docutaz-<version>-linux-x86_64.flatpak` from the release.
+2. Install and run (no root needed):
+   ```sh
+   flatpak install --user ./docutaz-<version>-linux-x86_64.flatpak
+   flatpak run in.illimitable.Docutaz
+   ```
+
+**Runtime note:** the bundle contains only Docutaz, not the shared KDE runtime it
+links against (`org.kde.Platform`). If you already have the **Flathub remote**
+configured (most desktops do), the runtime is fetched automatically. If not, the
+bundle embeds a hint pointing at Flathub, so Flatpak offers to add it and pull the
+runtime — you're using Flathub only for that standard shared runtime, not for
+Docutaz itself. `mongosh` is bundled inside the Flatpak, so there's nothing else
+to install.
+
+**Updating:** the in-app notice links you to the new release; download the newer
+`.flatpak` and install it over the top. Your settings live in the Flatpak's own
+data dir and carry across updates.
 
 ---
 
@@ -104,21 +136,36 @@ Gatekeeper would otherwise block it.
 
 ## Windows (64-bit)
 
-A self-contained folder (Qt, QScintilla and the MongoDB / OpenSSL / libssh2
-DLLs are all included). **64-bit Intel/AMD only** — arm64 isn't available yet.
+**64-bit Intel/AMD only** — arm64 isn't available yet.
+
+### Installer (recommended)
+
+1. Install with [winget](https://learn.microsoft.com/windows/package-manager/winget/):
+   ```sh
+   winget install Illimitable.Docutaz
+   ```
+   …or run **`docutaz-<version>-windows-x86_64-setup.exe`** from the release.
+2. The installer puts Docutaz in Program Files, adds Start-menu and Desktop
+   shortcuts, and registers an *Apps & features* entry for a clean uninstall. On
+   first launch, SmartScreen may warn that it's from an unknown publisher (the app
+   is unsigned): click **More info → Run anyway**.
+
+### Portable (zip)
+
+A self-contained folder (Qt, QScintilla and the MongoDB / OpenSSL / libssh2 DLLs
+are all included).
 
 1. Extract `docutaz-<version>-windows-x86_64.zip` to a folder you control
    (e.g. under your user directory or `C:\Program Files\Docutaz`).
-2. Run **`docutaz.exe`**. On first launch, Windows SmartScreen may warn that
-   it's from an unknown publisher (the app is unsigned): click
-   **More info → Run anyway**.
+2. Run **`docutaz.exe`** (same SmartScreen note as above).
 3. **Desktop / Start-menu shortcut (optional):** double-click
    **`Create Desktop Shortcut.bat`** in the extracted folder to add Docutaz to
    your Desktop and Start menu (no admin needed). `Remove Desktop Shortcut.bat`
    undoes it. *Don't move the folder afterward* — the shortcut points at
    `docutaz.exe` where it is; if you move it, re-run the script.
-4. Install **mongosh** (see above; `winget install MongoDB.Shell` or the
-   download link).
+
+Then install **mongosh** (see above; `winget install MongoDB.Shell` or the
+download link).
 
 ---
 
