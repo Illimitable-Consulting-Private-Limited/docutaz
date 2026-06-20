@@ -74,10 +74,23 @@ OpenSSL and libssh2 come from your distribution.
 A self-contained `Docutaz.app` (Qt, QScintilla and the MongoDB driver are
 bundled inside it). **Apple Silicon — M1 or newer — only.**
 
+### Homebrew (recommended)
+
+```sh
+brew install --cask --no-quarantine illimitable-consulting-private-limited/docutaz/docutaz
+```
+
+This installs Docutaz from our tap and pulls in **mongosh** as a dependency, so
+there's nothing else to set up. The `--no-quarantine` flag is required because
+the app is ad-hoc signed but not notarized (no Apple Developer ID yet), so
+Gatekeeper would otherwise block it.
+
+### Manual
+
 1. Unzip `docutaz-<version>-macos-arm64.zip` and, optionally, drag `Docutaz.app`
    into **/Applications**.
-2. The app is **not signed/notarized**, so the first launch is blocked by
-   Gatekeeper. Do one of:
+2. The app is **ad-hoc signed but not notarized**, so the first launch is blocked
+   by Gatekeeper. Do one of:
    - **Right-click** `Docutaz.app` → **Open** → **Open** in the dialog, **or**
    - run once in Terminal:
      ```sh
