@@ -685,6 +685,49 @@ jobs:
           if-no-files-found: error
 
   # ──────────────────────────────────────────────────────────────────────────
+  # Flatpak bundle — release-only (vX.Y.Z tags). Builds the checked-out tag's
+  # code as a Flatpak (KDE 6.10 runtime) and produces a single-file
+  # docutaz-<ver>-linux-x86_64.flatpak. The action embeds a flathub runtime-repo
+  # hint by default, so `flatpak install ./docutaz-*.flatpak` fetches the runtime
+  # automatically. Continuous manifest validation lives in flatpak.yml (main/PRs);
+  # this job only runs on tags, to produce the release artifact.
+  # ──────────────────────────────────────────────────────────────────────────
+  flatpak:
+    name: Flatpak bundle (x86_64)
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.10
+      options: --privileged
+    env:
+      # The flatpak-github-actions actions still ship Node 20; force Node 24.
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate CI manifest (build the checked-out tag)
+        run: |
+          python3 packaging/flatpak/ci-manifest.py \
+            packaging/flatpak/in.illimitable.Docutaz.yaml \
+            packaging/flatpak/in.illimitable.Docutaz.ci.yaml
+
+      - uses: flatpak/flatpak-github-actions/flatpak-builder@v6
+        with:
+          bundle: docutaz.flatpak
+          manifest-path: packaging/flatpak/in.illimitable.Docutaz.ci.yaml
+          cache-key: flatpak-builder-${{ hashFiles('packaging/flatpak/in.illimitable.Docutaz.yaml') }}
+
+      - name: Name the bundle by version
+        run: mv docutaz.flatpak "docutaz-${GITHUB_REF_NAME#v}-linux-x86_64.flatpak"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: docutaz-flatpak
+          path: docutaz-*-linux-x86_64.flatpak
+          if-no-files-found: error
+
+  # ──────────────────────────────────────────────────────────────────────────
   # Release — runs only on a vX.Y.Z tag. Verifies the tag matches the project
   # version, then attaches the three platform artifacts to a DRAFT GitHub
   # Release with auto-generated notes (review + publish manually). A tag with a
@@ -735,3 +778,31 @@ jobs:
             dist/docutaz-windows/docutaz-*-windows-x86_64.zip
             dist/docutaz-windows/docutaz-*-windows-x86_64-setup.exe
             dist/docutaz-macos/docutaz-*-macos-arm64.zip
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # Attach the Flatpak bundle to the release — a SEPARATE job (needs both the
+  # release draft and the flatpak build) so a Flatpak build/upload failure never
+  # blocks the native release, which is already drafted by the time this runs.
+  # softprops updates the existing draft (adds the file), preserving its notes.
+  # ──────────────────────────────────────────────────────────────────────────
+  flatpak-release:
+    name: Attach Flatpak to release
+    needs: [release, flatpak]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download Flatpak bundle
+        uses: actions/download-artifact@v7
+        with:
+          name: docutaz-flatpak
+          path: dist
+
+      - name: Attach to the draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true
+          files: dist/docutaz-*-linux-x86_64.flatpak
