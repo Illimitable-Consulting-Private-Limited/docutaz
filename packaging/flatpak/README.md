@@ -7,7 +7,7 @@ the Mongo drivers, or the shell separately.
 ## Files
 
 - **`in.illimitable.Docutaz.yaml`** — the manifest. Builds `libssh2`, the Mongo
-  C/C++ drivers, QScintilla and Docutaz against the **KDE 6.8** runtime, and
+  C/C++ drivers, QScintilla and Docutaz against the **KDE 6.10** runtime, and
   bundles the prebuilt `mongosh` into `/app/bin`.
 - **`../../install/linux/in.illimitable.Docutaz.desktop`** — desktop entry.
 - **`../../install/linux/in.illimitable.Docutaz.metainfo.xml`** — AppStream
@@ -22,7 +22,7 @@ used inside Flatpak — the runtime guarantees the libraries the GUI links again
 ## Build & run locally
 
 ```sh
-flatpak install flathub org.kde.Platform//6.8 org.kde.Sdk//6.8
+flatpak install flathub org.kde.Platform//6.10 org.kde.Sdk//6.10
 flatpak-builder --user --install --force-clean build-flatpak \
     packaging/flatpak/in.illimitable.Docutaz.yaml
 flatpak run in.illimitable.Docutaz

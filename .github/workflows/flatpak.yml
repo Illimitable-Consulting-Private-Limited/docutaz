@@ -43,9 +43,9 @@ jobs:
     name: Build Flatpak (x86_64)
     runs-on: ubuntu-24.04
     container:
-      # KDE 6.8 runtime/SDK preinstalled — must match runtime-version in the
+      # KDE 6.10 runtime/SDK preinstalled — must match runtime-version in the
       # manifest. Privileged is required for the build sandbox.
-      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.8
+      image: ghcr.io/flathub-infra/flatpak-github-actions:kde-6.10
       options: --privileged
     steps:
       - uses: actions/checkout@v6
