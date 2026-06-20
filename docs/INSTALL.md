@@ -6,10 +6,10 @@ then follow the steps for your OS below.
 
 | Platform | Download |
 |----------|----------|
-| Linux (Intel/AMD) | `docutaz-<version>-linux-x86_64.tar.gz` |
+| Linux (Intel/AMD) | `docutaz-<version>-linux-x86_64.tar.gz` · `docutaz-<version>-linux-x86_64.flatpak` |
 | Linux (ARM)       | `docutaz-<version>-linux-aarch64.tar.gz` |
 | macOS (Apple Silicon) | `docutaz-<version>-macos-arm64.zip` |
-| Windows (64-bit)  | `docutaz-<version>-windows-x86_64.zip` |
+| Windows (64-bit)  | `docutaz-<version>-windows-x86_64-setup.exe` · `docutaz-<version>-windows-x86_64.zip` |
 
 ---
 
@@ -76,9 +76,14 @@ OpenSSL and libssh2 come from your distribution.
 
 Docutaz ships a single-file Flatpak bundle on the
 [Releases page](https://github.com/Illimitable-Consulting-Private-Limited/docutaz/releases).
-It is **not on Flathub**: Flathub requires every component to be built from
-source, which isn't practical for the bundled MongoDB `mongosh` shell (a large
-Node/TypeScript app), so the bundle is distributed directly instead.
+It is **not on Flathub**, for two reasons:
+
+- **Flathub's AI policy** disallows submissions that involve AI-assisted
+  development, and Docutaz is built with AI assistance — so it isn't eligible.
+- **Flathub's build-from-source requirement** isn't practical for the bundled
+  MongoDB `mongosh` shell (a large Node/TypeScript app).
+
+The bundle is therefore distributed directly here instead.
 
 1. Download `docutaz-<version>-linux-x86_64.flatpak` from the release.
 2. Install and run (no root needed):

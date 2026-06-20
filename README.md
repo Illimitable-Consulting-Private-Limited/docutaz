@@ -128,6 +128,13 @@ To configure the `mongosh` path manually: **Options → Preferences → Shell**.
 
 ---
 
+## Built with AI
+
+Docutaz is developed with significant help from AI coding assistants (Anthropic's
+Claude). We note this openly, in the interest of transparency.
+
+---
+
 ## License
 
 GPL v3 — see [LICENSE](LICENSE). Fork of the [Robomongo](https://github.com/Studio3T/robomongo) open-source project.
