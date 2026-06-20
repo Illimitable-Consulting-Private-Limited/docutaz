@@ -117,9 +117,12 @@ ninja docutaz -j$(nproc)
 
 ## Configuration
 
-Settings are stored in `~/.Docutaz/<version>/docutaz.json`.
+Settings are stored in `~/.Docutaz/docutaz.json`.
 
-On first launch, Docutaz automatically imports connections from `~/.3T/robo-3t/` (Robo 3T) if found — those files are never modified.
+On first launch, Docutaz carries your existing setup over automatically, leaving the originals untouched:
+
+- from a **previous Docutaz version** — the newest config from the old per-release layout (`~/.Docutaz/<version>/docutaz.json`) is copied into the current single location;
+- otherwise from **Robo 3T** (`~/.3T/robo-3t/`) or older Robomongo, if found.
 
 To configure the `mongosh` path manually: **Options → Preferences → Shell**.
 
