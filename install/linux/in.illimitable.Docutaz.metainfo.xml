@@ -46,7 +46,7 @@
        is the featured image. -->
   <screenshots>
     <screenshot type="default">
-      <caption>Browsing databases and collections with query results</caption>
+      <caption>Browsing databases and collections alongside query results</caption>
       <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-explorer.png</image>
     </screenshot>
     <screenshot>
@@ -58,8 +58,12 @@
       <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-export.png</image>
     </screenshot>
     <screenshot>
-      <caption>Formatting a query or an aggregation</caption>
+      <caption>Formatting a query or aggregation</caption>
       <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-format.png</image>
+    </screenshot>
+    <screenshot>
+      <caption>Catching syntax errors inline before you run</caption>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-syntax.png</image>
     </screenshot>
   </screenshots>
 
