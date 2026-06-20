@@ -75,6 +75,18 @@
     .card h3 { margin: 0 0 6px; font-size: 1.05rem; }
     .card p { margin: 0; color: var(--muted); font-size: .96rem; }
 
+    .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px; }
+    .shot { margin: 0; }
+    .shot a { display: block; }
+    .shot img {
+      width: 100%; height: auto; display: block; background: #fff;
+      border-radius: 10px; border: 1px solid var(--border);
+      box-shadow: 0 6px 20px rgba(15,23,42,.08);
+      transition: box-shadow .15s ease, transform .15s ease;
+    }
+    .shot a:hover img { box-shadow: 0 10px 28px rgba(15,23,42,.16); transform: translateY(-2px); }
+    .shot figcaption { margin-top: 10px; color: var(--muted); font-size: .92rem; text-align: center; }
+
     .install { background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .install code, code.inline {
       background: #eaeef3; padding: 2px 6px; border-radius: 5px;
@@ -115,6 +127,42 @@
       <div class="card"><h3>Edit visually</h3><p>Insert, edit and delete documents with a visual editor — no hand-written JSON required.</p></div>
       <div class="card"><h3>Manage structure</h3><p>Create and inspect indexes, manage users and collection settings.</p></div>
       <div class="card"><h3>Private by design</h3><p>No telemetry or analytics. The only network traffic is your own MongoDB and SSH connections.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Screenshots</h2>
+    <div class="shots">
+      <figure class="shot">
+        <a href="screenshot-explorer.png" target="_blank" rel="noopener">
+          <img src="screenshot-explorer.png" loading="lazy" alt="Browsing databases and collections alongside query results">
+        </a>
+        <figcaption>Browsing databases and collections alongside query results</figcaption>
+      </figure>
+      <figure class="shot">
+        <a href="screenshot-editor.png" target="_blank" rel="noopener">
+          <img src="screenshot-editor.png" loading="lazy" alt="Editing a document in the visual editor">
+        </a>
+        <figcaption>Editing a document in the visual editor</figcaption>
+      </figure>
+      <figure class="shot">
+        <a href="screenshot-export.png" target="_blank" rel="noopener">
+          <img src="screenshot-export.png" loading="lazy" alt="Exporting results to JSON, CSV or XLSX">
+        </a>
+        <figcaption>Exporting results to JSON, CSV or XLSX</figcaption>
+      </figure>
+      <figure class="shot">
+        <a href="screenshot-format.png" target="_blank" rel="noopener">
+          <img src="screenshot-format.png" loading="lazy" alt="Formatting a query or aggregation">
+        </a>
+        <figcaption>Formatting a query or aggregation</figcaption>
+      </figure>
+      <figure class="shot">
+        <a href="screenshot-syntax.png" target="_blank" rel="noopener">
+          <img src="screenshot-syntax.png" loading="lazy" alt="Catching syntax errors inline before you run">
+        </a>
+        <figcaption>Catching syntax errors inline before you run</figcaption>
+      </figure>
     </div>
   </section>
 
