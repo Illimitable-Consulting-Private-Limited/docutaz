@@ -6,6 +6,7 @@
 #include <QCompleter>
 #include <QStringListModel>
 #include <QTimer>
+#include <QRegularExpression>
 #include <Qsci/qscilexerjavascript.h>
 #include <Qsci/qsciscintilla.h>
 
@@ -54,6 +55,17 @@ namespace
             if (!(ch.isLetterOrNumber() || ch == '_' || ch == '$'))
                 return false;
         return true;
+    }
+
+    // True when @p textBeforeDot ends with a getCollection("name") /
+    // getCollection('name') call. The tokenizer stops at the call's ')', so a
+    // member access like db.getCollection("user").<partial> loses its receiver;
+    // this recovers it so collection methods still complete there.
+    bool endsWithGetCollectionCall(const QString &textBeforeDot)
+    {
+        static const QRegularExpression re(
+            QStringLiteral("getCollection\\s*\\(\\s*(?:\"[^\"]*\"|'[^']*')\\s*\\)\\s*$"));
+        return re.match(textBeforeDot).hasMatch();
     }
 }
 
@@ -326,7 +338,19 @@ namespace Docutaz
         splitToken(token, qualifier, partial);
 
         QStringList out;
-        if (qualifier.isEmpty()) {
+        if (token.startsWith(QLatin1Char('.'))) {
+            // Member access whose receiver the tokenizer truncated at a stop
+            // char (e.g. the ')' in db.getCollection("x").<partial>). Recover the
+            // common case so collection methods complete; never offer globals
+            // here — a leading '.' is never a place for a bare keyword.
+            const QString lineText =
+                _queryText->sciScintilla()->text(_currentAutoCompletionInfo.line());
+            const QString before = lineText.left(_currentAutoCompletionInfo.lineIndexLeft());
+            if (endsWithGetCollectionCall(before)) {
+                for (const QString &m : staticCandidates(Context::CollectionMember, partial))
+                    out += QLatin1Char('.') + m;
+            }
+        } else if (qualifier.isEmpty()) {
             out += staticCandidates(Context::Global, partial);
         } else if (qualifier == QLatin1String("db")) {
             for (const QString &m : staticCandidates(Context::DbMember, partial))
