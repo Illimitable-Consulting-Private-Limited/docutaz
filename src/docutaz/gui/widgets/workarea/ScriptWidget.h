@@ -1,9 +1,12 @@
 #pragma once
 
 #include <QFrame>
+#include <QString>
+#include <QStringList>
 QT_BEGIN_NAMESPACE
 class QLabel;
 class QCompleter;
+class QTimer;
 QT_END_NAMESPACE
 
 #include "docutaz/core/domain/MongoShellResult.h"
@@ -85,8 +88,27 @@ namespace Docutaz
         void onCursorPositionChanged(int line, int index);
         void onCompletionActivated(const QString&);
 
+        // Debounce target: actually sends the server-backed completion request,
+        // unless a query is running (skip) — see showAutocompletion().
+        void requestServerCompletion();
+
     private:
         void configureQueryText();
+
+        /**
+         * @brief Instant, local (Tier 1 static + Tier 2 model) candidates for the
+         * given token. Never touches the network. Returns full replacement strings
+         * (e.g. "db.users", "db.users.find", "ObjectId", "$match").
+         */
+        QStringList localCandidates(const QString &token) const;
+
+        /** Collection names of the shell's current database, from the explorer
+         *  model (only those already loaded). Empty if nothing is cached. */
+        QStringList currentDbCollectionNames() const;
+
+        /** Shared popup display: positions and shows @p list, suppressing a single
+         *  completion identical to @p prefix. */
+        void popupCompletions(const QStringList &list, const QString &prefix);
 
         /**
          * @brief Calculates line height of text editor
@@ -121,6 +143,11 @@ namespace Docutaz
 
         bool _textChanged;
         bool _disableTextAndCursorNotifications;
+
+        // ── Autocompletion infrastructure ────────────────────────────────────
+        QTimer *_serverCompleteTimer;       // debounces server-backed requests
+        QString _pendingServerPrefix;       // token the debounced request will use
+        QStringList _lastLocalCandidates;   // shown instantly; merged with server reply
     };
 
     class TopStatusBar : public QFrame

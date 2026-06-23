@@ -56,6 +56,11 @@ namespace Docutaz
         // Get output window's dock status
         bool outputWindowDocked() const;
 
+        // True while a query is executing on this shell. The editor skips
+        // server-backed autocompletion in this window so completion never queues
+        // behind a long query on the shared mongosh subprocess.
+        bool isExecuting() const { return _executing; }
+
     Q_SIGNALS:
         void titleChanged(const QString &text);
         void toolTipChanged(const QString &text);
@@ -101,6 +106,7 @@ namespace Docutaz
         MongoShellExecResult _currentResult;
         QString _lastExecutedQuery;   // text submitted by execute(), for history
         bool _isTextChanged;
+        bool _executing = false;      // a query is in flight (see isExecuting())
     };
 
     /* ------- class CustomDockWidget -------- */

@@ -87,6 +87,7 @@ set(SOURCES
 
     # Isolated scope #5
     gui/editors/PlainJavaScriptEditor.cpp
+    gui/editors/MongoCompletionData.cpp
     gui/editors/JSLexer.cpp
     gui/editors/JsBeautifier.cpp
     gui/editors/FindFrame.cpp

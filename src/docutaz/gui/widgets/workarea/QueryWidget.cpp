@@ -236,6 +236,7 @@ namespace Docutaz
 
     void QueryWidget::showProgress()
     {
+        _executing = true;
         _viewer->showProgress();
     }
 
@@ -258,6 +259,7 @@ namespace Docutaz
 
     void QueryWidget::hideProgress()
     {
+        _executing = false;
         _viewer->hideProgress();
     }
 

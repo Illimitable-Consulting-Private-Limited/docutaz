@@ -79,6 +79,15 @@ namespace Docutaz
 
         MongoServer *server() const { return _server; }
 
+        /**
+         * @brief Collections currently known for this database.
+         *
+         * Populated lazily by loadCollections() (i.e. once the database is
+         * expanded in the explorer). Used by the editor for instant, local
+         * collection-name autocompletion without a server round-trip.
+         */
+        const std::vector<MongoCollection *> &collections() const { return _collections; }
+
     protected Q_SLOTS:
         void handle(LoadCollectionNamesResponse *event);
         void handle(LoadUsersResponse *event);

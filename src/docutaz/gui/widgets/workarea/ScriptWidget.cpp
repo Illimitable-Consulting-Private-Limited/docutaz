@@ -5,11 +5,16 @@
 #include <QPalette>
 #include <QCompleter>
 #include <QStringListModel>
+#include <QTimer>
 #include <Qsci/qscilexerjavascript.h>
 #include <Qsci/qsciscintilla.h>
 
+#include "docutaz/core/AppRegistry.h"
+#include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/core/domain/MongoShell.h"
 #include "docutaz/core/domain/MongoServer.h"
+#include "docutaz/core/domain/MongoDatabase.h"
+#include "docutaz/core/domain/MongoCollection.h"
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/utils/QtUtils.h"
 
@@ -19,6 +24,38 @@
 #include "docutaz/gui/editors/JSLexer.h"
 #include "docutaz/gui/editors/FindFrame.h"
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
+#include "docutaz/gui/editors/MongoCompletionData.h"
+
+namespace
+{
+    // Debounce window before a server-backed completion request is sent.
+    const int kServerCompleteDebounceMs = 150;
+
+    // Split a token like "db.users.fi" into qualifier ("db.users") and the
+    // partial word after the last dot ("fi"). No dot → empty qualifier.
+    void splitToken(const QString &token, QString &qualifier, QString &partial)
+    {
+        const int dot = token.lastIndexOf('.');
+        if (dot < 0) { qualifier.clear(); partial = token; return; }
+        qualifier = token.left(dot);
+        partial = token.mid(dot + 1);
+    }
+
+    // True when @p qualifier is exactly "db.<identifier>" — i.e. a single
+    // collection segment, so collection methods are the right completion.
+    bool isCollectionQualifier(const QString &qualifier)
+    {
+        if (!qualifier.startsWith(QLatin1String("db.")))
+            return false;
+        const QString coll = qualifier.mid(3);
+        if (coll.isEmpty() || coll.contains('.'))
+            return false;
+        for (const QChar ch : coll)
+            if (!(ch.isLetterOrNumber() || ch == '_' || ch == '$'))
+                return false;
+        return true;
+    }
+}
 
 namespace
 {
@@ -93,6 +130,14 @@ namespace Docutaz
 
         QStringListModel *model = new QStringListModel(_completer);
         _completer->setModel(model);
+
+        // Server-backed completion is debounced: local suggestions show instantly
+        // on every keystroke, but the request to the (shared) mongosh subprocess
+        // is only sent once typing pauses.
+        _serverCompleteTimer = new QTimer(this);
+        _serverCompleteTimer->setSingleShot(true);
+        _serverCompleteTimer->setInterval(kServerCompleteDebounceMs);
+        VERIFY(connect(_serverCompleteTimer, SIGNAL(timeout()), this, SLOT(requestServerCompletion())));
 
         setText(QtUtils::toQString(shell->query()));
         setTextCursor(shell->cursor());
@@ -170,13 +215,19 @@ namespace Docutaz
         _topStatusBar->setCurrentServer(address, isValid);
     }
 
-    void ScriptWidget::showAutocompletion(const QStringList &list, const QString &prefix)
+    void ScriptWidget::popupCompletions(const QStringList &list, const QString &prefix)
     {
+        if (list.isEmpty()) {
+            hideAutocompletion();
+            return;
+        }
+
         // do not show single autocompletion which is identical to existing prefix
         // or if it identical to prefix + '('.
         if (list.count() == 1) {
             if (list.at(0) == prefix ||
                 list.at(0) == (prefix + "(")) {
+                hideAutocompletion();
                 return;
             }
         }
@@ -205,16 +256,118 @@ namespace Docutaz
         scin->setIgnoreTabKey(true);
     }
 
+    // Server-backed completion reply. Async: by the time it arrives the user may
+    // have typed on, so we re-sanitize and drop it if the live prefix no longer
+    // matches (stale-guard). Otherwise we merge it with the instant local list.
+    void ScriptWidget::showAutocompletion(const QStringList &list, const QString &prefix)
+    {
+        const AutoCompletionInfo live = sanitizeForAutocompletion();
+        if (live.isEmpty() || live.text() != prefix)
+            return; // stale — the cursor has moved past this request
+        _currentAutoCompletionInfo = live;
+
+        QStringList merged = _lastLocalCandidates;
+        for (const QString &item : list)
+            if (!merged.contains(item))
+                merged += item;
+
+        popupCompletions(merged, prefix);
+    }
+
     void ScriptWidget::showAutocompletion()
     {
-        _currentAutoCompletionInfo = sanitizeForAutocompletion();
+        const AutocompletionMode mode =
+            AppRegistry::instance().settingsManager()->autocompletionMode();
+        if (mode == AutocompleteNone) {
+            hideAutocompletion();
+            return;
+        }
 
+        _currentAutoCompletionInfo = sanitizeForAutocompletion();
         if (_currentAutoCompletionInfo.isEmpty()) {
             hideAutocompletion();
             return;
         }
 
-        _shell->autocomplete(QtUtils::toStdString(_currentAutoCompletionInfo.text()));
+        // Cancel any pending/in-flight server request for an earlier keystroke.
+        _serverCompleteTimer->stop();
+        _pendingServerPrefix.clear();
+
+        const QString token = _currentAutoCompletionInfo.text();
+
+        // 1. Instant, local suggestions (Tier 1 static + Tier 2 model).
+        _lastLocalCandidates = localCandidates(token);
+        popupCompletions(_lastLocalCandidates, token);
+
+        // 2. Server-backed live collection names — only in full mode, only for the
+        //    "db." context, and debounced so a typing burst sends at most one
+        //    request. requestServerCompletion() also skips while a query runs.
+        if (mode == AutocompleteAll) {
+            QString qualifier, partial;
+            splitToken(token, qualifier, partial);
+            if (qualifier == QLatin1String("db") && !token.contains('(')) {
+                _pendingServerPrefix = token;
+                _serverCompleteTimer->start();
+            }
+        }
+    }
+
+    QStringList ScriptWidget::localCandidates(const QString &token) const
+    {
+        using namespace MongoCompletion;
+
+        const AutocompletionMode mode =
+            AppRegistry::instance().settingsManager()->autocompletionMode();
+        // AutocompleteNoCollectionNames suppresses collection-name suggestions
+        // (local and server alike); methods/operators/globals still show.
+        const bool wantCollections = (mode != AutocompleteNoCollectionNames);
+
+        QString qualifier, partial;
+        splitToken(token, qualifier, partial);
+
+        QStringList out;
+        if (qualifier.isEmpty()) {
+            out += staticCandidates(Context::Global, partial);
+        } else if (qualifier == QLatin1String("db")) {
+            for (const QString &m : staticCandidates(Context::DbMember, partial))
+                out += QLatin1String("db.") + m;
+            if (wantCollections) {
+                for (const QString &c : currentDbCollectionNames())
+                    if (c.startsWith(partial, Qt::CaseInsensitive))
+                        out += QLatin1String("db.") + c;
+            }
+        } else if (isCollectionQualifier(qualifier)) {
+            for (const QString &m : staticCandidates(Context::CollectionMember, partial))
+                out += qualifier + QLatin1Char('.') + m;
+        }
+
+        out.removeDuplicates();
+        return out;
+    }
+
+    QStringList ScriptWidget::currentDbCollectionNames() const
+    {
+        QStringList names;
+        MongoServer *server = _shell ? _shell->server() : nullptr;
+        if (!server)
+            return names;
+        MongoDatabase *database = server->findDatabaseByName(_shell->dbname());
+        if (!database)
+            return names;
+        for (MongoCollection *coll : database->collections())
+            names += QtUtils::toQString(coll->name());
+        return names;
+    }
+
+    void ScriptWidget::requestServerCompletion()
+    {
+        // Skip while a query is executing — completion must not queue behind a
+        // long query on the shared mongosh subprocess.
+        if (_parent && _parent->isExecuting())
+            return;
+        if (_pendingServerPrefix.isEmpty())
+            return;
+        _shell->autocomplete(QtUtils::toStdString(_pendingServerPrefix));
     }
 
     void ScriptWidget::hideAutocompletion()
