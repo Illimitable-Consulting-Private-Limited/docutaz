@@ -62,6 +62,31 @@ namespace Docutaz
             };
         }
 
+        // Flat, slim scrollbars themed to the palette. Applied app-wide so every
+        // QAbstractScrollArea (explorer, tree/table results, dialogs) shares the
+        // same minimal chrome. QScintilla draws its own scrollbars, so editors
+        // are unaffected by this.
+        QString buildGlobalStyleSheet(const Tokens &t)
+        {
+            const QString trough      = t.window.name();
+            const QString handle      = t.mid.name();
+            const QString handleHover = t.muted.name();
+            return QString(
+                "QScrollBar:vertical { background: %1; width: 12px; margin: 0px; border: none; }"
+                "QScrollBar::handle:vertical { background: %2; min-height: 24px;"
+                    " border-radius: 4px; margin: 2px; }"
+                "QScrollBar::handle:vertical:hover { background: %3; }"
+                "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0px; }"
+                "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical { background: none; }"
+                "QScrollBar:horizontal { background: %1; height: 12px; margin: 0px; border: none; }"
+                "QScrollBar::handle:horizontal { background: %2; min-width: 24px;"
+                    " border-radius: 4px; margin: 2px; }"
+                "QScrollBar::handle:horizontal:hover { background: %3; }"
+                "QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal { width: 0px; }"
+                "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal { background: none; }"
+            ).arg(trough, handle, handleHover);
+        }
+
         const Tokens &tokens(bool dark)
         {
             return dark ? kDark : kLight;
@@ -121,6 +146,7 @@ namespace Docutaz
             if (QStyle *fusion = QStyleFactory::create(QStringLiteral("Fusion")))
                 QApplication::setStyle(fusion);
             QApplication::setPalette(buildPalette(isDark()));
+            qApp->setStyleSheet(buildGlobalStyleSheet(current()));
         }
     }
 }

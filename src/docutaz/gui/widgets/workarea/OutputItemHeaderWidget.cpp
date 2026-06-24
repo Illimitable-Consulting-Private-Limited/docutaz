@@ -8,6 +8,7 @@
 
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/widgets/workarea/QueryWidget.h"
 #include "docutaz/gui/widgets/workarea/OutputWidget.h"
 #include "docutaz/gui/widgets/workarea/OutputItemContentWidget.h"
@@ -187,8 +188,10 @@ namespace Docutaz
             _dockUndockButton->setVisible(true);
         }
       
-        if(tabbedResults && !QtUtils::isDarkPalette(this))
-            setStyleSheet("background-color: white");
+        // In tabbed mode the header sits on the tab pane; key it to the themed
+        // canvas so it matches the result body in both light and dark.
+        if (tabbedResults)
+            setStyleSheet(QString("background-color: %1;").arg(Theme::current().base.name()));
     }
 
     void OutputItemHeaderWidget::setCopyResultsEnabled(bool on)

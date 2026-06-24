@@ -8,6 +8,7 @@
 #include <QPlainTextEdit>
 #include <QPalette>
 #include "docutaz/core/utils/QtUtils.h"
+#include "docutaz/gui/Theme.h"
 
 namespace Docutaz
 {
@@ -38,26 +39,27 @@ namespace Docutaz
     void LogWidget::addMessage(const QString &message, mongo::logger::LogSeverity level)
     {
         // Print time
+        const Theme::Tokens &th = Theme::current();
+
         QTime time = QTime::currentTime();
         _logTextEdit->moveCursor (QTextCursor::End);
-        _logTextEdit->setTextColor(QColor("#aaaaaa"));
+        _logTextEdit->setTextColor(th.muted);
         _logTextEdit->insertPlainText(time.toString("h:mm:ss AP") + "\t");
 
         // Print message
         _logTextEdit->moveCursor (QTextCursor::End);
 
-        // Nice color for the future: "#CD9800" :)
-
-        // Default to the palette text colour (not a fixed black) so normal log
-        // lines stay legible under a dark theme.
-        QColor textColor = _logTextEdit->palette().color(QPalette::Text);
+        // Severity colours follow the theme so they stay legible in both schemes:
+        // errors use the danger token, warnings the amber number token, ordinary
+        // log lines the muted token, and the rest the plain text colour.
+        QColor textColor = th.text;
 
         if (level == mongo::logger::LogSeverity::Error())
-            textColor = QColor("#CD0000");
+            textColor = th.danger;
         else if (level == mongo::logger::LogSeverity::Log())
-            textColor = QColor("#777777");
+            textColor = th.muted;
         else if (level == mongo::logger::LogSeverity::Warning())
-            textColor = QColor("#CD9800");
+            textColor = th.synNumber;
 
         _logTextEdit->setTextColor(textColor);
 

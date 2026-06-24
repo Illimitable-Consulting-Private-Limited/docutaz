@@ -11,6 +11,7 @@
 #include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/core/utils/QtUtils.h"
 
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/widgets/workarea/OutputItemContentWidget.h"
 #include "docutaz/gui/widgets/workarea/ProgressBarPopup.h"
 #include "docutaz/gui/widgets/workarea/WorkAreaTabBar.h"
@@ -261,140 +262,48 @@ namespace Docutaz
 
     QString OutputWidget::buildStyleSheet()
     {
-        QColor background = palette().window().color();
-        QColor gradientZero = QColor("#ffffff"); //Qt::white;//.lighter(103);
-        QColor gradientOne = background.lighter(104); //Qt::white;//.lighter(103);
-        QColor gradientTwo = background.lighter(108); //.lighter(103);
-        QColor selectedBorder = background.darker(103);
+        // Flat, theme-driven results tabs that mirror WorkAreaTabBar: a window
+        // strip with the selected tab raised to the canvas and a brand-green top
+        // marker. One path for light and dark.
+        const Theme::Tokens &t = Theme::current();
+        const QString window = t.window.name();
+        const QString base   = t.base.name();
+        const QString hover  = t.hover.name();
+        const QString text   = t.text.name();
+        const QString muted  = t.muted.name();
+        const QString border = t.mid.name();
+        const QString accent = t.highlight.name();
 
-        QString aga1 = gradientOne.name();
-        QString aga2 = gradientTwo.name();
-        QString aga3 = background.name();
-
-        // The light-mode tab colours below are unreadable under a dark palette
-        // (light text on near-white tabs); derive a dark equivalent from the
-        // window colour instead. Same approach as WorkAreaTabBar.
-        if (QtUtils::isDarkPalette(this)) {
-            const QString text     = palette().color(QPalette::WindowText).name();
-            const QString unselTop = background.lighter(118).name();
-            const QString unselBot = background.lighter(108).name();
-            const QString border   = background.lighter(140).name();
-            const QString selected = background.lighter(150).name();
-
-            return QString(
-                "QTabWidget::pane { background-color: %6; }"
-                "QTabBar::close-button { "
-                #ifdef __APPLE__
-                    "image: url(:/docutaz/icons/close_2_Mac_16x16.png);"
-                #else
-                    "image: url(:/docutaz/icons/close_2_16x16.png);"
-                #endif
-                    "width: 10px; height: 10px;"
-                "}"
-                "QTabBar::close-button:hover { "
-                    "image: url(:/docutaz/icons/close_hover_16x16.png);"
-                    "width: 15px; height: 15px;"
-                "}"
-                "QTabBar::tab {"
-                    "color: %5;"
-                    "font-size: 11px;"
-                    "background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
-                                                "stop: 0 %1, stop: 1.0 %2);"
-                    "border: 1px solid %3;"
-                    "border-bottom-color: %3;"
-                    "border-top-left-radius: 6px;"
-                    "border-top-right-radius: 6px;"
-                    "padding: 4px 4px 5px 8px;"
-                "}"
-                "QTabBar::tab:selected, QTabBar::tab:hover {"
-                    "background-color: %4;"
-                "}"
-                "QTabBar::tab:selected {"
-                    "margin-top: 1px;"
-                    "border-color: %3;"
-                    "border-bottom-color: %4;"
-                "}"
-                "QTabBar::tab:!selected { margin-top: 2px; }"
-            ).arg(unselTop, unselBot, border, selected, text, background.name());
-        }
-
-#ifdef __APPLE__
-        QString styles = QString(
-            "QTabWidget::pane { background-color: white; }"   // This style disables default styling under Mac
-            "QTabWidget::tab-bar {"
-                "alignment: left;"
-                "border-top-left-radius: 2px;"
-                "border-top-right-radius: 2px;"
-            "}"
+        return QString(
+            "QTabWidget::pane { background-color: %5; border: none; }"
             "QTabBar::close-button { "
-                "margin-top: 2px;"              
+            #ifdef __APPLE__
                 "image: url(:/docutaz/icons/close_2_Mac_16x16.png);"
-                "width: 10px;"
-                "height: 10px;"
-                "}"
+            #else
+                "image: url(:/docutaz/icons/close_2_16x16.png);"
+            #endif
+                "width: 10px; height: 10px;"
+            "}"
             "QTabBar::close-button:hover { "
                 "image: url(:/docutaz/icons/close_hover_16x16.png);"
-                "width: 15px;"
-                "height: 15px;"
+                "width: 15px; height: 15px;"
             "}"
-            "QTabBar::tab:selected { "
-                "background: white; /*#E1E1E1*/; "
-                "color: #282828;"
-            "} "
             "QTabBar::tab {"
-                "color: #505050;"
+                "color: %2;"
                 "font-size: 11px;"
                 "background: %1;"
-                "border-top-left-radius: 2px;"
-                "border-top-right-radius: 2px;"
-                "border-right: 1px solid #aaaaaa;"
-                "padding: 8px 0px 5px 0px;" // top r b l
+                "border: none;"
+                "border-top: 2px solid transparent;"
+                "border-right: 1px solid %6;"
+                "padding: 5px 8px 6px 10px;"
             "}"
-        ).arg(QWidget::palette().color(QWidget::backgroundRole()).darker(114).name());
-#else // Wind and Linux
-        QString styles = QString(
-            "QTabBar::close-button { "
-                "image: url(:/docutaz/icons/close_2_16x16.png);"
-                "width: 10px;"
-                "height: 10px;"
-            "}"
-            "QTabBar::close-button:hover { "
-                  "image: url(:/docutaz/icons/close_hover_16x16.png);"
-                  "width: 15px;"
-                  "height: 15px;"
-            "}"
-            "QTabBar::tab {"
-                "background: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,"
-                                            "stop: 0 #F0F0F0, stop: 0.4 #DEDEDE,"
-                                            "stop: 0.5 #E6E6E6, stop: 1.0 #E1E1E1);"
-                "border: 1px solid #C4C4C3;"
-                "border-bottom-color: #B8B7B6;" // #C2C7CB same as the pane color
-                "border-top-left-radius: 6px;"
-                "border-top-right-radius: 6px;"
-                "padding: 4px 4px 5px 8px;"
-                "max-width: 200px;"
-                "margin: 0px;"
-                "margin-left: 1px;"
-                "margin-right: -3px;"  // it should be -(tab:first:margin-left + tab:last:margin-left) to fix incorrect text elidement                
-            "}"
-            "QTabBar::tab:selected, QTabBar::tab:hover {"
-                "/* background: qlineargradient(x1: 0, y1: 1, x2: 0, y2: 0,"
-                                "stop: 0 %1, stop: 0.3 %2,"    //#fafafa, #f4f4f4
-                                "stop: 0.6 %3, stop: 1.0 %4); */" //#e7e7e7, #fafafa            
-                "background-color: white;"
-            "}"
+            "QTabBar::tab:hover { background: %3; color: %4; }"
             "QTabBar::tab:selected {"
-                "margin-top: 1px;"
-                "border-color: #9B9B9B;" //
-                "border-bottom-color: %4;" //#fafafa
+                "color: %4;"
+                "background: %5;"
+                "border-top: 2px solid %7;"
             "}"
-            "QTabBar::tab:!selected {"
-                "margin-top: 2px;" // make non-selected tabs look smaller
-            "}"
-        ).arg(gradientZero.name(), gradientOne.name(), gradientTwo.name(), "#ffffff");
-#endif            
-
-        return styles;
+        ).arg(window, muted, hover, text, base, border, accent);
     }
 
     void OutputWidget::tryToMakeAllPartsEqualInSize()

@@ -8,6 +8,7 @@
 
 #include "docutaz/gui/widgets/workarea/BsonTreeItem.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/core/utils/QtUtils.h"
 
 namespace Docutaz
@@ -22,15 +23,13 @@ namespace Docutaz
 
         verticalHeader()->setDefaultAlignment(Qt::AlignLeft);
         horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
-        // Light borders/gridlines glare against a dark palette; derive both from
-        // the window colour when dark.
-        if (QtUtils::isDarkPalette(this)) {
-            const QColor bg = palette().window().color();
+        // Border and gridlines follow the theme so they read as thin separators
+        // in both light and dark rather than glaring against the canvas.
+        {
+            const Theme::Tokens &t = Theme::current();
             setStyleSheet(QString("QTableView { border-left: 1px solid %1; border-top: 1px solid %1;"
                                   " gridline-color: %2;}")
-                          .arg(bg.lighter(140).name(), bg.lighter(125).name()));
-        } else {
-            setStyleSheet("QTableView { border-left: 1px solid #c7c5c4; border-top: 1px solid #c7c5c4; gridline-color: #edebea;}");
+                          .arg(t.mid.name(), t.alternateBase.name()));
         }
 
         setSelectionMode(QAbstractItemView::ExtendedSelection);

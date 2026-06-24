@@ -7,6 +7,7 @@
 
 #include "docutaz/gui/widgets/workarea/BsonTreeItem.h"
 #include "docutaz/gui/widgets/workarea/BsonTreeModel.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/core/utils/QtUtils.h"
 
 namespace Docutaz
@@ -116,13 +117,9 @@ namespace Docutaz
 
         if (!node) {
             if (role == Qt::BackgroundRole) {
-                // Subtle shade marking an empty cell. Light theme uses an
-                // off-white; under a dark palette derive a faintly lighter shade
-                // of the base colour so it doesn't flash a light patch.
-                if (QtUtils::isDarkPalette()) {
-                    return QBrush(qApp->palette().color(QPalette::Base).lighter(118));
-                }
-                return QBrush("#f5f3f2");
+                // Subtle shade marking an empty cell: the themed alternate-base
+                // tone so it reads as a faint patch in both light and dark.
+                return QBrush(Theme::current().alternateBase);
             }
             return result;
         }
