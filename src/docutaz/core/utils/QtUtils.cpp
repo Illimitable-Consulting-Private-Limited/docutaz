@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QPalette>
 #include <QWidget>
+#include <QStyleHints>
 
 namespace Docutaz
 {
@@ -61,6 +62,17 @@ namespace Docutaz
         {
             const QPalette pal = w ? w->palette() : qApp->palette();
             return pal.color(QPalette::Window).lightness() < 128;
+        }
+
+        bool isDarkMode(const QWidget *const w)
+        {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+            // OS-reported appearance; tracks live light/dark switches on 6.5+.
+            const Qt::ColorScheme scheme = qApp->styleHints()->colorScheme();
+            if (scheme != Qt::ColorScheme::Unknown)
+                return scheme == Qt::ColorScheme::Dark;
+#endif
+            return isDarkPalette(w);
         }
     }
 }

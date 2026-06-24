@@ -22,6 +22,7 @@
 #include "docutaz/gui/widgets/workarea/IndicatorLabel.h"
 #include "docutaz/gui/widgets/workarea/QueryWidget.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/editors/JSLexer.h"
 #include "docutaz/gui/editors/FindFrame.h"
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
@@ -31,6 +32,11 @@ namespace
 {
     // Debounce window before a server-backed completion request is sent.
     const int kServerCompleteDebounceMs = 150;
+
+    // Minimum visible height of the query editor, in text lines. A short (e.g.
+    // one-line) query still reserves this much so the editor reads as its own
+    // panel rather than blending into the surrounding chrome.
+    const int kMinEditorLines = 3;
 
     // Split a token like "db.users.fi" into qualifier ("db.users") and the
     // partial word after the last dot ("fi"). No dot → empty qualifier.
@@ -105,14 +111,12 @@ namespace Docutaz
         _textChanged(false),
         _disableTextAndCursorNotifications(false)
     {
-        // Forcing white here makes the connection/server/db indicator labels
-        // (which use the palette text colour) invisible under a dark desktop
-        // theme, so follow the palette window colour instead.
-        const QString bg = QtUtils::isDarkPalette(this)
-            ? palette().color(QPalette::Window).name()
-            : QStringLiteral("rgb(255, 255, 255)");
-        setStyleSheet(QString("QFrame {background-color: %1; border: 0px solid #c7c5c4;"
-                      "border-radius: 0px; margin: 0px; padding: 0px;}").arg(bg));
+        // Follow the themed palette window colour so the strip blends with the
+        // surrounding chrome in both light and dark.
+        const QString bg = palette().color(QPalette::Window).name();
+        setStyleSheet(QString("QFrame {background-color: %1; border: 0px solid %2;"
+                      "border-radius: 0px; margin: 0px; padding: 0px;}")
+                      .arg(bg, Theme::current().mid.name()));
 
         _queryText = new FindFrame(this);
         _topStatusBar = new TopStatusBar(_shell->server()->connectionRecord()->connectionName(), 
@@ -416,7 +420,7 @@ namespace Docutaz
         // Set fixed size only if output widget is docked
         if (_parent->outputWindowDocked())
         {
-            int lines = _queryText->sciScintilla()->lines();
+            int lines = qMax(_queryText->sciScintilla()->lines(), kMinEditorLines);
             int editorTotalHeight = editorHeight(lines);
 
             int maxHeight = editorHeight(18);
@@ -482,15 +486,18 @@ namespace Docutaz
     {
         QsciLexerJavaScript *javaScriptLexer = new JSLexer(this);
         javaScriptLexer->setFont(GuiRegistry::instance().font());
-        int height = editorHeight(1);
+        int height = editorHeight(kMinEditorLines);
         _queryText->sciScintilla()->setMinimumHeight(height);
         _queryText->sciScintilla()->setFixedHeight(height);
         _queryText->sciScintilla()->setAppropriateBraceMatching();
         _queryText->sciScintilla()->setFont(GuiRegistry::instance().font());
-        _queryText->sciScintilla()->setPaper(QColor(255, 0, 0, 127));
+        _queryText->sciScintilla()->setPaper(Theme::current().editorCanvas);
         _queryText->sciScintilla()->setLexer(javaScriptLexer);
 
-        _queryText->sciScintilla()->setStyleSheet("QFrame { background-color: rgb(73, 76, 78); border: 1px solid #c7c5c4; border-radius: 4px; margin: 0px; padding: 0px;}");
+        _queryText->sciScintilla()->setStyleSheet(
+            QString("QFrame { background-color: %1; border: 1px solid %2; border-radius: 4px;"
+                    " margin: 0px; padding: 0px;}")
+                .arg(Theme::current().editorCanvas.name(), Theme::current().mid.name()));
         VERIFY(connect(_queryText->sciScintilla(), SIGNAL(linesChanged()), SLOT(ui_queryLinesCountChanged())));
         VERIFY(connect(_queryText->sciScintilla(), SIGNAL(textChanged()), SLOT(onTextChanged())));
         VERIFY(connect(_queryText->sciScintilla(), SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int, int))));

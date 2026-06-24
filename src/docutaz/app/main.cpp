@@ -14,6 +14,7 @@
 #include "docutaz/core/utils/Logger.h"
 #include "docutaz/gui/MainWindow.h"
 #include "docutaz/gui/AppStyle.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/dialogs/EulaDialog.h"
 #include "docutaz/ssh/ssh.h"
 #include "docutaz/utils/DocutazCrypt.h"
@@ -95,10 +96,11 @@ int main(int argc, char *argv[])
         settings->save();
     }
 
-    // Init GUI style, then tint the palette with the Docutaz brand accent
-    // (selection highlight + links) on top of the native light/dark palette.
+    // Init GUI style settings, then apply the flat Docutaz look: Fusion base
+    // style + a curated light/dark palette (built from the design tokens, with
+    // the brand accent as Highlight/Link), selected from the OS colour scheme.
     Docutaz::AppStyleUtils::initStyle();
-    Docutaz::AppStyleUtils::applyBrandAccent();
+    Docutaz::Theme::apply();
 
     Docutaz::MainWindow mainWindow;
     mainWindow.show();

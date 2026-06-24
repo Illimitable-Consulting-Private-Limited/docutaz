@@ -18,6 +18,7 @@
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/editors/JsBeautifier.h"
 #include "docutaz/core/utils/QtUtils.h"
 
@@ -94,30 +95,32 @@ namespace
 
 namespace Docutaz
 {
-    const QColor DocutazScintilla::marginsBackgroundColor = QColor(73, 76, 78);
-    const QColor DocutazScintilla::caretForegroundColor = QColor("#FFFFFF");
-    const QColor DocutazScintilla::matchedBraceForegroundColor = QColor("#FF8861");
-
     DocutazScintilla::DocutazScintilla(QWidget *parent) : QsciScintilla(parent),
         _ignoreEnterKey(false),
         _ignoreTabKey(false),
         _lineNumberDigitWidth(0),
         _lineNumberMarginWidth(0)
     {
+        // Editor chrome follows the active light/dark scheme. QScintilla renders
+        // independently of QPalette, so every colour is read from the theme here.
+        const Theme::Tokens &th = Theme::current();
+        const QColor canvas    = th.editorCanvas;
+        const QColor marginFg  = th.lineNumber;
+
         setAutoIndent(true);
         setIndentationsUseTabs(false);
         setIndentationWidth(indentationWidth);
         setUtf8(true);
-        setCaretForegroundColor(caretForegroundColor);
-        setMatchedBraceForegroundColor(matchedBraceForegroundColor); //1AB0A6
-        setMatchedBraceBackgroundColor(marginsBackgroundColor);
+        setCaretForegroundColor(th.text);
+        setMatchedBraceForegroundColor(th.synOperator);
+        setMatchedBraceBackgroundColor(th.hover);
         setContentsMargins(0, 0, 0, 0);
         setViewportMargins(3, 3, 3, 3);
         QFont ourFont = GuiRegistry::instance().font();
         setMarginsFont(ourFont);
         setMarginLineNumbers(0, true);
-        setMarginsBackgroundColor(QColor(53, 56, 58));
-        setMarginsForegroundColor(QColor(173, 176, 178));
+        setMarginsBackgroundColor(canvas);
+        setMarginsForegroundColor(marginFg);
 
         SendScintilla(QsciScintilla::SCI_STYLESETFONT, 1, ourFont.family().data());
         SendScintilla(QsciScintilla::SCI_SETHSCROLLBAR, 0);
@@ -133,7 +136,7 @@ namespace Docutaz
         // attached) is safe: setFolding sets the master "fold" document property,
         // which the lexer's refreshProperties() leaves untouched.
         setFolding(QsciScintilla::BoxedTreeFoldStyle, 2);
-        setFoldMarginColors(QColor(53, 56, 58), QColor(53, 56, 58));
+        setFoldMarginColors(canvas, canvas);
         // Render the fold tree/markers as light glyphs on the dark margin: pass
         // the symbol fill (back) the margin colour so only the light outline and
         // +/- glyph (fore) show. Scintilla wants colours packed as 0xBBGGRR.
@@ -141,8 +144,8 @@ namespace Docutaz
             return (long)((c.blue() << 16) | (c.green() << 8) | c.red());
         };
         for (int marker = SC_MARKNUM_FOLDEREND; marker <= SC_MARKNUM_FOLDEROPEN; ++marker) {
-            SendScintilla(SCI_MARKERSETFORE, (unsigned long)marker, sciColor(QColor(173, 176, 178)));
-            SendScintilla(SCI_MARKERSETBACK, (unsigned long)marker, sciColor(QColor(53, 56, 58)));
+            SendScintilla(SCI_MARKERSETFORE, (unsigned long)marker, sciColor(marginFg));
+            SendScintilla(SCI_MARKERSETBACK, (unsigned long)marker, sciColor(canvas));
         }
 
         // ---- Error margin (index 1) ----
@@ -157,13 +160,12 @@ namespace Docutaz
 
         // Faint vertical indentation guides.
         setIndentationGuides(true);
-        setIndentationGuidesForegroundColor(QColor(99, 102, 104));
-        setIndentationGuidesBackgroundColor(QColor(73, 76, 78));
+        setIndentationGuidesForegroundColor(th.mid);
+        setIndentationGuidesBackgroundColor(canvas);
 
-        // Subtly highlight the line the caret is on (white at low alpha so it
-        // works over the dark editor background without washing out the text).
-        setCaretLineVisible(true);
-        setCaretLineBackgroundColor(QColor(255, 255, 255, 18));
+        // No caret-line highlight: the band competes with the flat canvas, so
+        // the current line is left undecorated.
+        setCaretLineVisible(false);
 
         // Bracket-pair colorization: each bracket glyph is tinted by its nesting
         // depth via an INDIC_TEXTFORE indicator (which overrides the lexer's

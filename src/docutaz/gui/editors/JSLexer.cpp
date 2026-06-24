@@ -2,116 +2,82 @@
 
 #include <Qsci/qscilexerjavascript.h>
 
+#include "docutaz/gui/Theme.h"
+
 namespace Docutaz
 {
     JSLexer::JSLexer(QObject *parent) : QsciLexerJavaScript(parent)
     {
     }
 
-    QColor JSLexer::defaultPaper(int style) const
+    QColor JSLexer::defaultPaper(int /*style*/) const
     {
-        return QColor(73, 76, 78);
-        //return QColor(48, 10, 36); // Ubuntu-style background
+        // The editor canvas follows the active light/dark scheme. QScintilla
+        // renders independently of QPalette/QSS, so the colour is read here and
+        // re-applied when the theme changes (see PlainJavaScriptEditor).
+        return Theme::current().editorCanvas;
     }
 
     QColor JSLexer::defaultColor(int style) const
     {
+        const Theme::Tokens &t = Theme::current();
+
         switch (style)
         {
-        case Default:
-            return QColor("#FFFFFF");
-
         case Comment:
         case CommentLine:
-            return QColor("#999999");
-
         case CommentDoc:
         case CommentLineDoc:
-            return QColor("#999999");
+            return t.synComment;
 
         case Number:
-            //return QColor("#DBF76C");
-            return QColor("#FFA09E");
+            return t.synNumber;
 
         case Keyword:
-            //return QColor("#FDE15D");
-            return QColor("#BEE5FF");
-
-        case KeywordSet2:
-            // mongo-shell globals, BSON type constructors and the iconic
-            // collection/db methods — a warm orange that stands apart from the
-            // light-blue JavaScript keywords.
-            return QColor("#FFB86C");
+        case KeywordSet2:   // mongo-shell globals / BSON ctors / collection methods
+        case PreProcessor:
+            return t.synKeyword;
 
         case DoubleQuotedString:
         case SingleQuotedString:
         case RawString:
-            //return QColor("#5ED363");
-            return QColor("#C6F079");
-
-        case PreProcessor:
-            return QColor("#00FF00");
+        case UnclosedString:
+            return t.synString;
 
         case Operator:
-        case UnclosedString:
-            //return QColor("#FF7729");
-            //return QColor("#AFBED4");
-            return QColor("#FFD14D");
+            return t.synOperator;
 
-
-        case Regex:
-            return QColor("#FFFFFF");
-
-        case CommentDocKeyword:
-            return QColor("#FFFFFF");
-
-        case CommentDocKeywordError:
-            return QColor("#FFFFFF");
-
+        // Inactive (greyed-out) regions read as muted in either scheme.
         case InactiveDefault:
         case InactiveUUID:
-        case InactiveCommentLineDoc:
-        case InactiveKeywordSet2:
-        case InactiveCommentDocKeyword:
-        case InactiveCommentDocKeywordError:
-            return QColor("#FFFFFF");
-
         case InactiveComment:
         case InactiveCommentLine:
-        case InactiveNumber:
-            return QColor("#FFFFFF");
-
         case InactiveCommentDoc:
-            return QColor("#FFFFFF");
-
+        case InactiveCommentLineDoc:
+        case InactiveNumber:
         case InactiveKeyword:
-            return QColor("#FFFFFF");
-
+        case InactiveKeywordSet2:
         case InactiveDoubleQuotedString:
         case InactiveSingleQuotedString:
         case InactiveRawString:
-            return QColor("#FFFFFF");
-
+        case InactiveUnclosedString:
+        case InactiveVerbatimString:
         case InactivePreProcessor:
-            return QColor("#FFFFFF");
-
         case InactiveOperator:
         case InactiveIdentifier:
         case InactiveGlobalClass:
-            return QColor("#FFFFFF");
-
-        case InactiveUnclosedString:
-            return QColor("#FFFFFF");
-
-        case InactiveVerbatimString:
-            return QColor("#FFFFFF");
-
         case InactiveRegex:
-            return QColor("#FFFFFF");
-        }
+        case InactiveCommentDocKeyword:
+        case InactiveCommentDocKeywordError:
+            return t.synComment;
 
-        return QColor("#FFFFFF");
-        //    return QsciLexer::defaultColor(style);
+        case Default:
+        case Regex:
+        case CommentDocKeyword:
+        case CommentDocKeywordError:
+        default:
+            return t.text;
+        }
     }
 
     const char *JSLexer::keywords(int set) const

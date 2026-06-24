@@ -36,6 +36,13 @@ namespace Docutaz
         // Pass a widget to read its palette, or nullptr to use the app palette.
         bool isDarkPalette(const QWidget *w = nullptr);
 
+        // Single source of truth for whether the UI should render dark. On
+        // Qt 6.5+ this follows the OS appearance via QStyleHints::colorScheme()
+        // (and tracks user light/dark switches); below 6.5, or when the platform
+        // reports an unknown scheme, it falls back to isDarkPalette(). Prefer
+        // this over isDarkPalette() in new code so the theme follows the system.
+        bool isDarkMode(const QWidget *w = nullptr);
+
         template<typename Type>
         inline Type item(const QModelIndex &index)
         {

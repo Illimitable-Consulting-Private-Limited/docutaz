@@ -35,6 +35,7 @@
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
 #include "docutaz/gui/widgets/workarea/CollectionStatsTreeWidget.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/editors/JSLexer.h"
 #include "docutaz/gui/editors/FindFrame.h"
 
@@ -457,6 +458,12 @@ namespace Docutaz
                     VERIFY(connect(_thread, SIGNAL(finished()), _thread, SLOT(deleteLater())));
                     _thread->start();
                 }
+                else {
+                    // A find/aggregation that matched nothing leaves both the
+                    // response text and the document set empty. Without this the
+                    // view is a bare, scrollbar-only canvas that reads as broken.
+                    _textView->sciScintilla()->setText("// No documents returned.");
+                }
             }
             _stack->addWidget(_textView);
             _isTextModeInitialized = true;
@@ -605,8 +612,14 @@ namespace Docutaz
         _logText->sciScintilla()->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
         _logText->sciScintilla()->setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
         // Wrap mode turned off because it introduces huge performance problems
-        // even for medium size documents.    
-        _logText->sciScintilla()->setStyleSheet("QFrame {background-color: rgb(73, 76, 78); border: 1px solid #c7c5c4; border-radius: 0px; margin: 0px; padding: 0px;}");
+        // even for medium size documents.
+        // The text view follows the active light/dark scheme (QScintilla renders
+        // its own canvas via the lexer; the frame chrome is themed here to match).
+        const Theme::Tokens &th = Theme::current();
+        _logText->sciScintilla()->setStyleSheet(
+            QString("QFrame {background-color: %1; border: 1px solid %2; "
+                    "border-radius: 0px; margin: 0px; padding: 0px;}")
+                .arg(th.editorCanvas.name(), th.mid.name()));
         return _logText;
     }
 }

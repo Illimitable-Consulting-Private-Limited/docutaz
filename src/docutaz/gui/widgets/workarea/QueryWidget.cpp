@@ -32,6 +32,7 @@
 #include "docutaz/core/utils/Logger.h"
 
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/widgets/workarea/OutputWidget.h"
 #include "docutaz/gui/widgets/workarea/ScriptWidget.h"
 #include "docutaz/gui/widgets/workarea/OutputItemContentWidget.h"
@@ -78,9 +79,14 @@ namespace Docutaz
         _outputLabel->setContentsMargins(0, 5, 0, 0);
         _outputLabel->setVisible(false);
 
+        // A crisp 1px divider between the query editor and the results. In the
+        // flat theme there are no bevels, so this structural line is what
+        // separates the two regions (a default sunken/raised HLine is invisible
+        // on a near-white surface).
         _line = new QFrame(this);
-        _line->setFrameShape(QFrame::HLine);
-        _line->setFrameShadow(QFrame::Raised);
+        _line->setFrameShape(QFrame::NoFrame);
+        _line->setFixedHeight(1);
+        _line->setStyleSheet(QString("background-color: %1;").arg(Theme::current().mid.name()));
 
         _mainLayout = new QVBoxLayout;
         _mainLayout->setSpacing(0);
