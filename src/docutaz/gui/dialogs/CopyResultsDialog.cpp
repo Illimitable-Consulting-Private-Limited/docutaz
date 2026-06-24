@@ -17,6 +17,7 @@
 #include "docutaz/core/settings/SshSettings.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/ConnectionEnvironment.h"
+#include "docutaz/gui/Theme.h"
 
 namespace Docutaz
 {
@@ -118,6 +119,7 @@ namespace Docutaz
         QDialogButtonBox *buttons =
             new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         buttons->button(QDialogButtonBox::Ok)->setText("Copy");
+        Theme::markPrimary(buttons->button(QDialogButtonBox::Ok));
         VERIFY(connect(buttons, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(buttons, SIGNAL(rejected()), this, SLOT(reject())));
         VERIFY(connect(_connectionCombo, SIGNAL(currentIndexChanged(int)),

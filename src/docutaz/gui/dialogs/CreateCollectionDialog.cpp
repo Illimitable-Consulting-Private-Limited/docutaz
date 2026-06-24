@@ -17,6 +17,7 @@
 
 #include "docutaz/gui/widgets/workarea/IndicatorLabel.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/core/domain/MongoDatabase.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/editors/FindFrame.h"
@@ -63,6 +64,7 @@ namespace Docutaz
         _buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
         _buttonBox->button(QDialogButtonBox::Save)->setText(tr("C&reate"));
         _buttonBox->button(QDialogButtonBox::Save)->setEnabled(false);
+        Theme::markPrimary(_buttonBox->button(QDialogButtonBox::Save));
         VERIFY(connect(_buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(_buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
         VERIFY(connect(_inputEdit, SIGNAL(textChanged(const QString &)),

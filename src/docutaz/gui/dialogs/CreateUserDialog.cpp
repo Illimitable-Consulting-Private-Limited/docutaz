@@ -11,6 +11,7 @@
 
 #include "docutaz/gui/widgets/workarea/IndicatorLabel.h"
 #include "docutaz/gui/utils/ComboBoxUtils.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/core/domain/MongoUtils.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/GuiRegistry.h"
@@ -93,6 +94,7 @@ namespace Docutaz
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
+        Theme::markPrimary(buttonBox->button(QDialogButtonBox::Save));
         VERIFY(connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
 
@@ -153,6 +155,7 @@ namespace Docutaz
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
+        Theme::markPrimary(buttonBox->button(QDialogButtonBox::Save));
         VERIFY(connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
 

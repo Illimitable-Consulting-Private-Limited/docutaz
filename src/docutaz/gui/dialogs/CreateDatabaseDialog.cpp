@@ -9,6 +9,7 @@
 
 #include "docutaz/gui/widgets/workarea/IndicatorLabel.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/core/utils/QtUtils.h"
 
 namespace Docutaz
@@ -38,6 +39,7 @@ namespace Docutaz
         _buttonBox->setOrientation(Qt::Horizontal);
         _buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
         _buttonBox->button(QDialogButtonBox::Save)->setText("C&reate");
+        Theme::markPrimary(_buttonBox->button(QDialogButtonBox::Save));
         VERIFY(connect(_buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(_buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
 

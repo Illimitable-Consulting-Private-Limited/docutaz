@@ -12,6 +12,7 @@
 
 #include "docutaz/gui/editors/JSLexer.h"
 #include "docutaz/gui/editors/FindFrame.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
 #include "docutaz/gui/widgets/workarea/IndicatorLabel.h"
 #include "docutaz/gui/GuiRegistry.h"
@@ -50,6 +51,7 @@ namespace Docutaz
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
+        Theme::markPrimary(buttonBox->button(QDialogButtonBox::Save));
         VERIFY(connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
 

@@ -1,5 +1,7 @@
 #include "docutaz/gui/dialogs/ExportResultsDialog.h"
 
+#include "docutaz/gui/Theme.h"
+
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFileDialog>
@@ -81,6 +83,7 @@ namespace Docutaz
         QDialogButtonBox *buttons =
             new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
         buttons->button(QDialogButtonBox::Ok)->setText("Export");
+        Theme::markPrimary(buttons->button(QDialogButtonBox::Ok));
 
         QVBoxLayout *root = new QVBoxLayout(this);
         root->addLayout(form);

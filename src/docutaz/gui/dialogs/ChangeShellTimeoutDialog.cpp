@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QPushButton>
 #include <QLineEdit>
 #include <QObject>
 #include <QLabel>
@@ -15,6 +16,7 @@
 #include "docutaz/core/domain/App.h"
 #include "docutaz/core/domain/MongoServer.h"
 #include "docutaz/core/settings/SettingsManager.h"
+#include "docutaz/gui/Theme.h"
 
 namespace Docutaz
 {
@@ -26,6 +28,7 @@ namespace Docutaz
         auto newShellTimeout = new QLineEdit;
         newShellTimeout->setValidator(new QIntValidator(0, 100000));
         auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel);
+        Theme::markPrimary(buttonBox->button(QDialogButtonBox::Save));
         QObject::connect(buttonBox, SIGNAL(accepted()), changeShellTimeoutDialog, SLOT(accept()));
         QObject::connect(buttonBox, SIGNAL(rejected()), changeShellTimeoutDialog, SLOT(reject()));
         auto lay = new QGridLayout;

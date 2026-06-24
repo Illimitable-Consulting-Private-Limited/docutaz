@@ -28,6 +28,7 @@
 #include "docutaz/core/domain/MongoDatabase.h"
 #include "docutaz/gui/widgets/explorer/ExplorerServerTreeItem.h"
 #include "docutaz/gui/widgets/workarea/IndicatorLabel.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/widgets/explorer/ExplorerWidget.h"
 #include "docutaz/gui/widgets/explorer/ExplorerTreeWidget.h"
 #include "docutaz/gui/widgets/explorer/ExplorerServerTreeItem.h"
@@ -186,8 +187,7 @@ namespace Docutaz
         _buttonBox->setOrientation(Qt::Horizontal);
         _buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
         _buttonBox->button(QDialogButtonBox::Save)->setText("E&xport");
-        _buttonBox->button(QDialogButtonBox::Save)->setMaximumWidth(70);
-        _buttonBox->button(QDialogButtonBox::Cancel)->setMaximumWidth(70);
+        Theme::markPrimary(_buttonBox->button(QDialogButtonBox::Save));
         VERIFY(connect(_buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(_buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
 

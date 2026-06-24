@@ -12,6 +12,7 @@
 
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/AppStyle.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/utils/ComboBoxUtils.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/AppRegistry.h"
@@ -106,6 +107,7 @@ namespace Docutaz
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
+        Theme::markPrimary(buttonBox->button(QDialogButtonBox::Save));
         VERIFY(connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
         layout->addWidget(buttonBox);
