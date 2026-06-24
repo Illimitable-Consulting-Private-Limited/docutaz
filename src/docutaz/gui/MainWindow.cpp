@@ -51,6 +51,7 @@
 #include "docutaz/gui/dialogs/ChangeShellTimeoutDialog.h"
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/AppStyle.h"
+#include "docutaz/gui/Theme.h"
 
 namespace
 {
@@ -131,25 +132,21 @@ namespace Docutaz
 #endif
         _allowExit(false)
      {
-        QColor background = palette().window().color();
         QString controlKey = "Ctrl";
 
     #if defined(Q_OS_MAC)
-        QString explorerColor = "#EFEFEF"; // was #CED6DF"
         controlKey = QChar(0x2318); // "Command" key aka Cauliflower
         setUnifiedTitleAndToolBarOnMac(true);
-    #elif defined(Q_OS_LINUX)
-        QString explorerColor = background.darker(103).name();
-    #else
-        QString explorerColor = background.lighter(103).name();
     #endif
 
-        // A faint shade of the window colour for the query backdrop and the
-        // window splitters — replaces the old hardcoded light grey (#E7E5E4),
-        // which showed as a light band under a dark palette.
-        const QString separatorColor = (QtUtils::isDarkPalette(this)
-            ? background.lighter(130) : background.darker(108)).name();
-        qApp->setStyleSheet(QString(
+        // The explorer panel sits on the window tone; the query backdrop and the
+        // window splitters use the mid token so they read as thin separators in
+        // both light and dark. Prepend the shared global QSS (themed scrollbars)
+        // so setting our own qApp stylesheet here does not wipe it out.
+        const Theme::Tokens &th = Theme::current();
+        const QString explorerColor  = th.window.name();
+        const QString separatorColor = th.mid.name();
+        qApp->setStyleSheet(Theme::globalStyleSheet() + QString(
             "QWidget#queryWidget { background-color:%2; margin: 0px; padding:0px; } \n"
             "Docutaz--ExplorerTreeWidget#explorerTree { padding: 1px 0px 0px 0px; background-color: %1; border: 0px; } \n"
             "QMainWindow::separator { background: %2; width: 1px; } \n"

@@ -46,5 +46,10 @@ namespace Docutaz
         // Apply the base style (Fusion) and the scheme-selected palette to the
         // application. Safe to call again on a colour-scheme change.
         void apply();
+
+        // Application-wide QSS for shared flat chrome (slim themed scrollbars).
+        // Callers that set their own qApp stylesheet must prepend this so the
+        // shared rules survive (e.g. MainWindow appends its own widget rules).
+        QString globalStyleSheet();
     }
 }

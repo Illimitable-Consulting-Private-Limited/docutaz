@@ -62,6 +62,9 @@ namespace Docutaz
             };
         }
 
+        const Tokens &tokens(bool dark);
+        const Tokens &current();
+
         // Flat, slim scrollbars themed to the palette. Applied app-wide so every
         // QAbstractScrollArea (explorer, tree/table results, dialogs) shares the
         // same minimal chrome. QScintilla draws its own scrollbars, so editors
@@ -147,6 +150,11 @@ namespace Docutaz
                 QApplication::setStyle(fusion);
             QApplication::setPalette(buildPalette(isDark()));
             qApp->setStyleSheet(buildGlobalStyleSheet(current()));
+        }
+
+        QString globalStyleSheet()
+        {
+            return buildGlobalStyleSheet(current());
         }
     }
 }
