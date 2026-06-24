@@ -39,7 +39,7 @@ include(DocutazPackage)
 
 # Search for dependencies
 find_package(Threading REQUIRED)    # Wrapper arround CMake "Threads" module
-find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets PrintSupport Network Xml)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets PrintSupport Network Xml Svg)
 find_package(OpenSSL REQUIRED)
 
 if (SYSTEM_MACOSX)

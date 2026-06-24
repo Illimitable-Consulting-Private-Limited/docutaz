@@ -32,6 +32,7 @@
 
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
 #include "docutaz/gui/editors/JSLexer.h"
+#include "docutaz/gui/Theme.h"
 
 namespace Docutaz
 {
@@ -40,7 +41,8 @@ namespace Docutaz
         constexpr int RoleIndex     = Qt::UserRole;       // index into entries()
         constexpr int RoleMeta      = Qt::UserRole + 1;   // dimmed second line
         constexpr int RolePinned    = Qt::UserRole + 2;   // bool
-        constexpr int RoleTypeColor = Qt::UserRole + 3;   // QColor for the type bar
+        constexpr int RoleTypeColor = Qt::UserRole + 3;   // QColor for the type chip
+        constexpr int RoleTypeLabel = Qt::UserRole + 4;   // op-type label for the chip
 
         struct TypeInfo { QString label; QColor color; };
 
@@ -111,25 +113,65 @@ namespace Docutaz
                 initStyleOption(&opt, index);
                 const QWidget *w = opt.widget;
                 QStyle *style = w ? w->style() : QApplication::style();
+                const bool    sel    = opt.state & QStyle::State_Selected;
+
+                // Suppress the style's full brand-green selection fill (too loud);
+                // we paint a subtle tint + a left accent bar instead.
                 opt.text.clear();
+                opt.state &= ~(QStyle::State_Selected | QStyle::State_HasFocus);
                 style->drawControl(QStyle::CE_ItemViewItem, &opt, p, w);
+
+                // Thin separator between rows (replaces zebra striping, which does
+                // not fit the flat UI).
+                p->setPen(Theme::current().mid);
+                p->drawLine(option.rect.left(), option.rect.bottom(),
+                            option.rect.right(), option.rect.bottom());
+
+                // Selection: a 3px brand-green left bar only (no background fill).
+                if (sel) {
+                    QRect barRect = option.rect;
+                    barRect.setWidth(3);
+                    p->fillRect(barRect, Theme::current().highlight);
+                }
 
                 const QString query  = index.data(Qt::DisplayRole).toString();
                 const QString meta   = index.data(RoleMeta).toString();
                 const bool    pinned = index.data(RolePinned).toBool();
                 const QColor  type   = index.data(RoleTypeColor).value<QColor>();
-                const bool    sel    = opt.state & QStyle::State_Selected;
+                const QString typeLbl= index.data(RoleTypeLabel).toString().toUpper();
 
-                // Type bar.
-                QRect bar = opt.rect.adjusted(3, 5, 0, -5);
-                bar.setWidth(3);
-                p->fillRect(bar, type);
+                p->setRenderHint(QPainter::Antialiasing, true);
 
-                const QRect r = opt.rect.adjusted(12, 5, -8, -5);
-                const QColor textColor = sel ? opt.palette.color(QPalette::HighlightedText)
-                                             : opt.palette.color(QPalette::Text);
-                const QColor metaColor = sel ? textColor
-                                             : opt.palette.color(QPalette::Disabled, QPalette::Text);
+                const QColor textColor = opt.palette.color(QPalette::Text);
+                const QColor metaColor = opt.palette.color(QPalette::Disabled, QPalette::Text);
+
+                // Op-type chip: a saturated pill with the uppercased type label,
+                // right-aligned and vertically centred (a blessed colour
+                // exception). White text on the type colour reads as a clear badge.
+                QRect chipRect;
+                if (!typeLbl.isEmpty()) {
+                    QFont cf = opt.font;
+                    if (cf.pointSizeF() > 0) cf.setPointSizeF(cf.pointSizeF() - 1.5);
+                    cf.setLetterSpacing(QFont::PercentageSpacing, 104);
+                    const QFontMetrics cfm(cf);
+                    const int cw = cfm.horizontalAdvance(typeLbl) + 18;
+                    const int ch = cfm.height() + 6;
+                    chipRect = QRect(opt.rect.right() - 10 - cw,
+                                     opt.rect.center().y() - ch / 2, cw, ch);
+                    QColor bg = type;
+                    bg.setAlpha(Theme::isDark() ? 235 : 220);
+                    p->setBrush(bg);
+                    p->setPen(Qt::NoPen);
+                    p->drawRoundedRect(chipRect, ch / 2.0, ch / 2.0);
+                    p->setFont(cf);
+                    p->setPen(QColor(Qt::white));
+                    p->drawText(chipRect, Qt::AlignCenter, typeLbl);
+                }
+
+                // Text block, kept clear of the chip.
+                const int rightInset = chipRect.isNull() ? 8 : (opt.rect.right() - chipRect.left() + 8);
+                const QRect r(opt.rect.left() + 12, opt.rect.top() + 5,
+                              opt.rect.width() - 12 - rightInset, opt.rect.height() - 10);
 
                 QFont qf = opt.font;
                 p->setFont(qf);
@@ -209,7 +251,7 @@ namespace Docutaz
 
         // ── Master / detail ─────────────────────────────────────────────────
         _list = new QListWidget;
-        _list->setAlternatingRowColors(true);
+        // No zebra striping (the delegate draws thin row separators instead).
         _list->setUniformItemSizes(true);
         _list->setWordWrap(false);
         _list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -372,7 +414,7 @@ namespace Docutaz
             QString meta = e.timestamp.toString("MMM d HH:mm");
             if (!e.connection.isEmpty()) meta += " · " + e.connection;
             if (!e.database.isEmpty())   meta += "/" + e.database;
-            meta += " · " + ti.label;
+            // The op-type is shown as a colour chip (see the delegate), not text.
             // Result count intentionally omitted: the engine only knows the first
             // page (batch size), not the total matched, so showing it would be
             // misleading. Re-run the query to see the live count.
@@ -385,6 +427,7 @@ namespace Docutaz
             item->setData(RoleMeta, meta);
             item->setData(RolePinned, e.pinned);
             item->setData(RoleTypeColor, ti.color);
+            item->setData(RoleTypeLabel, ti.label);
             _list->addItem(item);
             if (i == keepIndex) rowToSelect = r;
         }

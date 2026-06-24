@@ -11,6 +11,7 @@
 
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/Theme.h"
 #include "docutaz/gui/dialogs/ConnectionAuthTab.h"
 #include "docutaz/gui/dialogs/ConnectionBasicTab.h"
 #include "docutaz/gui/dialogs/ConnectionAdvancedTab.h"
@@ -39,6 +40,7 @@ namespace Docutaz
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
+        Theme::markPrimary(buttonBox->button(QDialogButtonBox::Save));  // brand-green action button
         VERIFY(connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
         bottomLayout->addWidget(buttonBox);
@@ -145,7 +147,12 @@ namespace Docutaz
     void ConnectionDialog::restoreWindowSettings()
     {
         QSettings settings("Docutaz", "Docutaz");
-        resize(settings.value("ConnectionDialog/size").toSize());
+        // Restore the saved width only; the height is content-driven (adjustSize
+        // ran just before this). Restoring a stale tall height left a large empty
+        // gap in the form, so we keep the natural height instead.
+        const QSize saved = settings.value("ConnectionDialog/size").toSize();
+        if (saved.isValid() && saved.width() > 0)
+            resize(saved.width(), height());
     }
 
     void ConnectionDialog::saveWindowSettings() const

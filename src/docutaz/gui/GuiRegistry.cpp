@@ -1,6 +1,8 @@
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
+#include "docutaz/gui/GlyphIcons.h"
+#include "docutaz/gui/Theme.h"
 
 #include <QApplication>
 #include <QStyle>
@@ -8,6 +10,28 @@
 
 namespace Docutaz
 {
+    namespace
+    {
+        // Theme-tinted glyph icons. Built once on first access (after Theme::apply
+        // has run at startup): the normal tint comes from the requested token and
+        // the engine swaps to highlightedText when a row is painted selected.
+        QIcon glyph(const QString &name)
+        {
+            const Theme::Tokens &t = Theme::current();
+            return GlyphIcons::icon(name, t.text, t.highlightedText);
+        }
+
+        QIcon glyphMuted(const QString &name)
+        {
+            const Theme::Tokens &t = Theme::current();
+            return GlyphIcons::icon(name, t.muted, t.highlightedText);
+        }
+
+        QIcon glyphColor(const QString &name, const QColor &c)
+        {
+            return GlyphIcons::icon(name, c, Theme::current().highlightedText);
+        }
+    }
 
     /**
      * @brief This is a private constructor, because GuiRegistry is a singleton
@@ -21,311 +45,304 @@ namespace Docutaz
      */
     void GuiRegistry::setAlternatingColor(QAbstractItemView *view)
     {
-    #if defined(Q_OS_MAC)
-        view->setAlternatingRowColors(true);
-
-        QPalette p = view->palette();
-//        p.setColor(QPalette::AlternateBase, QColor(243, 246, 250));
-        p.setColor(QPalette::AlternateBase, QColor(245, 245, 245));
-        p.setColor(QPalette::Active, QPalette::Highlight, QColor(17, 158, 102)); // Docutaz accent
-        view->setPalette(p);
-    #endif
+        // Zebra striping is intentionally not used in the flat theme; the views
+        // keep a single base background. (Kept as a no-op so existing call sites
+        // don't need touching.)
+        Q_UNUSED(view);
     }
 
     const QIcon &GuiRegistry::serverIcon() const
     {
-        static const QIcon serverIc = QIcon(":/docutaz/icons/server_16x16.png");
-        return serverIc;
+        static const QIcon icon = glyph("server");
+        return icon;
     }
 
     const QIcon &GuiRegistry::serverImportedIcon() const
     {
-        static const QIcon importedIcon = QIcon(":/docutaz/icons/server_imported_16x16.png");
-        return importedIcon;
+        static const QIcon icon = glyph("server");
+        return icon;
     }
 
     const QIcon &GuiRegistry::serverPrimaryIcon() const
     {
-        static const QIcon icon(":/docutaz/icons/server_primary_16x16.png");
+        static const QIcon icon = glyph("server");
         return icon;
     }
 
     const QIcon &GuiRegistry::serverSecondaryIcon() const
     {
-        static const QIcon icon(":/docutaz/icons/server_secondary_16x16.png");
+        static const QIcon icon = glyphMuted("server");
         return icon;
     }
 
     const QIcon &GuiRegistry::replicaSetIcon() const
     {
-        static const QIcon replicaSetIc(":/docutaz/icons/replica_set_16x16.png");
-        return replicaSetIc;
+        static const QIcon icon = glyph("server");
+        return icon;
     }
 
     const QIcon &GuiRegistry::replicaSetOfflineIcon() const
     {
-        static const QIcon icon(":/docutaz/icons/replica_set_offline_16x16.png");
+        static const QIcon icon = glyphMuted("server");
         return icon;
     }
 
     const QIcon &GuiRegistry::openIcon() const
     {
-        static const QIcon openIc = qApp->style()->standardIcon(QStyle::SP_DialogOpenButton);
-        //static const QIcon openIc = QIcon(":/docutaz/icons/open_32x32.png");
-        return openIc;
+        static const QIcon icon = glyph("open");
+        return icon;
     }
 
     const QIcon &GuiRegistry::saveIcon() const
     {
-        static const QIcon saveIc = qApp->style()->standardIcon(QStyle::SP_DialogSaveButton);
-        // static const QIcon saveIc = QIcon(":/docutaz/icons/save_32x32.png");
-        return saveIc;
+        static const QIcon icon = glyph("save");
+        return icon;
     }
 
     const QIcon &GuiRegistry::databaseIcon() const
     {
-        static const QIcon databaseIc = QIcon(":/docutaz/icons/database_16x16.png");
-        return databaseIc;
+        static const QIcon icon = glyph("db");
+        return icon;
     }
 
     const QIcon &GuiRegistry::collectionIcon() const
     {
-        static const QIcon collectionIc = QIcon(":/docutaz/icons/collection_16x16.png");
-        return collectionIc;
+        static const QIcon icon = glyph("coll");
+        return icon;
     }
 
     const QIcon &GuiRegistry::indexIcon() const
     {
-        static const QIcon collectionIc = QIcon(":/docutaz/icons/index_16x16.png");
-        return collectionIc;
+        static const QIcon icon = glyph("index");
+        return icon;
     }
 
     const QIcon &GuiRegistry::userIcon() const
     {
-        static const QIcon userIc = QIcon(":/docutaz/icons/user_16x16.png");
-        return userIc;
+        static const QIcon icon = glyph("user");
+        return icon;
     }
 
     const QIcon &GuiRegistry::functionIcon() const
     {
-        static const QIcon functionIc = QIcon(":/docutaz/icons/function_16x16.png");
-        return functionIc;
+        static const QIcon icon = glyph("function");
+        return icon;
     }
 
     const QIcon &GuiRegistry::maximizeIcon() const
     {
-        static const QIcon maximizeIc(":/docutaz/icons/maximize.png");
-        return maximizeIc;
+        static const QIcon icon = glyph("maximize");
+        return icon;
     }
 
     const QIcon &GuiRegistry::minimizeIcon() const
     {
-        static const QIcon minimizeIc(":/docutaz/icons/minimize.png");
-        return minimizeIc;
+        static const QIcon icon = glyph("minimize");
+        return icon;
     }
 
     const QIcon &GuiRegistry::undockIcon() const
     {
-        static const QIcon undockIc(":/docutaz/icons/undock.png");
-        return undockIc;
+        static const QIcon icon = glyph("undock");
+        return icon;
     }
 
     const QIcon &GuiRegistry::dockIcon() const
     {
-        static const QIcon dockIc(":/docutaz/icons/dock.png");
-        return dockIc;
+        static const QIcon icon = glyph("dock");
+        return icon;
     }
 
     const QIcon &GuiRegistry::textIcon() const
     {
-        static const QIcon textIc = QIcon(":/docutaz/icons/text_16x16.png");
-        return textIc;
+        static const QIcon icon = glyph("view-text");
+        return icon;
     }
 
     const QIcon &GuiRegistry::textHighlightedIcon() const
     {
-        static const QIcon textHighlightedIc = QIcon(":/docutaz/icons/text_highlighted_16x16.png");
-        return textHighlightedIc;
+        static const QIcon icon = glyphColor("view-text", Theme::current().highlight);
+        return icon;
     }
 
     const QIcon &GuiRegistry::treeIcon() const
     {
-        static const QIcon treeIc = QIcon(":/docutaz/icons/tree_16x16.png");
-        return treeIc;
+        static const QIcon icon = glyph("view-tree");
+        return icon;
     }
 
     const QIcon &GuiRegistry::treeHighlightedIcon() const
     {
-        static const QIcon treeHighlightedIc = QIcon(":/docutaz/icons/tree_highlighted_16x16.png");
-        return treeHighlightedIc;
+        static const QIcon icon = glyphColor("view-tree", Theme::current().highlight);
+        return icon;
     }
 
     const QIcon &GuiRegistry::tableIcon() const
     {
-        static const QIcon treeIc = QIcon(":/docutaz/icons/table_16x16.png");
-        return treeIc;
+        static const QIcon icon = glyph("view-table");
+        return icon;
     }
 
     const QIcon &GuiRegistry::tableHighlightedIcon() const
     {
-        static const QIcon treeHighlightedIc = QIcon(":/docutaz/icons/table_highlighted_16x16.png");
-        return treeHighlightedIc;
+        static const QIcon icon = glyphColor("view-table", Theme::current().highlight);
+        return icon;
     }
 
     const QIcon &GuiRegistry::customIcon() const
     {
-        static const QIcon customIc = QIcon(":/docutaz/icons/custom_16x16.png");
-        return customIc;
+        static const QIcon icon = glyph("view-custom");
+        return icon;
     }
 
     const QIcon &GuiRegistry::customHighlightedIcon() const
     {
-        static const QIcon customHighlightedIc = QIcon(":/docutaz/icons/custom_highlighted_16x16.png");
-        return customHighlightedIc;
+        static const QIcon icon = glyphColor("view-custom", Theme::current().highlight);
+        return icon;
     }
 
     const QIcon &GuiRegistry::rotateIcon() const
     {
-        static const QIcon rotateIc = QIcon(":/docutaz/icons/rotate_16x16.png");
-        return rotateIc;
+        static const QIcon icon = glyph("refresh");
+        return icon;
     }
 
     const QIcon &GuiRegistry::visualIcon() const
     {
-        static const QIcon visualIc = QIcon(":/docutaz/icons/visual_16x16.png");
-        return visualIc;
+        static const QIcon icon = glyph("view-custom");
+        return icon;
     }
 
     const QIcon &GuiRegistry::circleIcon() const
     {
-        static const QIcon circleIc = QIcon(":/docutaz/icons/bson_unsupported_16x16.png");
-        return circleIc;
+        static const QIcon icon = glyphMuted("circle");
+        return icon;
     }
 
     const QIcon &GuiRegistry::bsonArrayIcon() const
     {
-        static const QIcon bsonArrayIc = QIcon(":/docutaz/icons/bson_array_16x16.png");
-        return bsonArrayIc;
+        static const QIcon icon = glyphMuted("bson-array");
+        return icon;
     }
 
 
     const QIcon &GuiRegistry::bsonObjectIcon() const
     {
-        static const QIcon bsonObjectIc = QIcon(":/docutaz/icons/bson_object_16x16.png");
-        return bsonObjectIc;
+        static const QIcon icon = glyphMuted("bson-object");
+        return icon;
     }
 
     const QIcon &GuiRegistry::bsonStringIcon() const
     {
-        static const QIcon bsonStringIc = QIcon(":/docutaz/icons/bson_string_16x16.png");
-        return bsonStringIc;
+        static const QIcon icon = glyphMuted("bson-string");
+        return icon;
     }
 
     const QIcon &GuiRegistry::folderIcon() const
     {
-        static const QIcon folderIc = qApp->style()->standardIcon(QStyle::SP_DirClosedIcon);
-        return folderIc;
+        static const QIcon icon = glyph("folder");
+        return icon;
     }
 
     const QIcon &GuiRegistry::bsonIntegerIcon() const
     {
-        static const QIcon bsonIntegerIc = QIcon(":/docutaz/icons/bson_integer_16x16.png");
-        return bsonIntegerIc;
+        static const QIcon icon = glyphMuted("bson-number");
+        return icon;
     }
 
     const QIcon &GuiRegistry::bsonDoubleIcon() const
     {
-        static const QIcon bsonDoubleIc = QIcon(":/docutaz/icons/bson_double_16x16.png");
-        return bsonDoubleIc;
+        static const QIcon icon = glyphMuted("bson-number");
+        return icon;
     }
 
 	const QIcon &GuiRegistry::bsonNumberDecimalIcon() const
 	{
-		static const QIcon icon(":/docutaz/icons/bson_decimal128_16x16.png");
+		static const QIcon icon = glyphMuted("bson-number");
 		return icon;
 	}
 
     const QIcon &GuiRegistry::bsonDateTimeIcon() const
     {
-        static const QIcon bsonDateTimeIc = QIcon(":/docutaz/icons/bson_datetime_16x16.png");
-        return bsonDateTimeIc;
+        static const QIcon icon = glyphMuted("bson-datetime");
+        return icon;
     }
 
     const QIcon &GuiRegistry::bsonBinaryIcon() const
     {
-        static const QIcon bsonBinaryIc = QIcon(":/docutaz/icons/bson_binary_16x16.png");
-        return bsonBinaryIc;
+        static const QIcon icon = glyphMuted("bson-binary");
+        return icon;
     }
 
     const QIcon &GuiRegistry::bsonNullIcon() const
     {
-        static const QIcon bsonNullIc = QIcon(":/docutaz/icons/bson_null_16x16.png");
-        return bsonNullIc;
+        static const QIcon icon = glyphMuted("bson-null");
+        return icon;
     }
 
     const QIcon &GuiRegistry::bsonBooleanIcon() const
     {
-        static const QIcon bsonBooleanIc = QIcon(":/docutaz/icons/bson_bool_16x16.png");
-        return bsonBooleanIc;
+        static const QIcon icon = glyphMuted("bson-bool");
+        return icon;
     }
 
     const QIcon &GuiRegistry::noMarkIcon() const
     {
-        static const QIcon noMarkIc = QIcon(":/docutaz/icons/no_mark_24x24.png");
-        return noMarkIc;
+        static const QIcon icon = glyphColor("x", Theme::current().danger);
+        return icon;
     }
 
     const QIcon &GuiRegistry::yesMarkIcon() const
     {
-        static const QIcon yesMarkIc = QIcon(":/docutaz/icons/yes_mark_24x24.png");
-        return yesMarkIc;
+        static const QIcon icon = glyphColor("check", Theme::current().highlight);
+        return icon;
     }
 
     const QIcon &GuiRegistry::skipMarkIcon() const
     {
-        static const QIcon skipMarkIc = QIcon(":/docutaz/icons/skip_mark_24x24.png");
-        return skipMarkIc;
+        static const QIcon icon = glyphMuted("dash");
+        return icon;
     }
 
     const QIcon &GuiRegistry::questionMarkIcon() const
     {
-        static const QIcon questionMarkIc = QIcon(":/docutaz/icons/question_mark_24x24.png");
-        return questionMarkIc;
+        static const QIcon icon = glyphMuted("question");
+        return icon;
     }
 
     const QIcon &GuiRegistry::timeIcon() const
     {
-        static const QIcon timeIc = QIcon(":/docutaz/icons/time_16x16.png");
-        return timeIc;
+        static const QIcon icon = glyph("history");
+        return icon;
     }
 
     const QIcon &GuiRegistry::keyIcon() const
     {
-        static const QIcon keyIc = QIcon(":/docutaz/icons/key_16x16.png");
-        return keyIc;
+        static const QIcon icon = glyph("key");
+        return icon;
     }
 
     const QIcon &GuiRegistry::showIcon() const
     {
-        static const QIcon icon = QIcon(":/docutaz/icons/show_64x64.png");
+        static const QIcon icon = glyph("eye");
         return icon;
     }
 
     const QIcon &GuiRegistry::hideIcon() const
     {
-        static const QIcon icon = QIcon(":/docutaz/icons/hide_64x64.png");
+        static const QIcon icon = glyph("eye-off");
         return icon;
     }
 
     const QIcon &GuiRegistry::plusIcon() const
     {
-        static const QIcon icon {":/docutaz/icons/plus_sign.png"};
+        static const QIcon icon = glyph("plus");
         return icon;
     }
 
     const QIcon &GuiRegistry::minusIcon() const
     {
-        static const QIcon icon {":/docutaz/icons/minus_sign.png"};
+        static const QIcon icon = glyph("minus");
         return icon;
     }
 
@@ -337,74 +354,74 @@ namespace Docutaz
 
     const QIcon &GuiRegistry::leftIcon() const
     {
-        static const QIcon leftIc = QIcon(":/docutaz/icons/left_16x16.png");
-        return leftIc;
+        static const QIcon icon = glyph("chev-l");
+        return icon;
     }
 
     const QIcon &GuiRegistry::rightIcon() const
     {
-        static const QIcon rightIc = QIcon(":/docutaz/icons/right_16x16.png");
-
-        return rightIc;
+        static const QIcon icon = glyph("chev-r");
+        return icon;
     }
 
     const QIcon &GuiRegistry::mongodbIcon() const
     {
-        static const QIcon mongodbIc = QIcon(":/docutaz/icons/mongodb_16x16.png");
-        return mongodbIc;
+        static const QIcon icon = glyphMuted("doc");
+        return icon;
     }
-    
+
     const QIcon &GuiRegistry::mongodbIconForMAC() const
     {
-        static const QIcon mongodbIc = QIcon(":/docutaz/icons/mongodb_icon_for_MAC.png");
-        return mongodbIc;
+        static const QIcon icon = glyphMuted("doc");
+        return icon;
     }
 
     const QIcon &GuiRegistry::connectIcon() const
     {
-        static const QIcon connectIc = QIcon(":/docutaz/icons/connect_24x24.png");
-        return connectIc;
+        static const QIcon icon = glyph("connect");
+        return icon;
     }
 
     const QIcon &GuiRegistry::executeIcon() const
     {
-        static const QIcon executeIc = QIcon(":/docutaz/icons/execute_24x24.png");
-        return executeIc;
+        // Monochrome per the mockup; brand green stays reserved for selection.
+        static const QIcon icon = glyph("run");
+        return icon;
     }
 
     const QIcon &GuiRegistry::stopIcon() const
     {
-        static const QIcon stopIc = QIcon(":/docutaz/icons/stop_24x24.png");
-        return stopIc;
+        static const QIcon icon = glyph("stop");
+        return icon;
     }
 
     const QIcon &GuiRegistry::exportIcon() const
     {
-        static const QIcon exportIc = QIcon(":/docutaz/icons/export_64x64.png");
-        return exportIc;
+        static const QIcon icon = glyph("export");
+        return icon;
     }
 
     const QIcon &GuiRegistry::importIcon() const
     {
-        static const QIcon importIc = QIcon(":/docutaz/icons/import_64x64.png");
-        return importIc;
+        static const QIcon icon = glyph("import");
+        return icon;
     }
 
     const QIcon &GuiRegistry::deleteIcon() const
     {
-        static const QIcon icon(":/docutaz/icons/delete.png");
+        static const QIcon icon = glyph("trash");
         return icon;
     }
 
     const QIcon &GuiRegistry::deleteIconRed() const
     {
-        static const QIcon icon(":/docutaz/icons/delete_red_color.png");
+        static const QIcon icon = glyphColor("trash", Theme::current().danger);
         return icon;
     }
 
     const QIcon &GuiRegistry::deleteIconMouseHovered() const
     {
-        static const QIcon icon(":/docutaz/icons/delete_mouse_hovered.png");
+        static const QIcon icon = glyphColor("trash", Theme::current().danger);
         return icon;
     }
 
@@ -428,16 +445,12 @@ namespace Docutaz
 
     const QFont &GuiRegistry::font() const
     {
+        // Default the editor and result views to the bundled UI font (Inter) so
+        // the whole application shares one typeface; an explicit user-chosen
+        // textFontFamily still wins.
         QString family = AppRegistry::instance().settingsManager()->textFontFamily();
-        if (family.isEmpty()) {
-#if defined(Q_OS_MAC)
-            family = "Monaco";
-#elif defined(Q_OS_UNIX)
-            family = "Monospace";
-#elif defined(Q_OS_WIN)
-            family = "Courier";
-#endif
-        }
+        if (family.isEmpty())
+            family = Theme::uiFontFamily();
 
         int pointSize = AppRegistry::instance().settingsManager()->textFontPointSize();
         if (pointSize < 1) {
@@ -452,10 +465,6 @@ namespace Docutaz
 
 
         static QFont textFont = QFont(family, pointSize);
-#if defined(Q_OS_UNIX)
-        textFont.setFixedPitch(true);
-#endif
-
         return textFont;
     }
 }

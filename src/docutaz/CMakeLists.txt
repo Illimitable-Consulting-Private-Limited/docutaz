@@ -47,6 +47,7 @@ set(SOURCES
     core/domain/MongoDocument.cpp
     gui/AppStyle.cpp
     gui/Theme.cpp
+    gui/GlyphIcons.cpp
     core/domain/MongoServer.cpp
     core/domain/MongoShell.cpp
     core/domain/MongoDatabase.cpp
@@ -166,6 +167,7 @@ target_link_libraries(docutaz_core
         Qt6::Network
         Qt6::Xml
         Qt6::PrintSupport
+        Qt6::Svg
         qscintilla
         xlsxwriter
         mongo::mongocxx_shared

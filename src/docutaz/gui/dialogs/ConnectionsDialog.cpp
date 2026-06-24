@@ -3,6 +3,7 @@
 #include <memory>
 
 #include <QPushButton>
+#include <QToolButton>
 #include <QHBoxLayout>
 #include <QAction>
 #include <QMessageBox>
@@ -14,6 +15,8 @@
 #include <QApplication>
 #include <QSettings>
 #include <QUuid>
+#include <QPainter>
+#include <QPixmap>
 
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/ConnectionSettings.h"
@@ -25,6 +28,9 @@
 #include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/GlyphIcons.h"
+#include "docutaz/gui/Theme.h"
+#include "docutaz/gui/ConnectionEnvironment.h"
 #include "docutaz/gui/dialogs/ConnectionDialog.h"
 #include "docutaz/gui/MainWindow.h"
 #include "docutaz/gui/widgets/workarea/WelcomeTab.h"
@@ -32,7 +38,40 @@
 
 namespace Docutaz
 {
-    
+    namespace
+    {
+        // Compose the row glyph with the connection's environment colour dot to
+        // its right (prod=red / staging=amber / dev=green …), matching the
+        // connection-list mockup. Bakes a Normal and a Selected (white glyph)
+        // variant so the glyph stays legible on the green selected row.
+        QIcon iconWithEnvironmentDot(const QIcon &base, const QColor &dot)
+        {
+            const int s = 16, d = 8, gap = 5;
+            const int w = s + (dot.isValid() ? gap + d : 0);
+            const qreal dpr = qApp->devicePixelRatio();
+
+            auto render = [&](QIcon::Mode mode) {
+                QPixmap pm(QSize(w, s) * dpr);
+                pm.setDevicePixelRatio(dpr);
+                pm.fill(Qt::transparent);
+                QPainter p(&pm);
+                base.paint(&p, QRect(0, 0, s, s), Qt::AlignCenter, mode);
+                if (dot.isValid()) {
+                    p.setRenderHint(QPainter::Antialiasing, true);
+                    p.setBrush(dot);
+                    p.setPen(Qt::NoPen);
+                    p.drawEllipse(QRect(s + gap, (s - d) / 2, d, d));
+                }
+                return pm;
+            };
+
+            QIcon ic;
+            ic.addPixmap(render(QIcon::Normal), QIcon::Normal);
+            ic.addPixmap(render(QIcon::Selected), QIcon::Selected);
+            return ic;
+        }
+    }
+
     /* ------------------------ ConnectionListWidgetItem ------------------------ */
 
     /**
@@ -58,8 +97,9 @@ namespace Docutaz
         {
             _connection = connection;
 
+            QIcon baseIcon = GuiRegistry::instance().serverIcon();
             if (_connection->isReplicaSet()) {
-                setIcon(0, GuiRegistry::instance().replicaSetIcon());
+                baseIcon = GuiRegistry::instance().replicaSetIcon();
                 setText(0, QtUtils::toQString(_connection->connectionName()));
                 auto const repSetSize = _connection->replicaSetSettings()->members().size();
                 auto addrText = QString::number(repSetSize) + ((repSetSize > 1) ? " nodes" : " node");
@@ -69,14 +109,16 @@ namespace Docutaz
                 setText(1, addrText);
             }
             else {
-                setIcon(0, GuiRegistry::instance().serverIcon());
                 setText(0, QtUtils::toQString(_connection->connectionName()));
                 setText(1, QtUtils::toQString(_connection->getFullAddress()));
             }
 
-            if (_connection->imported()) {
-                setIcon(0, GuiRegistry::instance().serverImportedIcon());
-            }
+            if (_connection->imported())
+                baseIcon = GuiRegistry::instance().serverImportedIcon();
+
+            // Environment colour dot on the row glyph (prod/staging/dev/…).
+            const QColor envDot = ConnectionEnvironment::color(_connection->environment());
+            setIcon(0, iconWithEnvironmentDot(baseIcon, envDot));
 
             // Header "Attributes" (column[2])
             setText(2, _connection->isReplicaSet() ? "Replica Set" : "");
@@ -136,11 +178,18 @@ namespace Docutaz
         VERIFY(connect(removeAction, SIGNAL(triggered()), this, SLOT(remove())));
 
         _listWidget = new ConnectionsTreeWidget;
+        // Framed list to match the mockup's .clist (1px border, rounded, base bg).
+        _listWidget->setStyleSheet(QString(
+            "QTreeWidget { background: %1; border: 1px solid %2; border-radius: 8px; }")
+            .arg(Theme::current().base.name(), Theme::current().mid.name()));
         GuiRegistry::instance().setAlternatingColor(_listWidget);
 #if defined(Q_OS_MAC)
         _listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
 #endif
         _listWidget->setIndentation(5);
+        // Wide enough for the composite "glyph + environment dot" icon so it is
+        // not shrunk to the default 16px slot.
+        _listWidget->setIconSize(QSize(30, 18));
 
         QStringList colums;
         colums << "Name" << "Address" << "Attributes" << "Auth. Database / User";
@@ -168,8 +217,9 @@ namespace Docutaz
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
-        buttonBox->button(QDialogButtonBox::Save)->setIcon(GuiRegistry::instance().serverIcon());
+        buttonBox->button(QDialogButtonBox::Save)->setIcon(GuiRegistry::instance().connectIcon());
         buttonBox->button(QDialogButtonBox::Save)->setText("C&onnect");
+        Theme::markPrimary(buttonBox->button(QDialogButtonBox::Save));  // brand-green action button
         VERIFY(connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept())));
         VERIFY(connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject())));
 
@@ -185,9 +235,9 @@ namespace Docutaz
             importLabelIcon->setPixmap(importPixmap);
             QString importedRecords = importedCount > 1 ? "records" : "record";
             QLabel *importLabelMessage = new QLabel(QString(
-                "<span style='color: #777777;'>"
+                "<span style='color: %3;'>"
                 "Connection settings have been imported (%1 %2)"
-                "</span>").arg(importedCount).arg(importedRecords));
+                "</span>").arg(importedCount).arg(importedRecords).arg(Theme::current().muted.name()));
 
             bottomLayout->addWidget(importLabelIcon, 0, Qt::AlignLeft);
             bottomLayout->addWidget(importLabelMessage, 1, Qt::AlignLeft);
@@ -195,22 +245,38 @@ namespace Docutaz
 
         bottomLayout->addWidget(buttonBox, 0, Qt::AlignRight);
 
-        QLabel *intro = new QLabel(QString(
-            "<a style='color: %1' href='create'>Create</a>, "
-            "<a style='color: %1' href='edit'>edit</a>, "
-            "<a style='color: %1' href='remove'>remove</a>, "
-            "<a style='color: %1' href='clone'>clone</a> "
-            "or reorder connections via drag'n'drop.").arg("#106CD6"));
-        intro->setWordWrap(true);
+        // Prominent action buttons (New / Edit / Clone / Remove) instead of the
+        // easy-to-miss text links — flat glyph buttons wired to the same slots.
+        auto makeActionBtn = [this](const QString &text, const QString &glyph, const char *slot) {
+            auto *b = new QToolButton;
+            b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+            b->setText(text);
+            b->setIcon(GlyphIcons::icon(glyph, Theme::current().text, Theme::current().highlightedText));
+            b->setAutoRaise(true);
+            b->setCursor(Qt::PointingHandCursor);
+            VERIFY(connect(b, SIGNAL(clicked()), this, slot));
+            return b;
+        };
 
-        VERIFY(connect(intro, SIGNAL(linkActivated(QString)), this, SLOT(linkActivated(QString))));
+        auto *actionsRow = new QHBoxLayout;
+        actionsRow->setSpacing(4);
+        actionsRow->addWidget(makeActionBtn("New",    "plus",  SLOT(add())));
+        actionsRow->addWidget(makeActionBtn("Edit",   "edit",  SLOT(edit())));
+        actionsRow->addWidget(makeActionBtn("Clone",  "copy",  SLOT(clone())));
+        actionsRow->addWidget(makeActionBtn("Remove", "trash", SLOT(remove())));
+        actionsRow->addStretch(1);
+        auto *dragHint = new QLabel("or reorder via drag'n'drop");
+        dragHint->setStyleSheet(QString("color:%1;").arg(Theme::current().muted.name()));
+        actionsRow->addWidget(dragHint, 0, Qt::AlignVCenter);
 
         QVBoxLayout *firstColumnLayout = new QVBoxLayout;
-        firstColumnLayout->addWidget(intro);
+        firstColumnLayout->setSpacing(12);
+        firstColumnLayout->addLayout(actionsRow);
         firstColumnLayout->addWidget(_listWidget, 1);
         firstColumnLayout->addLayout(bottomLayout);
 
         QHBoxLayout *mainLayout = new QHBoxLayout(this);
+        mainLayout->setContentsMargins(16, 16, 16, 16);
         mainLayout->addLayout(firstColumnLayout, 1);
 
         // Populate list with connections

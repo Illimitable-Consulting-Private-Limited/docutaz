@@ -5,6 +5,7 @@
 QT_BEGIN_NAMESPACE
 class QPalette;
 class QWidget;
+class QAbstractButton;
 QT_END_NAMESPACE
 
 namespace Docutaz
@@ -40,6 +41,11 @@ namespace Docutaz
         // Tokens for the currently active scheme.
         const Tokens &current();
 
+        // The resolved UI font family ("Inter" once the bundled font has loaded
+        // in apply(); the literal "Inter" before that). Used so the editor and
+        // result views share the same family as the chrome.
+        QString uiFontFamily();
+
         // A curated QPalette built from the tokens for the given scheme.
         QPalette buildPalette(bool dark);
 
@@ -51,5 +57,10 @@ namespace Docutaz
         // Callers that set their own qApp stylesheet must prepend this so the
         // shared rules survive (e.g. MainWindow appends its own widget rules).
         QString globalStyleSheet();
+
+        // Tag a button as the primary/action button (filled brand green). Sets
+        // the `primary` dynamic property the global QSS keys off and repolishes
+        // so the rule takes effect even though the button was already polished.
+        void markPrimary(QAbstractButton *button);
     }
 }

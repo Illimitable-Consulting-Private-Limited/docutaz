@@ -152,24 +152,19 @@ namespace Docutaz
         const QString muted  = t.muted.name();
         const QString border = t.mid.name();
         const QString accent = t.highlight.name();
+        const bool dark = Theme::isDark();
+        const QString closeIcon  = dark ? QStringLiteral(":/docutaz/icons/close_glyph_dark.svg")
+                                        : QStringLiteral(":/docutaz/icons/close_glyph.svg");
+        const QString closeHover = dark ? QStringLiteral(":/docutaz/icons/close_glyph_hover_dark.svg")
+                                        : QStringLiteral(":/docutaz/icons/close_glyph_hover.svg");
 
         return QString(
             #ifndef __APPLE__
             "QTabBar::tab:first { margin-left: 4px; }  "
             "QTabBar::tab:last { margin-right: 1px; }  "
             #endif
-            "QTabBar::close-button { "
-            #ifdef __APPLE__
-                "image: url(:/docutaz/icons/close_2_Mac_16x16.png);"
-            #else
-                "image: url(:/docutaz/icons/close_2_16x16.png);"
-            #endif
-                "width: 10px; height: 10px;"
-            "}"
-            "QTabBar::close-button:hover { "
-                "image: url(:/docutaz/icons/close_hover_16x16.png);"
-                "width: 15px; height: 15px;"
-            "}"
+            "QTabBar::close-button { image: url(%8); width: 12px; height: 12px; }"
+            "QTabBar::close-button:hover { image: url(%9); }"
             "QTabBar::tab {"
                 "color: %2;"                          // muted text, unselected
                 "background: %1;"                     // window strip
@@ -188,6 +183,6 @@ namespace Docutaz
                 "background: %5;"                     // raised to the canvas
                 "border-top: 2px solid %7;"           // brand-green active marker
             "}"
-        ).arg(window, muted, hover, text, base, border, accent);
+        ).arg(window, muted, hover, text, base, border, accent, closeIcon, closeHover);
     }
 }

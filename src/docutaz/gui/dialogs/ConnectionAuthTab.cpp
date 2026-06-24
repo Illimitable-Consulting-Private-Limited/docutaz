@@ -6,6 +6,7 @@
 #include <QCheckBox>
 #include <QPushButton>
 #include <QComboBox>
+#include <QSizePolicy>
 
 #include "docutaz/core/settings/ConnectionSettings.h"
 #include "docutaz/core/settings/CredentialSettings.h"
@@ -27,6 +28,12 @@ namespace Docutaz
             "databases</b>."
         );
         _databaseNameDescriptionLabel->setWordWrap(true);
+        // Guarantee room for the wrapped help text (~3 lines at field width) so it
+        // is never clipped when the dialog is restored to a tight saved size.
+        _databaseNameDescriptionLabel->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+        _databaseNameDescriptionLabel->setMinimumHeight(
+            _databaseNameDescriptionLabel->fontMetrics().lineSpacing() * 3);
+        _databaseNameDescriptionLabel->setAlignment(Qt::AlignTop | Qt::AlignLeft);
 
         _userName = new QLineEdit();
         _userNameLabel = new QLabel("User Name");

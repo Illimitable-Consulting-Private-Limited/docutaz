@@ -20,10 +20,11 @@ namespace
 {
     QFrame *createVerticalLine()
     {
+        // Flat 1px separator (no 3D sunken bevel) themed to the mid token.
         QFrame *vline = new QFrame();
-        vline->setFrameShape(QFrame::VLine);
-        vline->setFrameShadow(QFrame::Sunken);
-        vline->setFixedWidth(5);
+        vline->setFrameShape(QFrame::NoFrame);
+        vline->setFixedWidth(1);
+        vline->setStyleSheet(QString("background-color: %1;").arg(Docutaz::Theme::current().mid.name()));
         return vline;
     }
 }

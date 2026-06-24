@@ -20,6 +20,7 @@
 #include "docutaz/core/settings/ReplicaSetSettings.h"
 #include "docutaz/gui/dialogs/ConnectionDialog.h"
 #include "docutaz/gui/GuiRegistry.h"
+#include "docutaz/gui/widgets/FlatComboBox.h"
 #include "docutaz/gui/utils/GuiConstants.h"
 #include "docutaz/gui/ConnectionEnvironment.h"
 
@@ -50,7 +51,7 @@ namespace Docutaz
         // the explorer row, shell tabs and an accent strip above the editor so a
         // prod connection is unmistakable. Each item carries a colour swatch icon.
         _environmentLabel = new QLabel("Environment:");
-        _environment = new QComboBox;
+        _environment = new FlatComboBox;
         for (auto const &p : ConnectionEnvironment::presets()) {
             QPixmap swatch(12, 12);
             swatch.fill(p.color.isValid() ? p.color : QColor(Qt::transparent));
@@ -66,7 +67,7 @@ namespace Docutaz
         _serverPort = new QLineEdit(QString::number(_settings->serverPort()));
         _serverPort->setFixedWidth(80);
         QRegularExpression rx("\\d+"); //(0-65554)
-        _serverPort->setValidator(new QRegularExpressionValidator(rx, this)); 
+        _serverPort->setValidator(new QRegularExpressionValidator(rx, this));
         _addInfoLabel = new QLabel("Specify host and port of MongoDB server. Host can be either IPv4, IPv6 or domain name.");
         _addInfoLabel->setWordWrap(true);
 
@@ -124,7 +125,6 @@ namespace Docutaz
         _setNameLabel = new QLabel("Set Name:");
         _setNameEdit = new QLineEdit(QString::fromStdString(_settings->replicaSetSettings()->setNameUserEntered()));
 
-        auto fakeSpacer = new QLabel("");
         auto hline = new QFrame();
         hline->setFrameShape(QFrame::HLine);
         hline->setFrameShadow(QFrame::Sunken);
@@ -134,11 +134,16 @@ namespace Docutaz
 #ifdef _WIN32
         _uriButton->setMaximumHeight(HighDpiConstants::WIN_HIGH_DPI_BUTTON_HEIGHT);
         _uriButton->setMinimumWidth(60);
-#else   // MacOS
-        _uriButton->setMaximumHeight(HighDpiConstants::MACOS_HIGH_DPI_BUTTON_HEIGHT);   
+#elif defined(__APPLE__)
+        _uriButton->setMaximumHeight(HighDpiConstants::MACOS_HIGH_DPI_BUTTON_HEIGHT);
         _uriButton->setMaximumWidth(90);
-#endif        
+#else   // Linux: size to content so the label is never clipped (the flat-button
+        // padding makes a fixed 90px too tight for "From URI").
+        _uriButton->setMinimumWidth(_uriButton->sizeHint().width());
+#endif
         VERIFY(connect(_uriButton, SIGNAL(clicked()), this, SLOT(on_uriButton_clicked())));
+
+        auto fakeSpacer = new QLabel("");
 
         auto connLayout = new QGridLayout;
         connLayout->setVerticalSpacing(8);
@@ -164,7 +169,7 @@ namespace Docutaz
         connLayout->addWidget(_uriButton,                    13, 0);
         connLayout->addWidget(_uriEdit,                      13, 1, 1, 3);
 
-        connLayout->setRowStretch(10, 1);        
+        connLayout->setRowStretch(10, 1);
 #ifdef __APPLE__
         connLayout->setRowMinimumHeight(11, 20);
 #endif

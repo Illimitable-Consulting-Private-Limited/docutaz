@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/docutaz">
+        <file>fonts/Inter-Regular.otf</file>
+        <file>fonts/Inter-SemiBold.otf</file>
         <file>icons/collection_16x16.png</file>
         <file>icons/server_16x16.gif</file>
         <file>icons/left_16x16.png</file>
@@ -31,6 +33,10 @@
         <file>icons/close_hover_16x16.png</file>
         <file>icons/close_2_16x16.png</file>
         <file>icons/close_2_Mac_16x16.png</file>
+        <file>icons/close_glyph.svg</file>
+        <file>icons/close_glyph_dark.svg</file>
+        <file>icons/close_glyph_hover.svg</file>
+        <file>icons/close_glyph_hover_dark.svg</file>
         <file>icons/close_hover_16x16_original.png</file>
         <file>icons/text2_16x16.png</file>
         <file>icons/mongodb_16x16.png</file>
