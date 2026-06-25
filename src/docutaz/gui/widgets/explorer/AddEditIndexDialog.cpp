@@ -57,7 +57,7 @@ namespace
 
     Docutaz::FindFrame *createFindFrame(QWidget *parent = NULL, const QString &text = QString())
     {
-        const QFont &textFont = Docutaz::GuiRegistry::instance().font();
+        const QFont &textFont = Docutaz::GuiRegistry::instance().editorFont();
         QsciLexerJavaScript *javaScriptLexer = new Docutaz::JSLexer(parent);
         javaScriptLexer->setFont(textFont);
         Docutaz::FindFrame *findFrame = new Docutaz::FindFrame(parent);

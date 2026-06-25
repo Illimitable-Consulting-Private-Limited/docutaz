@@ -178,6 +178,15 @@ namespace Docutaz
         int textFontPointSize() const { return _textFontPointSize; }
         void setTextFontPointSize(int pointSize);
 
+        // Editor (query/document/function/index editors) font, configured
+        // separately from the UI/result typeface. Empty family / non-positive
+        // size mean "use the platform monospace default" (see GuiRegistry).
+        QString editorFontFamily() const { return _editorFontFamily; }
+        void setEditorFontFamily(const QString& fontFamily);
+
+        int editorFontPointSize() const { return _editorFontPointSize; }
+        void setEditorFontPointSize(int pointSize);
+
         int mongoTimeoutSec() const { return _mongoTimeoutSec; }
         int shellTimeoutSec() const { return _shellTimeoutSec; }
 
@@ -264,6 +273,8 @@ namespace Docutaz
         QString _currentStyle;
         QString _textFontFamily;
         int _textFontPointSize;
+        QString _editorFontFamily;
+        int _editorFontPointSize;
 
         int _mongoTimeoutSec;
         int _shellTimeoutSec;

@@ -107,7 +107,7 @@ namespace Docutaz
         setUtf8(true);
         setContentsMargins(0, 0, 0, 0);
         setViewportMargins(3, 3, 3, 3);
-        QFont ourFont = GuiRegistry::instance().font();
+        QFont ourFont = GuiRegistry::instance().editorFont();
         setMarginsFont(ourFont);
         setMarginLineNumbers(0, true);
 

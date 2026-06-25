@@ -420,7 +420,7 @@ namespace Docutaz
     void CreateCollectionDialog::configureFrameText(JSONFrame* frame)
     {
         QsciLexerJavaScript *javaScriptLexer = new JSLexer(this);
-        QFont font = GuiRegistry::instance().font();
+        QFont font = GuiRegistry::instance().editorFont();
         javaScriptLexer->setFont(font);
         frame->sciScintilla()->setBraceMatching(QsciScintilla::StrictBraceMatch);
         frame->sciScintilla()->setFont(font);

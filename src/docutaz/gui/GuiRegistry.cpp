@@ -444,9 +444,10 @@ namespace Docutaz
 
     const QFont &GuiRegistry::font() const
     {
-        // Default the editor and result views to the bundled UI font (Inter) so
-        // the whole application shares one typeface; an explicit user-chosen
-        // textFontFamily still wins.
+        // Default the result views to the bundled UI font (Inter) so they share
+        // the application typeface; an explicit user-chosen textFontFamily still
+        // wins. Recomputed each call so a Preferences change is picked up by
+        // newly built widgets without a restart.
         QString family = AppRegistry::instance().settingsManager()->textFontFamily();
         if (family.isEmpty())
             family = Theme::uiFontFamily();
@@ -462,8 +463,47 @@ namespace Docutaz
 #endif
         }
 
-
-        static QFont textFont = QFont(family, pointSize);
+        static QFont textFont;
+        textFont = QFont(family, pointSize);
         return textFont;
+    }
+
+    const QFont &GuiRegistry::editorFont() const
+    {
+        // The code editor has its own font, separate from the UI typeface. When
+        // the user hasn't chosen one we fall back to the platform monospace face
+        // (StyleHint set so the fallback also resolves to a monospaced font);
+        // an explicit family is used verbatim. Recomputed each call.
+        const QString chosen = AppRegistry::instance().settingsManager()->editorFontFamily();
+        const bool useMonoDefault = chosen.isEmpty();
+
+        QString family = chosen;
+        if (useMonoDefault) {
+#if defined(Q_OS_MAC)
+            family = "Monaco";
+#elif defined(Q_OS_WIN)
+            family = "Courier";
+#else
+            family = "Monospace";
+#endif
+        }
+
+        int pointSize = AppRegistry::instance().settingsManager()->editorFontPointSize();
+        if (pointSize < 1) {
+#if defined(Q_OS_MAC)
+            pointSize = 12;
+#elif defined(Q_OS_WIN)
+            pointSize = 10;
+#else
+            pointSize = -1;
+#endif
+        }
+
+        static QFont editorFontInstance;
+        editorFontInstance = QFont(family, pointSize);
+        if (useMonoDefault)
+            editorFontInstance.setStyleHint(QFont::Monospace);
+        editorFontInstance.setFixedPitch(true);
+        return editorFontInstance;
     }
 }

@@ -5,10 +5,15 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QComboBox>
+#include <QFontComboBox>
 #include <QPushButton>
 #include <QCheckBox>
 #include <QLineEdit>
+#include <QSpinBox>
 #include <QFileDialog>
+#include <QApplication>
+
+#include "docutaz/gui/widgets/workarea/ScriptWidget.h"
 
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/AppStyle.h"
@@ -93,6 +98,22 @@ namespace Docutaz
         stylesLayout->addWidget(_stylesComboBox);
         layout->addLayout(stylesLayout);
 
+        // Editor font — configured separately from the UI typeface. The combo
+        // lists every font in the database, which includes the bundled Inter
+        // (registered at startup) alongside the user's installed fonts; leaving
+        // it on the monospace default is the recommended choice for code.
+        QHBoxLayout *editorFontLayout = new QHBoxLayout(this);
+        QLabel *editorFontLabel = new QLabel("Editor font:");
+        editorFontLayout->addWidget(editorFontLabel);
+        _editorFontComboBox = new QFontComboBox();
+        editorFontLayout->addWidget(_editorFontComboBox, 1);
+        _editorFontSizeSpinBox = new QSpinBox();
+        _editorFontSizeSpinBox->setRange(0, 48);
+        _editorFontSizeSpinBox->setSpecialValueText("Default");   // shown when 0
+        _editorFontSizeSpinBox->setToolTip("Editor font size in points. 0 = platform default.");
+        editorFontLayout->addWidget(_editorFontSizeSpinBox);
+        layout->addLayout(editorFontLayout);
+
         QHBoxLayout *mongoshLayout = new QHBoxLayout(this);
         QLabel *mongoshLabel = new QLabel("mongosh path:");
         mongoshLayout->addWidget(mongoshLabel);
@@ -126,6 +147,14 @@ namespace Docutaz
         _disabelConnectionShortcutsCheckBox->setChecked(AppRegistry::instance().settingsManager()->disableConnectionShortcuts());
         _shareShellPerConnectionCheckBox->setChecked(AppRegistry::instance().settingsManager()->shareShellPerConnection());
         utils::setCurrentText(_stylesComboBox, Docutaz::AppRegistry::instance().settingsManager()->currentStyle());
+
+        // Editor font: show the resolved family (falls back to the monospace
+        // default when the user hasn't picked one) and the configured size (0 =
+        // platform default, shown as "Default").
+        _editorFontComboBox->setCurrentFont(GuiRegistry::instance().editorFont());
+        const int editorPt = AppRegistry::instance().settingsManager()->editorFontPointSize();
+        _editorFontSizeSpinBox->setValue(editorPt > 0 ? editorPt : 0);
+
         _mongoshPathEdit->setText(AppRegistry::instance().settingsManager()->mongoshPath());
     }
 
@@ -145,6 +174,18 @@ namespace Docutaz
         AppRegistry::instance().settingsManager()->setShareShellPerConnection(_shareShellPerConnectionCheckBox->isChecked());
         Docutaz::AppRegistry::instance().settingsManager()->setCurrentStyle(_stylesComboBox->currentText());
         AppStyleUtils::applyStyle(_stylesComboBox->currentText());
+
+        // Editor font (separate from the UI typeface). Size 0 → platform default.
+        AppRegistry::instance().settingsManager()->setEditorFontFamily(
+            _editorFontComboBox->currentFont().family());
+        AppRegistry::instance().settingsManager()->setEditorFontPointSize(
+            _editorFontSizeSpinBox->value());
+        // Push the new editor font onto any open query tabs so it takes effect
+        // immediately (other editors are modal dialogs, rebuilt on next open).
+        for (QWidget *w : QApplication::allWidgets())
+            if (auto *sw = qobject_cast<ScriptWidget*>(w))
+                sw->reapplyEditorFont();
+
         AppRegistry::instance().settingsManager()->setMongoshPath(_mongoshPathEdit->text().trimmed());
         Docutaz::AppRegistry::instance().settingsManager()->save();
 

@@ -94,7 +94,12 @@ namespace Docutaz
 
         const QBrush& typeBrush() const;
 
+        // UI / result-view text font (defaults to the bundled Inter family).
         const QFont& font() const;
+
+        // Code-editor font, configured separately (Preferences → Editor font).
+        // Defaults to the platform monospace face when the user hasn't chosen one.
+        const QFont& editorFont() const;
     private:
         /**
          * @brief Private, because this is singleton

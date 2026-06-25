@@ -134,7 +134,7 @@ namespace Docutaz
         _completer->setCaseSensitivity(Qt::CaseInsensitive);
         _completer->setMaxVisibleItems(20);
         _completer->setWrapAround(false);
-        _completer->popup()->setFont(GuiRegistry::instance().font());
+        _completer->popup()->setFont(GuiRegistry::instance().editorFont());
         VERIFY(connect(_completer, SIGNAL(activated(const QString &)), this, SLOT(onCompletionActivated(const QString&))));
 
         QStringListModel *model = new QStringListModel(_completer);
@@ -478,12 +478,12 @@ namespace Docutaz
     void ScriptWidget::configureQueryText()
     {
         QsciLexerJavaScript *javaScriptLexer = new JSLexer(this);
-        javaScriptLexer->setFont(GuiRegistry::instance().font());
+        javaScriptLexer->setFont(GuiRegistry::instance().editorFont());
         int height = editorHeight(kMinEditorLines);
         _queryText->sciScintilla()->setMinimumHeight(height);
         _queryText->sciScintilla()->setFixedHeight(height);
         _queryText->sciScintilla()->setAppropriateBraceMatching();
-        _queryText->sciScintilla()->setFont(GuiRegistry::instance().font());
+        _queryText->sciScintilla()->setFont(GuiRegistry::instance().editorFont());
         _queryText->sciScintilla()->setPaper(Theme::current().editorCanvas);
         _queryText->sciScintilla()->setLexer(javaScriptLexer);
 
@@ -495,6 +495,17 @@ namespace Docutaz
         VERIFY(connect(_queryText->sciScintilla(), SIGNAL(linesChanged()), SLOT(ui_queryLinesCountChanged())));
         VERIFY(connect(_queryText->sciScintilla(), SIGNAL(textChanged()), SLOT(onTextChanged())));
         VERIFY(connect(_queryText->sciScintilla(), SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int, int))));
+    }
+
+    void ScriptWidget::reapplyEditorFont()
+    {
+        const QFont &f = GuiRegistry::instance().editorFont();
+        auto *sci = _queryText->sciScintilla();
+        sci->setFont(f);
+        if (QsciLexer *lex = sci->lexer())
+            lex->setFont(f);   // applies to every lexer style
+        if (_completer && _completer->popup())
+            _completer->popup()->setFont(f);
     }
 
     void ScriptWidget::applyTheme()

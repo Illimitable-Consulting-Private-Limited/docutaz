@@ -3,8 +3,10 @@
 #include <QDialog>
 QT_BEGIN_NAMESPACE
 class QComboBox;
+class QFontComboBox;
 class QCheckBox;
 class QLineEdit;
+class QSpinBox;
 QT_END_NAMESPACE
 
 namespace Docutaz
@@ -30,6 +32,8 @@ namespace Docutaz
         QCheckBox *_disabelConnectionShortcutsCheckBox;
         QCheckBox *_shareShellPerConnectionCheckBox;
         QComboBox *_stylesComboBox;
+        QFontComboBox *_editorFontComboBox;
+        QSpinBox *_editorFontSizeSpinBox;
         QLineEdit *_mongoshPathEdit;
     };
 }

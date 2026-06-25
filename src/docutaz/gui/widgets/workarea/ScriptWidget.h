@@ -61,6 +61,10 @@ namespace Docutaz
         bool eventFilter(QObject *obj, QEvent *e);
 
         void setup(const MongoShellExecResult & execResult);
+        // Re-apply the configured editor font to the live editor, its lexer and
+        // the completion popup (called after the user changes it in Preferences,
+        // so open query tabs update without a restart).
+        void reapplyEditorFont();
         void setTextCursor(const CursorPosition &cursor = CursorPosition());
         QString text() const;
         QString selectedText() const;

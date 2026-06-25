@@ -85,6 +85,8 @@ namespace Docutaz
         _batchSize(50),
         _textFontFamily(""),
         _textFontPointSize(-1),
+        _editorFontFamily(""),
+        _editorFontPointSize(-1),
         _mongoTimeoutSec(10),
         _shellTimeoutSec(15),
         _imported(false)
@@ -258,6 +260,9 @@ namespace Docutaz
         // Load font information
         _textFontFamily = map.value("textFontFamily").toString();
         _textFontPointSize = map.value("textFontPointSize").toInt();
+        _editorFontFamily = map.value("editorFontFamily").toString();
+        _editorFontPointSize = map.contains("editorFontPointSize")
+            ? map.value("editorFontPointSize").toInt() : -1;
 
         if (map.contains("mongoTimeoutSec")) {
             _mongoTimeoutSec = map.value("mongoTimeoutSec").toInt();
@@ -356,6 +361,8 @@ namespace Docutaz
         // 11. Save font information
         map.insert("textFontFamily", _textFontFamily);
         map.insert("textFontPointSize", _textFontPointSize);
+        map.insert("editorFontFamily", _editorFontFamily);
+        map.insert("editorFontPointSize", _editorFontPointSize);
 
         // 12. Save connections
         QVariantList list;
@@ -424,6 +431,15 @@ namespace Docutaz
 
     void SettingsManager::setTextFontPointSize(int pointSize) {
         _textFontPointSize = pointSize > 0 ? pointSize : -1;
+    }
+
+    void SettingsManager::setEditorFontFamily(const QString& fontFamily)
+    {
+        _editorFontFamily = fontFamily;
+    }
+
+    void SettingsManager::setEditorFontPointSize(int pointSize) {
+        _editorFontPointSize = pointSize > 0 ? pointSize : -1;
     }
 
     void SettingsManager::reorderConnections(const ConnectionSettingsContainerType &connections)

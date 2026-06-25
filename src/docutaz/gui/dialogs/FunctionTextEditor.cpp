@@ -98,7 +98,7 @@ namespace Docutaz
     */
     void FunctionTextEditor::_configureQueryText()
     {
-        const QFont &textFont = GuiRegistry::instance().font();
+        const QFont &textFont = GuiRegistry::instance().editorFont();
         QsciLexerJavaScript *javaScriptLexer = new JSLexer(this);
         javaScriptLexer->setFont(textFont);        
         _queryText->sciScintilla()->setAppropriateBraceMatching();
