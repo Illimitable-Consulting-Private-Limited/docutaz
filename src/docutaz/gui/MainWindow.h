@@ -124,6 +124,11 @@ namespace Docutaz
         void openQueryHistoryTab();
 
     private:
+        // (Re-)install the application stylesheet: the shared global flat chrome
+        // plus the MainWindow-specific explorer/separator/queryWidget rules.
+        // Re-run on a live colour-scheme change so the appended rules survive
+        // Theme::apply() resetting qApp's stylesheet to the bare global sheet.
+        void applyChromeStyleSheet();
         void updateConnectionsMenu();
         void createDatabaseExplorer();
         void createTabs();

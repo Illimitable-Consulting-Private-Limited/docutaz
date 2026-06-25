@@ -139,19 +139,11 @@ namespace Docutaz
         setUnifiedTitleAndToolBarOnMac(true);
     #endif
 
-        // The explorer panel sits on the window tone; the query backdrop and the
-        // window splitters use the mid token so they read as thin separators in
-        // both light and dark. Prepend the shared global QSS (themed scrollbars)
-        // so setting our own qApp stylesheet here does not wipe it out.
-        const Theme::Tokens &th = Theme::current();
-        const QString explorerColor  = th.window.name();
-        const QString separatorColor = th.mid.name();
-        qApp->setStyleSheet(Theme::globalStyleSheet() + QString(
-            "QWidget#queryWidget { background-color:%2; margin: 0px; padding:0px; } \n"
-            "Docutaz--ExplorerTreeWidget#explorerTree { padding: 1px 0px 0px 0px; background-color: %1; border: 0px; } \n"
-            "QMainWindow::separator { background: %2; width: 1px; } \n"
-            "QMessageBox { messagebox-text-interaction-flags: 5; }"  // Make QMessageBox text selectable
-        ).arg(explorerColor, separatorColor));
+        applyChromeStyleSheet();
+        // On a live colour-scheme change Theme::apply() resets qApp's stylesheet
+        // to the bare global sheet; re-append our chrome rules so they survive.
+        VERIFY(connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                       this, &MainWindow::applyChromeStyleSheet));
         _openAction = new QAction(GuiRegistry::instance().openIcon(), tr("&Open..."), this);
         _openAction->setToolTip(QString("Load script from the file to the currently opened shell <b>(%1 + O)</b>").arg(controlKey));
         _openAction->setShortcuts(QKeySequence::Open);
@@ -644,6 +636,23 @@ namespace Docutaz
              styleGroup->addAction(styleAction);
              styles->addAction(styleAction);             
          }
+    }
+
+    void MainWindow::applyChromeStyleSheet()
+    {
+        // The explorer panel sits on the window tone; the query backdrop and the
+        // window splitters use the mid token so they read as thin separators in
+        // both light and dark. Prepend the shared global QSS (themed scrollbars)
+        // so setting our own qApp stylesheet here does not wipe it out.
+        const Theme::Tokens &th = Theme::current();
+        const QString explorerColor  = th.window.name();
+        const QString separatorColor = th.mid.name();
+        qApp->setStyleSheet(Theme::globalStyleSheet() + QString(
+            "QWidget#queryWidget { background-color:%2; margin: 0px; padding:0px; } \n"
+            "Docutaz--ExplorerTreeWidget#explorerTree { padding: 1px 0px 0px 0px; background-color: %1; border: 0px; } \n"
+            "QMainWindow::separator { background: %2; width: 1px; } \n"
+            "QMessageBox { messagebox-text-interaction-flags: 5; }"  // Make QMessageBox text selectable
+        ).arg(explorerColor, separatorColor));
     }
 
     void MainWindow::createStatusBar()

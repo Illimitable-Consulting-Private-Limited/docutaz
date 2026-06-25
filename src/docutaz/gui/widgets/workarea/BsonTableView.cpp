@@ -25,12 +25,14 @@ namespace Docutaz
         horizontalHeader()->setDefaultAlignment(Qt::AlignLeft);
         // Border and gridlines follow the theme so they read as thin separators
         // in both light and dark rather than glaring against the canvas.
-        {
+        auto applyThemeBorder = [this] {
             const Theme::Tokens &t = Theme::current();
             setStyleSheet(QString("QTableView { border-left: 1px solid %1; border-top: 1px solid %1;"
                                   " gridline-color: %2;}")
                           .arg(t.mid.name(), t.alternateBase.name()));
-        }
+        };
+        applyThemeBorder();
+        connect(Theme::Notifier::instance(), &Theme::Notifier::changed, this, applyThemeBorder);
 
         setSelectionMode(QAbstractItemView::ExtendedSelection);
         setSelectionBehavior(QAbstractItemView::SelectItems);

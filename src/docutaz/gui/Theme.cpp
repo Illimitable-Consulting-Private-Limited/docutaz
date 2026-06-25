@@ -4,10 +4,12 @@
 #include <QApplication>
 #include <QFont>
 #include <QFontDatabase>
+#include <QGuiApplication>
 #include <QPalette>
 #include <QProxyStyle>
 #include <QStyle>
 #include <QStyleFactory>
+#include <QStyleHints>
 
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/GlyphIcons.h"
@@ -350,6 +352,28 @@ namespace Docutaz
             // for the [primary="true"] rule to apply.
             button->style()->unpolish(button);
             button->style()->polish(button);
+        }
+
+        Notifier *Notifier::instance()
+        {
+            static Notifier *n = new Notifier(qApp);
+            return n;
+        }
+
+        void installColorSchemeWatch()
+        {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
+            QObject::connect(
+                QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
+                Notifier::instance(), [](Qt::ColorScheme) {
+                    // Re-pick the palette + global QSS for the new scheme, then
+                    // let imperative widgets refresh via changed(). Glyph icons
+                    // resolve their tint at paint time, so they follow along once
+                    // the palette change triggers repaints.
+                    apply();
+                    Notifier::instance()->notify();
+                });
+#endif
         }
     }
 }

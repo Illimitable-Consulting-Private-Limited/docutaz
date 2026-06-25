@@ -101,26 +101,15 @@ namespace Docutaz
         _lineNumberDigitWidth(0),
         _lineNumberMarginWidth(0)
     {
-        // Editor chrome follows the active light/dark scheme. QScintilla renders
-        // independently of QPalette, so every colour is read from the theme here.
-        const Theme::Tokens &th = Theme::current();
-        const QColor canvas    = th.editorCanvas;
-        const QColor marginFg  = th.lineNumber;
-
         setAutoIndent(true);
         setIndentationsUseTabs(false);
         setIndentationWidth(indentationWidth);
         setUtf8(true);
-        setCaretForegroundColor(th.text);
-        setMatchedBraceForegroundColor(th.synOperator);
-        setMatchedBraceBackgroundColor(th.hover);
         setContentsMargins(0, 0, 0, 0);
         setViewportMargins(3, 3, 3, 3);
         QFont ourFont = GuiRegistry::instance().font();
         setMarginsFont(ourFont);
         setMarginLineNumbers(0, true);
-        setMarginsBackgroundColor(canvas);
-        setMarginsForegroundColor(marginFg);
 
         SendScintilla(QsciScintilla::SCI_STYLESETFONT, 1, ourFont.family().data());
         SendScintilla(QsciScintilla::SCI_SETHSCROLLBAR, 0);
@@ -136,17 +125,12 @@ namespace Docutaz
         // attached) is safe: setFolding sets the master "fold" document property,
         // which the lexer's refreshProperties() leaves untouched.
         setFolding(QsciScintilla::BoxedTreeFoldStyle, 2);
-        setFoldMarginColors(canvas, canvas);
-        // Render the fold tree/markers as light glyphs on the dark margin: pass
-        // the symbol fill (back) the margin colour so only the light outline and
-        // +/- glyph (fore) show. Scintilla wants colours packed as 0xBBGGRR.
+        // Scintilla wants colours packed as 0xBBGGRR. Used just below for the
+        // (theme-independent) bracket-pair indicators; the theme-driven fold and
+        // margin colours are pushed in applyThemeColors().
         auto sciColor = [](const QColor &c) -> long {
             return (long)((c.blue() << 16) | (c.green() << 8) | c.red());
         };
-        for (int marker = SC_MARKNUM_FOLDEREND; marker <= SC_MARKNUM_FOLDEROPEN; ++marker) {
-            SendScintilla(SCI_MARKERSETFORE, (unsigned long)marker, sciColor(marginFg));
-            SendScintilla(SCI_MARKERSETBACK, (unsigned long)marker, sciColor(canvas));
-        }
 
         // ---- Error margin (index 1) ----
         // A dedicated symbol margin that shows a warning triangle on lines with
@@ -158,10 +142,8 @@ namespace Docutaz
         SendScintilla(SCI_SETMARGINMASKN, (unsigned long)1, (long)(1 << kErrorMarker));
         setMarginWidth(1, kErrorMarginWidth);
 
-        // Faint vertical indentation guides.
+        // Faint vertical indentation guides (colours set in applyThemeColors).
         setIndentationGuides(true);
-        setIndentationGuidesForegroundColor(th.mid);
-        setIndentationGuidesBackgroundColor(canvas);
 
         // No caret-line highlight: the band competes with the flat canvas, so
         // the current line is left undecorated.
@@ -193,6 +175,12 @@ namespace Docutaz
 
         VERIFY(connect(this, SIGNAL(textChanged()), this, SLOT(updateSyntaxIndicators())));
 
+        // Push the theme-driven chrome colours now, and refresh them whenever the
+        // OS colour scheme flips live.
+        applyThemeColors();
+        VERIFY(connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                       this, &DocutazScintilla::applyThemeColors));
+
         // Cache width of one digit
 #ifdef Q_OS_WIN
         _lineNumberDigitWidth = rowNumberWidth;
@@ -204,6 +192,43 @@ namespace Docutaz
         setLineNumbers(AppRegistry::instance().settingsManager()->lineNumbers());
         setUtf8(true);
         VERIFY(connect(this, SIGNAL(linesChanged()), this, SLOT(updateLineNumbersMarginWidth())));
+    }
+
+    void DocutazScintilla::applyThemeColors()
+    {
+        // QScintilla renders independently of QPalette/QSS, so every theme colour
+        // is pushed explicitly. Re-runnable so a live colour-scheme change just
+        // re-applies the new tokens (and re-reads the lexer's syntax colours).
+        const Theme::Tokens &th = Theme::current();
+        const QColor canvas   = th.editorCanvas;
+        const QColor marginFg = th.lineNumber;
+
+        setCaretForegroundColor(th.text);
+        setMatchedBraceForegroundColor(th.synOperator);
+        setMatchedBraceBackgroundColor(th.hover);
+        setMarginsBackgroundColor(canvas);
+        setMarginsForegroundColor(marginFg);
+
+        // Fold tree/markers: light outline + glyph on the canvas-coloured fill.
+        setFoldMarginColors(canvas, canvas);
+        auto sciColor = [](const QColor &c) -> long {
+            return (long)((c.blue() << 16) | (c.green() << 8) | c.red());
+        };
+        for (int marker = SC_MARKNUM_FOLDEREND; marker <= SC_MARKNUM_FOLDEROPEN; ++marker) {
+            SendScintilla(SCI_MARKERSETFORE, (unsigned long)marker, sciColor(marginFg));
+            SendScintilla(SCI_MARKERSETBACK, (unsigned long)marker, sciColor(canvas));
+        }
+
+        setIndentationGuidesForegroundColor(th.mid);
+        setIndentationGuidesBackgroundColor(canvas);
+
+        // Re-reading the lexer re-applies its themed paper + syntax colours; with
+        // no lexer, set the paper directly. recolor() repaints the buffer.
+        if (QsciLexer *lex = lexer())
+            setLexer(lex);
+        else
+            setPaper(canvas);
+        recolor();
     }
 
     int DocutazScintilla::lineNumberMarginWidth() const

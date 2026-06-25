@@ -111,13 +111,6 @@ namespace Docutaz
         _textChanged(false),
         _disableTextAndCursorNotifications(false)
     {
-        // Follow the themed palette window colour so the strip blends with the
-        // surrounding chrome in both light and dark.
-        const QString bg = palette().color(QPalette::Window).name();
-        setStyleSheet(QString("QFrame {background-color: %1; border: 0px solid %2;"
-                      "border-radius: 0px; margin: 0px; padding: 0px;}")
-                      .arg(bg, Theme::current().mid.name()));
-
         _queryText = new FindFrame(this);
         _topStatusBar = new TopStatusBar(_shell->server()->connectionRecord()->connectionName(), 
                                          _shell->server()->connectionRecord()->getFullAddress(), "loading...");
@@ -494,13 +487,29 @@ namespace Docutaz
         _queryText->sciScintilla()->setPaper(Theme::current().editorCanvas);
         _queryText->sciScintilla()->setLexer(javaScriptLexer);
 
+        // Frame backgrounds/borders follow the theme; refresh them on a live
+        // colour-scheme change (the editor canvas/syntax refresh themselves).
+        applyTheme();
+        VERIFY(connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                       this, &ScriptWidget::applyTheme));
+        VERIFY(connect(_queryText->sciScintilla(), SIGNAL(linesChanged()), SLOT(ui_queryLinesCountChanged())));
+        VERIFY(connect(_queryText->sciScintilla(), SIGNAL(textChanged()), SLOT(onTextChanged())));
+        VERIFY(connect(_queryText->sciScintilla(), SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int, int))));
+    }
+
+    void ScriptWidget::applyTheme()
+    {
+        // Top strip blends with the window chrome; the editor frame carries the
+        // canvas fill and a thin themed border.
+        const QString bg = palette().color(QPalette::Window).name();
+        setStyleSheet(QString("QFrame {background-color: %1; border: 0px solid %2;"
+                      "border-radius: 0px; margin: 0px; padding: 0px;}")
+                      .arg(bg, Theme::current().mid.name()));
+
         _queryText->sciScintilla()->setStyleSheet(
             QString("QFrame { background-color: %1; border: 1px solid %2; border-radius: 4px;"
                     " margin: 0px; padding: 0px;}")
                 .arg(Theme::current().editorCanvas.name(), Theme::current().mid.name()));
-        VERIFY(connect(_queryText->sciScintilla(), SIGNAL(linesChanged()), SLOT(ui_queryLinesCountChanged())));
-        VERIFY(connect(_queryText->sciScintilla(), SIGNAL(textChanged()), SLOT(onTextChanged())));
-        VERIFY(connect(_queryText->sciScintilla(), SIGNAL(cursorPositionChanged(int, int)), SLOT(onCursorPositionChanged(int, int))));
     }
 
     /**

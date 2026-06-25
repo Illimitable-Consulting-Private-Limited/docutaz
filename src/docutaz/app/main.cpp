@@ -101,6 +101,9 @@ int main(int argc, char *argv[])
     // the brand accent as Highlight/Link), selected from the OS colour scheme.
     Docutaz::AppStyleUtils::initStyle();
     Docutaz::Theme::apply();
+    // Follow live OS light/dark switches (Qt 6.5+): re-apply palette/QSS and
+    // notify widgets that paint theme colours imperatively.
+    Docutaz::Theme::installColorSchemeWatch();
 
     Docutaz::MainWindow mainWindow;
     mainWindow.show();

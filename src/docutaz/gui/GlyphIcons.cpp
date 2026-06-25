@@ -7,6 +7,8 @@
 #include <QSvgRenderer>
 #include <QGuiApplication>
 
+#include "docutaz/gui/Theme.h"
+
 namespace Docutaz
 {
     namespace GlyphIcons
@@ -96,12 +98,35 @@ namespace Docutaz
                 return svg;
             }
 
+            QColor resolveTint(Tint tint)
+            {
+                const Theme::Tokens &t = Theme::current();
+                switch (tint)
+                {
+                case Tint::Muted:     return t.muted;
+                case Tint::Link:      return t.link;
+                case Tint::Danger:    return t.danger;
+                case Tint::Highlight: return t.highlight;
+                case Tint::Text:
+                default:              return t.text;
+                }
+            }
+
             // QIconEngine that renders the glyph SVG fresh at the requested size,
-            // so it stays crisp at any DPI. Holds the normal and selected tints;
-            // Disabled mode is drawn at reduced opacity.
+            // so it stays crisp at any DPI. The normal colour is either a fixed
+            // tint or a semantic role resolved from the live theme at paint time;
+            // Selected mode uses the highlighted-text colour (or a fixed
+            // override) and Disabled mode is drawn at reduced opacity.
             class GlyphIconEngine : public QIconEngine
             {
             public:
+                // Theme-following: colour follows `tint` at paint time.
+                GlyphIconEngine(QByteArray body, Tint tint)
+                    : _body(std::move(body)), _useTint(true), _tint(tint)
+                {
+                }
+
+                // Fixed colours: do not follow the theme.
                 GlyphIconEngine(QByteArray body, QColor normal, QColor selected)
                     : _body(std::move(body)), _normal(normal), _selected(selected)
                 {
@@ -110,7 +135,9 @@ namespace Docutaz
                 void paint(QPainter *painter, const QRect &rect,
                            QIcon::Mode mode, QIcon::State /*state*/) override
                 {
-                    const QColor c = (mode == QIcon::Selected) ? _selected : _normal;
+                    QColor normal = _useTint ? resolveTint(_tint) : _normal;
+                    QColor selected = _useTint ? Theme::current().highlightedText : _selected;
+                    const QColor c = (mode == QIcon::Selected) ? selected : normal;
                     QSvgRenderer renderer(buildSvg(_body, c));
                     painter->save();
                     if (mode == QIcon::Disabled)
@@ -135,11 +162,14 @@ namespace Docutaz
 
                 QIconEngine *clone() const override
                 {
-                    return new GlyphIconEngine(_body, _normal, _selected);
+                    return _useTint ? new GlyphIconEngine(_body, _tint)
+                                    : new GlyphIconEngine(_body, _normal, _selected);
                 }
 
             private:
                 QByteArray _body;
+                bool _useTint = false;
+                Tint _tint = Tint::Text;
                 QColor _normal;
                 QColor _selected;
             };
@@ -148,6 +178,14 @@ namespace Docutaz
         bool has(const QString &name)
         {
             return glyphTable().contains(name);
+        }
+
+        QIcon icon(const QString &name, Tint tint)
+        {
+            const auto it = glyphTable().constFind(name);
+            if (it == glyphTable().constEnd())
+                return QIcon();
+            return QIcon(new GlyphIconEngine(it.value(), tint));
         }
 
         QIcon icon(const QString &name, const QColor &color, const QColor &selected)

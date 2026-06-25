@@ -18,6 +18,7 @@
 #include "docutaz/core/EventBus.h"
 #include "docutaz/core/events/MongoEvents.h"
 #include "docutaz/gui/dialogs/PreferencesDialog.h"
+#include "docutaz/gui/Theme.h"
 
 namespace Docutaz
 {
@@ -83,38 +84,20 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
     _logo->setAlignment(Qt::AlignLeft | Qt::AlignTop);
     _logo->setContentsMargins(0, 0, 0, 0);
 
-    const bool dark = QtUtils::isDarkPalette(this);
-
-    QString bodyHtml = QString::fromUtf8(BODY_HTML);
-    bodyHtml.replace("%MUTED%",  dark ? "#9aa0a6" : "#666");
-    bodyHtml.replace("%INTRO%",  dark ? "#e8eaed" : "#222");
-    bodyHtml.replace("%HR%",     dark ? "#3c4043" : "#ddd");
-    bodyHtml.replace("%STRONG%", dark ? "#f1f3f4" : "#111");
-    bodyHtml.replace("%BODY%",   dark ? "#c0c4c9" : "#444");
-
-    auto* body = new QLabel(this);
-    body->setTextFormat(Qt::RichText);
-    body->setWordWrap(true);
-    body->setOpenExternalLinks(true);
-    body->setContentsMargins(0, 0, 0, 0);
-    body->setText(bodyHtml);
-    body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
+    _body = new QLabel(this);
+    _body->setTextFormat(Qt::RichText);
+    _body->setWordWrap(true);
+    _body->setOpenExternalLinks(true);
+    _body->setContentsMargins(0, 0, 0, 0);
+    _body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     // Proactive "mongosh not detected" card — shown only when mongosh can't be
     // found, so the unzip-and-run crowd is nudged before they hit a failed query.
     // Amber warning styling, toned down for dark palettes; the message text
     // colour is pinned too, otherwise it inherits the (light) palette text and
-    // washes out against the card.
+    // washes out against the card. (Colours applied in applyTheme.)
     _mongoshCard = new QFrame(this);
     _mongoshCard->setObjectName("mongoshCard");
-    _mongoshCard->setStyleSheet(
-        dark
-        ? "QFrame#mongoshCard { background-color: #3a2f15; border: 1px solid #a17a2c;"
-          " border-radius: 6px; }"
-          " QFrame#mongoshCard QLabel { color: #f3d9a6; background: transparent; }"
-        : "QFrame#mongoshCard { background-color: #FFF4E5; border: 1px solid #E6A23C;"
-          " border-radius: 6px; }"
-          " QFrame#mongoshCard QLabel { color: #5c4612; background: transparent; }");
     {
         auto* cardLayout = new QVBoxLayout(_mongoshCard);
         cardLayout->setContentsMargins(14, 12, 14, 12);
@@ -152,12 +135,40 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
     layout->setSpacing(16);
     layout->addWidget(_logo, 0, Qt::AlignLeft | Qt::AlignTop);
     layout->addWidget(_mongoshCard);
-    layout->addWidget(body);
+    layout->addWidget(_body);
     layout->addStretch();
     setLayout(layout);
 
+    // Fill the theme-dependent colours now, and re-fill on a live colour-scheme
+    // change (the body HTML and card styling bake in light/dark colours).
+    applyTheme();
+    VERIFY(connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                   this, &WelcomeTab::applyTheme));
+
     AppRegistry::instance().bus()->subscribe(this, MongoshSettingsChangedEvent::Type);
     refreshMongoshCard();
+}
+
+void WelcomeTab::applyTheme()
+{
+    const bool dark = Theme::isDark();
+
+    QString bodyHtml = QString::fromUtf8(BODY_HTML);
+    bodyHtml.replace("%MUTED%",  dark ? "#9aa0a6" : "#666");
+    bodyHtml.replace("%INTRO%",  dark ? "#e8eaed" : "#222");
+    bodyHtml.replace("%HR%",     dark ? "#3c4043" : "#ddd");
+    bodyHtml.replace("%STRONG%", dark ? "#f1f3f4" : "#111");
+    bodyHtml.replace("%BODY%",   dark ? "#c0c4c9" : "#444");
+    _body->setText(bodyHtml);
+
+    _mongoshCard->setStyleSheet(
+        dark
+        ? "QFrame#mongoshCard { background-color: #3a2f15; border: 1px solid #a17a2c;"
+          " border-radius: 6px; }"
+          " QFrame#mongoshCard QLabel { color: #f3d9a6; background: transparent; }"
+        : "QFrame#mongoshCard { background-color: #FFF4E5; border: 1px solid #E6A23C;"
+          " border-radius: 6px; }"
+          " QFrame#mongoshCard QLabel { color: #5c4612; background: transparent; }");
 }
 
 void WelcomeTab::handle(MongoshSettingsChangedEvent*)

@@ -20,6 +20,10 @@ namespace Docutaz
     {
         setDrawBase(false);
         setStyleSheet(buildStyleSheet());
+        // Rebuild the tab styling on a live colour-scheme change (the stylesheet
+        // bakes in theme colours, so it must be regenerated).
+        connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                this, [this] { setStyleSheet(buildStyleSheet()); });
 
         _menu = new QMenu(this);
         _newShellAction = new QAction("&New Shell", _menu);

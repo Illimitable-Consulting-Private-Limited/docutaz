@@ -94,6 +94,10 @@ namespace Docutaz
 
     private:
         void configureQueryText();
+        // Re-apply the theme-driven frame borders/backgrounds (the editor itself
+        // refreshes its own canvas/syntax colours via DocutazScintilla). Called
+        // at build time and on a live colour-scheme change.
+        void applyTheme();
 
         /**
          * @brief Instant, local (Tier 1 static + Tier 2 model) candidates for the

@@ -22,6 +22,11 @@ namespace Docutaz
         int lineNumberMarginWidth() const;
         int textWidth(int style, const QString &text);
         void setAppropriateBraceMatching();
+        // (Re-)apply the theme-driven editor chrome colours (canvas, caret,
+        // margins, fold/indent guides). Called from the constructor and again on
+        // a live colour-scheme change. QScintilla renders independently of
+        // QPalette, so these must be pushed explicitly.
+        void applyThemeColors();
 
     public Q_SLOTS:
         // Reflow the current selection (or the whole buffer when nothing is

@@ -12,24 +12,23 @@ namespace Docutaz
 {
     namespace
     {
-        // Theme-tinted glyph icons. Built once on first access (after Theme::apply
-        // has run at startup): the normal tint comes from the requested token and
-        // the engine swaps to highlightedText when a row is painted selected.
+        // Theme-tinted glyph icons. The icon resolves its colour from the active
+        // theme at paint time (see GlyphIcons::Tint), so a cached icon follows
+        // live light/dark switches; in the Selected mode the engine swaps to the
+        // highlighted-text colour for rows painted over the brand highlight.
         QIcon glyph(const QString &name)
         {
-            const Theme::Tokens &t = Theme::current();
-            return GlyphIcons::icon(name, t.text, t.highlightedText);
+            return GlyphIcons::icon(name, GlyphIcons::Tint::Text);
         }
 
         QIcon glyphMuted(const QString &name)
         {
-            const Theme::Tokens &t = Theme::current();
-            return GlyphIcons::icon(name, t.muted, t.highlightedText);
+            return GlyphIcons::icon(name, GlyphIcons::Tint::Muted);
         }
 
-        QIcon glyphColor(const QString &name, const QColor &c)
+        QIcon glyphTint(const QString &name, GlyphIcons::Tint tint)
         {
-            return GlyphIcons::icon(name, c, Theme::current().highlightedText);
+            return GlyphIcons::icon(name, tint);
         }
     }
 
@@ -161,7 +160,7 @@ namespace Docutaz
 
     const QIcon &GuiRegistry::textHighlightedIcon() const
     {
-        static const QIcon icon = glyphColor("view-text", Theme::current().highlight);
+        static const QIcon icon = glyphTint("view-text", GlyphIcons::Tint::Highlight);
         return icon;
     }
 
@@ -173,7 +172,7 @@ namespace Docutaz
 
     const QIcon &GuiRegistry::treeHighlightedIcon() const
     {
-        static const QIcon icon = glyphColor("view-tree", Theme::current().highlight);
+        static const QIcon icon = glyphTint("view-tree", GlyphIcons::Tint::Highlight);
         return icon;
     }
 
@@ -185,7 +184,7 @@ namespace Docutaz
 
     const QIcon &GuiRegistry::tableHighlightedIcon() const
     {
-        static const QIcon icon = glyphColor("view-table", Theme::current().highlight);
+        static const QIcon icon = glyphTint("view-table", GlyphIcons::Tint::Highlight);
         return icon;
     }
 
@@ -197,7 +196,7 @@ namespace Docutaz
 
     const QIcon &GuiRegistry::customHighlightedIcon() const
     {
-        static const QIcon icon = glyphColor("view-custom", Theme::current().highlight);
+        static const QIcon icon = glyphTint("view-custom", GlyphIcons::Tint::Highlight);
         return icon;
     }
 
@@ -288,13 +287,13 @@ namespace Docutaz
 
     const QIcon &GuiRegistry::noMarkIcon() const
     {
-        static const QIcon icon = glyphColor("x", Theme::current().danger);
+        static const QIcon icon = glyphTint("x", GlyphIcons::Tint::Danger);
         return icon;
     }
 
     const QIcon &GuiRegistry::yesMarkIcon() const
     {
-        static const QIcon icon = glyphColor("check", Theme::current().highlight);
+        static const QIcon icon = glyphTint("check", GlyphIcons::Tint::Highlight);
         return icon;
     }
 
@@ -415,13 +414,13 @@ namespace Docutaz
 
     const QIcon &GuiRegistry::deleteIconRed() const
     {
-        static const QIcon icon = glyphColor("trash", Theme::current().danger);
+        static const QIcon icon = glyphTint("trash", GlyphIcons::Tint::Danger);
         return icon;
     }
 
     const QIcon &GuiRegistry::deleteIconMouseHovered() const
     {
-        static const QIcon icon = glyphColor("trash", Theme::current().danger);
+        static const QIcon icon = glyphTint("trash", GlyphIcons::Tint::Danger);
         return icon;
     }
 

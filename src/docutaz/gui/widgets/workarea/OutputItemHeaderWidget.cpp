@@ -20,11 +20,17 @@ namespace
 {
     QFrame *createVerticalLine()
     {
-        // Flat 1px separator (no 3D sunken bevel) themed to the mid token.
+        // Flat 1px separator (no 3D sunken bevel) themed to the mid token, kept in
+        // sync on a live colour-scheme change.
         QFrame *vline = new QFrame();
         vline->setFrameShape(QFrame::NoFrame);
         vline->setFixedWidth(1);
-        vline->setStyleSheet(QString("background-color: %1;").arg(Docutaz::Theme::current().mid.name()));
+        auto applyColor = [vline] {
+            vline->setStyleSheet(QString("background-color: %1;").arg(Docutaz::Theme::current().mid.name()));
+        };
+        applyColor();
+        QObject::connect(Docutaz::Theme::Notifier::instance(),
+                         &Docutaz::Theme::Notifier::changed, vline, applyColor);
         return vline;
     }
 }
@@ -190,9 +196,15 @@ namespace Docutaz
         }
       
         // In tabbed mode the header sits on the tab pane; key it to the themed
-        // canvas so it matches the result body in both light and dark.
-        if (tabbedResults)
-            setStyleSheet(QString("background-color: %1;").arg(Theme::current().base.name()));
+        // canvas so it matches the result body in both light and dark, and keep
+        // it in sync on a live colour-scheme change.
+        if (tabbedResults) {
+            auto applyHeaderBg = [this] {
+                setStyleSheet(QString("background-color: %1;").arg(Theme::current().base.name()));
+            };
+            applyHeaderBg();
+            connect(Theme::Notifier::instance(), &Theme::Notifier::changed, this, applyHeaderBg);
+        }
     }
 
     void OutputItemHeaderWidget::setCopyResultsEnabled(bool on)

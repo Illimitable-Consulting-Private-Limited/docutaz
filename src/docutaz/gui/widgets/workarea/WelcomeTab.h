@@ -40,10 +40,15 @@ namespace Docutaz
         // Show/hide the "mongosh not detected" card based on current detection
         // (re-checked on show, so configuring a path elsewhere clears it).
         void refreshMongoshCard();
+        // Re-fill the body copy's colour tokens and the card styling for the
+        // active light/dark scheme. Called at build time and on a live
+        // colour-scheme change.
+        void applyTheme();
 
         QScrollArea* _parent;
         QLabel*      _logo;
         QPixmap      _logoPx;
+        QLabel*      _body = nullptr;
         QFrame*      _mongoshCard = nullptr;
     };
 }

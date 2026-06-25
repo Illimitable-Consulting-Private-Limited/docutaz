@@ -15,9 +15,27 @@ namespace Docutaz
     // selected colour automatically.
     namespace GlyphIcons
     {
-        // Build a tinted icon for the named glyph. `selected` is used when Qt
-        // paints the icon in the Selected mode (defaults to white). Returns a
-        // null icon if the name is unknown.
+        // Semantic tints resolved from Theme::current() at PAINT time, so an icon
+        // built once (and cached, e.g. in GuiRegistry) follows live light/dark
+        // colour-scheme changes without being rebuilt.
+        enum class Tint
+        {
+            Text,       // primary foreground
+            Muted,      // secondary / de-emphasised
+            Link,       // info accent
+            Danger,     // destructive accent
+            Highlight,  // brand green
+        };
+
+        // Build a theme-following icon for the named glyph: its colour is the
+        // resolved `tint` at paint time, and it swaps to the highlighted-text
+        // colour when painted in the Selected mode. Returns a null icon if the
+        // name is unknown.
+        QIcon icon(const QString &name, Tint tint);
+
+        // Build a fixed-colour icon for the named glyph (used where the colour is
+        // intentionally not theme-driven, e.g. environment dots). `selected` is
+        // used when Qt paints the icon in the Selected mode (defaults to white).
         QIcon icon(const QString &name, const QColor &color,
                    const QColor &selected = QColor(Qt::white));
 

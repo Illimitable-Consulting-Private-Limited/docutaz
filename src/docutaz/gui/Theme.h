@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QColor>
+#include <QObject>
 
 QT_BEGIN_NAMESPACE
 class QPalette;
@@ -62,5 +63,26 @@ namespace Docutaz
         // the `primary` dynamic property the global QSS keys off and repolishes
         // so the rule takes effect even though the button was already polished.
         void markPrimary(QAbstractButton *button);
+
+        // Single application-wide source of theme-change notifications. Widgets
+        // that paint or cache theme colours imperatively (the editors, the
+        // work-area tab strip, the result chrome) connect to changed() and
+        // refresh themselves; palette-/QSS-driven widgets adapt on their own.
+        class Notifier : public QObject
+        {
+            Q_OBJECT
+        public:
+            static Notifier *instance();
+            void notify() { emit changed(); }
+        signals:
+            void changed();
+        private:
+            explicit Notifier(QObject *parent = nullptr) : QObject(parent) {}
+        };
+
+        // Watch the OS colour scheme (Qt 6.5+). When it flips, re-apply the
+        // palette + global stylesheet and emit Notifier::changed(). No-op below
+        // 6.5 (those builds use the one-shot palette heuristic at startup).
+        void installColorSchemeWatch();
     }
 }

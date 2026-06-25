@@ -40,6 +40,9 @@ namespace Docutaz
         setDocumentMode(true);
 #endif        
         setStyleSheet(buildStyleSheet());
+        // Regenerate the themed stylesheet on a live colour-scheme change.
+        connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                this, [this] { setStyleSheet(buildStyleSheet()); });
         VERIFY(connect(this, SIGNAL(tabCloseRequested(int)), SLOT(tabCloseRequested(int))));
         
         _progressBarPopup = new ProgressBarPopup(this);

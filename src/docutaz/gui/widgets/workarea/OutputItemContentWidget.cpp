@@ -614,12 +614,18 @@ namespace Docutaz
         // Wrap mode turned off because it introduces huge performance problems
         // even for medium size documents.
         // The text view follows the active light/dark scheme (QScintilla renders
-        // its own canvas via the lexer; the frame chrome is themed here to match).
-        const Theme::Tokens &th = Theme::current();
-        _logText->sciScintilla()->setStyleSheet(
-            QString("QFrame {background-color: %1; border: 1px solid %2; "
-                    "border-radius: 0px; margin: 0px; padding: 0px;}")
-                .arg(th.editorCanvas.name(), th.mid.name()));
+        // its own canvas via the lexer; the frame chrome is themed here to match,
+        // and re-themed on a live colour-scheme change).
+        auto *sci = _logText->sciScintilla();
+        auto applyFrame = [sci] {
+            const Theme::Tokens &th = Theme::current();
+            sci->setStyleSheet(
+                QString("QFrame {background-color: %1; border: 1px solid %2; "
+                        "border-radius: 0px; margin: 0px; padding: 0px;}")
+                    .arg(th.editorCanvas.name(), th.mid.name()));
+        };
+        applyFrame();
+        QObject::connect(Theme::Notifier::instance(), &Theme::Notifier::changed, sci, applyFrame);
         return _logText;
     }
 }

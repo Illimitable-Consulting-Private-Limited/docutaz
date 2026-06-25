@@ -35,10 +35,12 @@ namespace Docutaz
         _collapseRecursive->setShortcut(QKeySequence(Qt::ALT + Qt::Key_Left));
         VERIFY(connect(_collapseRecursive, SIGNAL(triggered()), SLOT(onCollapseRecursive())));
 
-        {
+        auto applyThemeBorder = [this] {
             const QString line = Theme::current().mid.name();
             setStyleSheet(QString("QTreeView { border-left: 1px solid %1; border-top: 1px solid %1; }").arg(line));
-        }
+        };
+        applyThemeBorder();
+        connect(Theme::Notifier::instance(), &Theme::Notifier::changed, this, applyThemeBorder);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
         header()->setSectionResizeMode(QHeaderView::Interactive);
 #endif
