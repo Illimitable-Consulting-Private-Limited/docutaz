@@ -102,6 +102,7 @@ int main(int argc, char *argv[])
     Docutaz::AppStyleUtils::initStyle();
     Docutaz::Theme::setSchemePreference(
         static_cast<Docutaz::Theme::Scheme>(settings->colorSchemePreference()));
+    Docutaz::Theme::setUiFontOverride(settings->uiFontFamily());
     Docutaz::Theme::apply();
     // Follow live OS light/dark switches (Qt 6.5+): re-apply palette/QSS and
     // notify widgets that paint theme colours imperatively.

@@ -52,10 +52,15 @@ namespace Docutaz
         // Tokens for the currently active scheme.
         const Tokens &current();
 
-        // The resolved UI font family ("Inter" once the bundled font has loaded
-        // in apply(); the literal "Inter" before that). Used so the editor and
-        // result views share the same family as the chrome.
+        // The resolved UI font family (the bundled Inter by default, or the
+        // user's chosen interface font). Used so the result views share the
+        // family the chrome uses.
         QString uiFontFamily();
+
+        // User override for the interface font family (empty = bundled Inter).
+        // Set from the persisted setting at startup and when changed in
+        // Preferences; callers then re-run apply().
+        void setUiFontOverride(const QString &family);
 
         // A curated QPalette built from the tokens for the given scheme.
         QPalette buildPalette(bool dark);

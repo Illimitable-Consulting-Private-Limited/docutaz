@@ -22,6 +22,9 @@ namespace Docutaz
         // global QSS because an app stylesheet otherwise ignores setFont().
         static QString g_uiFontFamily = QStringLiteral("Inter");
 
+        // User-chosen interface font family (empty = bundled Inter default).
+        static QString g_uiFontOverride;
+
         namespace
         {
             const Tokens kLight = {
@@ -294,6 +297,11 @@ namespace Docutaz
             return g_uiFontFamily;
         }
 
+        void setUiFontOverride(const QString &family)
+        {
+            g_uiFontOverride = family;
+        }
+
         const Tokens &current()
         {
             return tokens(isDark());
@@ -358,9 +366,11 @@ namespace Docutaz
                 QFontDatabase::addApplicationFont(QStringLiteral(":/docutaz/fonts/Inter-SemiBold.otf"));
                 const QStringList fams = (id >= 0) ? QFontDatabase::applicationFontFamilies(id) : QStringList();
                 interFamily = fams.isEmpty() ? QStringLiteral("Inter") : fams.first();
-                g_uiFontFamily = interFamily;
             }
-            QFont uiFont(interFamily);
+            // Use the user's chosen interface font if set, else the bundled Inter.
+            // Size stays the platform default (not exposed — see SettingsManager).
+            g_uiFontFamily = g_uiFontOverride.isEmpty() ? interFamily : g_uiFontOverride;
+            QFont uiFont(g_uiFontFamily);
             uiFont.setPointSize(QApplication::font().pointSize());
             QApplication::setFont(uiFont);
 

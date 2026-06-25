@@ -192,6 +192,12 @@ namespace Docutaz
         int editorFontPointSize() const { return _editorFontPointSize; }
         void setEditorFontPointSize(int pointSize);
 
+        // Interface (UI + result-view) font family. Empty means "use the bundled
+        // Inter default" (see Theme::apply). Size is intentionally not exposed —
+        // the fixed dialog layouts can clip a larger UI font.
+        QString uiFontFamily() const { return _uiFontFamily; }
+        void setUiFontFamily(const QString& fontFamily);
+
         int mongoTimeoutSec() const { return _mongoTimeoutSec; }
         int shellTimeoutSec() const { return _shellTimeoutSec; }
 
@@ -280,6 +286,7 @@ namespace Docutaz
         int _textFontPointSize;
         QString _editorFontFamily;
         int _editorFontPointSize;
+        QString _uiFontFamily;
         int _colorSchemePreference;
 
         int _mongoTimeoutSec;

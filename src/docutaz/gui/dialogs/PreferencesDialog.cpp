@@ -99,18 +99,38 @@ namespace Docutaz
             "query in one tab blocks its sibling tabs. Takes effect for new tabs.");
         layout->addWidget(_shareShellPerConnectionCheckBox);
 
-        // Editor font — configured separately from the UI typeface. The combo
-        // lists every font in the database, which includes the bundled Inter
-        // (registered at startup) alongside the user's installed fonts; leaving
-        // it on the monospace default is the recommended choice for code.
+        // Interface font — the UI + result-view typeface (everything except the
+        // code editor). Defaults to the bundled Inter; size is not exposed (the
+        // fixed dialog layouts can clip a larger UI font).
+        QHBoxLayout *uiFontLayout = new QHBoxLayout(this);
+        uiFontLayout->addWidget(new QLabel("Interface font:"));
+        _uiFontComboBox = new QFontComboBox();
+        _uiFontComboBox->setToolTip(
+            "Font for the application UI and result views (menus, dialogs, "
+            "explorer, tree/table/text). Defaults to the bundled Inter.");
+        uiFontLayout->addWidget(_uiFontComboBox, 1);
+        layout->addLayout(uiFontLayout);
+
+        // Editor (query/document) font — the code editor's own typeface, separate
+        // from the UI font. The combo lists every installed font plus the bundled
+        // Inter; it defaults to the platform monospace face, which is recommended
+        // for code. The spin box sets the size in points (0 = platform default).
         QHBoxLayout *editorFontLayout = new QHBoxLayout(this);
         QLabel *editorFontLabel = new QLabel("Editor font:");
         editorFontLayout->addWidget(editorFontLabel);
         _editorFontComboBox = new QFontComboBox();
+        _editorFontComboBox->setToolTip(
+            "Font for the query/code editor. Defaults to the system monospace face; "
+            "pick any installed font (or Inter).");
         editorFontLayout->addWidget(_editorFontComboBox, 1);
+
+        editorFontLayout->addSpacing(8);
+        editorFontLayout->addWidget(new QLabel("Size:"));
         _editorFontSizeSpinBox = new QSpinBox();
         _editorFontSizeSpinBox->setRange(0, 48);
         _editorFontSizeSpinBox->setSpecialValueText("Default");   // shown when 0
+        _editorFontSizeSpinBox->setSuffix(" pt");
+        _editorFontSizeSpinBox->setMinimumWidth(90);
         _editorFontSizeSpinBox->setToolTip("Editor font size in points. 0 = platform default.");
         editorFontLayout->addWidget(_editorFontSizeSpinBox);
         layout->addLayout(editorFontLayout);
@@ -152,6 +172,13 @@ namespace Docutaz
         _disabelConnectionShortcutsCheckBox->setChecked(AppRegistry::instance().settingsManager()->disableConnectionShortcuts());
         _shareShellPerConnectionCheckBox->setChecked(AppRegistry::instance().settingsManager()->shareShellPerConnection());
 
+        // Interface font: show the resolved UI family (the user's choice, or the
+        // bundled Inter default).
+        {
+            const QString uiFam = AppRegistry::instance().settingsManager()->uiFontFamily();
+            _uiFontComboBox->setCurrentFont(QFont(uiFam.isEmpty() ? Theme::uiFontFamily() : uiFam));
+        }
+
         // Editor font: show the resolved family (falls back to the monospace
         // default when the user hasn't picked one) and the configured size (0 =
         // platform default, shown as "Default").
@@ -164,11 +191,15 @@ namespace Docutaz
 
     void PreferencesDialog::accept()
     {
-        // Appearance preference — persist and apply live (re-pick palette/QSS for
-        // the new scheme, then notify the imperatively-themed widgets).
+        // Appearance + interface font — persist and apply live: re-pick the
+        // palette/QSS/UI-font, then notify the imperatively-themed widgets. The
+        // interface font also drives the result views via GuiRegistry::font().
         const int scheme = _appearanceComboBox->currentIndex();
         AppRegistry::instance().settingsManager()->setColorSchemePreference(scheme);
         Theme::setSchemePreference(static_cast<Theme::Scheme>(scheme));
+        AppRegistry::instance().settingsManager()->setUiFontFamily(
+            _uiFontComboBox->currentFont().family());
+        Theme::setUiFontOverride(_uiFontComboBox->currentFont().family());
         Theme::apply();
         Theme::Notifier::instance()->notify();
 
