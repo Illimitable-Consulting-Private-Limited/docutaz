@@ -5,6 +5,7 @@
 
 #include <QThread>
 #include <QFile>
+#include <QFileInfo>
 #include <QDir>
 #include <QCoreApplication>
 #include <QJsonDocument>
@@ -641,12 +642,52 @@ bool MongoshEngine::isMongoshAvailable() {
 }
 
 QString MongoshEngine::findMongosh() {
-    // User-configured path takes highest priority
-    const QString fromSettings = AppRegistry::instance().settingsManager()->mongoshPath();
-    if (!fromSettings.isEmpty() && QFile::exists(fromSettings)) return fromSettings;
+    // Resolve a user-supplied path leniently. A path typed or pasted by hand on
+    // Windows commonly fails a bare QFile::exists check because it (a) carries
+    // surrounding quotes, (b) points at the install *folder* rather than the
+    // executable, or (c) omits the .exe/.cmd extension. Handle all three, and
+    // accept a plain existing file on every platform.
+    auto resolve = [](QString path) -> QString {
+        path = path.trimmed();
+        if (path.size() >= 2 && path.startsWith('"') && path.endsWith('"'))
+            path = path.mid(1, path.size() - 2);
+        if (path.isEmpty())
+            return {};
 
-    const QString fromEnv = qgetenv("DOCUTAZ_MONGOSH_PATH");
-    if (!fromEnv.isEmpty() && QFile::exists(fromEnv)) return fromEnv;
+#if defined(Q_OS_WIN)
+        static const QStringList execNames{ "mongosh.exe", "mongosh.cmd" };
+        static const QStringList execExts { ".exe", ".cmd" };
+#else
+        static const QStringList execNames{ "mongosh" };
+        static const QStringList execExts;
+#endif
+        const QFileInfo fi(path);
+        if (fi.isDir()) {
+            // Pointed at a directory: look for the executable inside it.
+            for (const QString& name : execNames) {
+                const QFileInfo cand(fi.absoluteFilePath() + '/' + name);
+                if (cand.isFile())
+                    return cand.absoluteFilePath();
+            }
+            return {};
+        }
+        if (fi.isFile())
+            return fi.absoluteFilePath();
+        // Extension-less path on a platform that needs one (Windows).
+        for (const QString& ext : execExts) {
+            const QFileInfo cand(path + ext);
+            if (cand.isFile())
+                return cand.absoluteFilePath();
+        }
+        return {};
+    };
+
+    // User-configured path takes highest priority.
+    const QString fromSettings = resolve(AppRegistry::instance().settingsManager()->mongoshPath());
+    if (!fromSettings.isEmpty()) return fromSettings;
+
+    const QString fromEnv = resolve(QString::fromLocal8Bit(qgetenv("DOCUTAZ_MONGOSH_PATH")));
+    if (!fromEnv.isEmpty()) return fromEnv;
 
     QStringList candidates;
 
