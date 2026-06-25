@@ -72,13 +72,13 @@ driver already installed).
 
 ### 1. Linux — system packages (Fedora/RHEL)
 ```bash
-sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel \
+sudo dnf install cmake ninja-build gcc-c++ qt6-qtbase-devel qt6-qtsvg-devel \
     qscintilla-qt6-devel openssl-devel libssh2-devel
 ```
 
 ### 1. Linux — system packages (Debian/Ubuntu)
 ```bash
-sudo apt install cmake ninja-build g++ qt6-base-dev \
+sudo apt install cmake ninja-build g++ qt6-base-dev libqt6svg6-dev \
     libqscintilla2-qt6-dev libssl-dev libssh2-1-dev
 ```
 
