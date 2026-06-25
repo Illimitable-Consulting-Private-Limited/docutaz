@@ -41,9 +41,12 @@ namespace
         "<b>Credits:<br/></b>"
         "Some icons are designed by Freepik "
         "<a href=\"https://www.flaticon.com\">www.flaticon.com</a><br/>"
+        "The <a href=\"https://rsms.me/inter/\">Inter</a> typeface by Rasmus Andersson, "
+        "licensed under the "
+        "<a href=\"https://opensource.org/licenses/OFL-1.1\">SIL Open Font License 1.1</a>.<br/>"
         "Based on <a href=\"https://github.com/Studio3T/robomongo\">Robomongo</a> "
         "by Studio 3T.<br/>"
-    };        
+    };
 }
 
 namespace Docutaz
