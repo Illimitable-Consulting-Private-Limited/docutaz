@@ -1,5 +1,6 @@
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
 
+#include <Qsci/qscilexer.h>
 #include <QPainter>
 #include <QPainterPath>
 #include <QImage>
@@ -203,17 +204,51 @@ namespace Docutaz
         const QColor canvas   = th.editorCanvas;
         const QColor marginFg = th.lineNumber;
 
+        // Caret colour is not a Scintilla style, so it can be set up front.
         setCaretForegroundColor(th.text);
-        setMatchedBraceForegroundColor(th.synOperator);
-        setMatchedBraceBackgroundColor(th.hover);
-        setMarginsBackgroundColor(canvas);
-        setMarginsForegroundColor(marginFg);
 
-        // Fold tree/markers: light outline + glyph on the canvas-coloured fill.
-        setFoldMarginColors(canvas, canvas);
+        // Scintilla wants colours packed as 0xBBGGRR.
         auto sciColor = [](const QColor &c) -> long {
             return (long)((c.blue() << 16) | (c.green() << 8) | c.red());
         };
+
+        // Re-theme the editor's text styles. Re-setting the (same) lexer pointer
+        // does NOT make QScintilla re-read per-style colours — verified out of
+        // band — so an already-open editor kept the previous scheme's syntax
+        // foreground AND token-background colours after a live light/dark switch,
+        // leaving the query text on a stale (light) band. So push every style's
+        // fg/bg explicitly from the lexer's theme-aware defaultColor/defaultPaper.
+        // STYLE_DEFAULT (32) is in range, so the empty canvas + EOL follow too.
+        // The lexer stays attached for tokenising; recolor() below repaints. With
+        // no lexer, just set the paper directly.
+        if (QsciLexer *lex = lexer()) {
+            for (int s = 0; s < 128; ++s) {
+                SendScintilla(SCI_STYLESETFORE, (unsigned long)s, sciColor(lex->defaultColor(s)));
+                SendScintilla(SCI_STYLESETBACK, (unsigned long)s, sciColor(lex->defaultPaper(s)));
+            }
+        } else {
+            setPaper(canvas);
+        }
+
+        // Matched-brace highlight (STYLE_BRACELIGHT) — after the per-style loop so
+        // it isn't overwritten by it.
+        setMatchedBraceForegroundColor(th.synOperator);
+        setMatchedBraceBackgroundColor(th.hover);
+
+        // Text-selection colour. QsciScintilla::setSelectionBackgroundColor is a
+        // no-op while a lexer is attached (like setPaper/setColor), so drive
+        // Scintilla directly: opaque mid tone for the main and additional
+        // selections. Selected text keeps its syntax foreground.
+        SendScintilla(SCI_SETSELBACK, 1UL, sciColor(th.mid));
+        SendScintilla(SCI_SETSELALPHA, (long)256 /* SC_ALPHA_NOALPHA */);
+        SendScintilla(SCI_SETADDITIONALSELBACK, sciColor(th.mid), 0L);
+
+        // Margin/gutter colours. STYLE_LINENUMBER's background colours the
+        // line-number margin AND the symbol (error) margin, so the whole gutter
+        // follows the canvas; the fold margin + markers are coloured explicitly.
+        setMarginsBackgroundColor(canvas);
+        setMarginsForegroundColor(marginFg);
+        setFoldMarginColors(canvas, canvas);
         for (int marker = SC_MARKNUM_FOLDEREND; marker <= SC_MARKNUM_FOLDEROPEN; ++marker) {
             SendScintilla(SCI_MARKERSETFORE, (unsigned long)marker, sciColor(marginFg));
             SendScintilla(SCI_MARKERSETBACK, (unsigned long)marker, sciColor(canvas));
@@ -222,12 +257,6 @@ namespace Docutaz
         setIndentationGuidesForegroundColor(th.mid);
         setIndentationGuidesBackgroundColor(canvas);
 
-        // Re-reading the lexer re-applies its themed paper + syntax colours; with
-        // no lexer, set the paper directly. recolor() repaints the buffer.
-        if (QsciLexer *lex = lexer())
-            setLexer(lex);
-        else
-            setPaper(canvas);
         recolor();
     }
 

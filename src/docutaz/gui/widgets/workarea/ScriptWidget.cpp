@@ -486,6 +486,10 @@ namespace Docutaz
         _queryText->sciScintilla()->setFont(GuiRegistry::instance().editorFont());
         _queryText->sciScintilla()->setPaper(Theme::current().editorCanvas);
         _queryText->sciScintilla()->setLexer(javaScriptLexer);
+        // setLexer ran STYLECLEARALL, which resets the margin/gutter background;
+        // re-assert the editor theme colours (margins set last) so the gutter
+        // doesn't render as a light strip in dark mode.
+        _queryText->sciScintilla()->applyThemeColors();
 
         // Frame backgrounds/borders follow the theme; refresh them on a live
         // colour-scheme change (the editor canvas/syntax refresh themselves).
@@ -511,8 +515,12 @@ namespace Docutaz
     void ScriptWidget::applyTheme()
     {
         // Top strip blends with the window chrome; the editor frame carries the
-        // canvas fill and a thin themed border.
-        const QString bg = palette().color(QPalette::Window).name();
+        // canvas fill and a thin themed border. Read the colour from Theme (not
+        // palette()): on a live switch this runs synchronously from the theme
+        // notifier, before the async ApplicationPaletteChange reaches the widget,
+        // so palette() would still be the previous scheme — leaving the breadcrumb
+        // strip in the old colour.
+        const QString bg = Theme::current().window.name();
         setStyleSheet(QString("QFrame {background-color: %1; border: 0px solid %2;"
                       "border-radius: 0px; margin: 0px; padding: 0px;}")
                       .arg(bg, Theme::current().mid.name()));

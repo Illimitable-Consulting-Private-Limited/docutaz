@@ -179,10 +179,8 @@ namespace Docutaz
         VERIFY(connect(removeAction, SIGNAL(triggered()), this, SLOT(remove())));
 
         _listWidget = new ConnectionsTreeWidget;
-        // Framed list to match the mockup's .clist (1px border, rounded, base bg).
-        _listWidget->setStyleSheet(QString(
-            "QTreeWidget { background: %1; border: 1px solid %2; border-radius: 8px; }")
-            .arg(Theme::current().base.name(), Theme::current().mid.name()));
+        // The framed list + drag-hint colours are applied (and re-applied on a
+        // live colour-scheme change) by applyTheme() below.
         GuiRegistry::instance().setAlternatingColor(_listWidget);
 #if defined(Q_OS_MAC)
         _listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -252,7 +250,7 @@ namespace Docutaz
             auto *b = new QToolButton;
             b->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
             b->setText(text);
-            b->setIcon(GlyphIcons::icon(glyph, Theme::current().text, Theme::current().highlightedText));
+            b->setIcon(GlyphIcons::icon(glyph, GlyphIcons::Tint::Text));
             b->setAutoRaise(true);
             b->setCursor(Qt::PointingHandCursor);
             VERIFY(connect(b, SIGNAL(clicked()), this, slot));
@@ -267,8 +265,25 @@ namespace Docutaz
         actionsRow->addWidget(makeActionBtn("Remove", "trash", SLOT(remove())));
         actionsRow->addStretch(1);
         auto *dragHint = new QLabel("or reorder via drag'n'drop");
-        dragHint->setStyleSheet(QString("color:%1;").arg(Theme::current().muted.name()));
         actionsRow->addWidget(dragHint, 0, Qt::AlignVCenter);
+
+        // Apply the theme-driven styles, and re-apply on a live colour-scheme
+        // change so an open dialog doesn't keep the stale colours baked in when
+        // the OS flips light/dark. The list needs its item text colour on the
+        // ::item subcontrol — giving an item view a stylesheet background makes
+        // item text fall back to a default (dark) colour instead of the palette,
+        // invisible on the dark base. Selected-row colours come from global QSS.
+        auto applyTheme = [this, dragHint] {
+            const Theme::Tokens &t = Theme::current();
+            _listWidget->setStyleSheet(QString(
+                "QTreeWidget { background: %1; border: 1px solid %2; border-radius: 8px; }"
+                "QTreeWidget::item { color: %3; }")
+                .arg(t.base.name(), t.mid.name(), t.text.name()));
+            dragHint->setStyleSheet(QString("color:%1;").arg(t.muted.name()));
+        };
+        applyTheme();
+        VERIFY(connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                       this, applyTheme));
 
         QVBoxLayout *firstColumnLayout = new QVBoxLayout;
         firstColumnLayout->setSpacing(12);

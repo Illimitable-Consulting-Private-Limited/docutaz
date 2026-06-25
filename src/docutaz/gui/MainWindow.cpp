@@ -657,32 +657,37 @@ namespace Docutaz
 
     void MainWindow::createStatusBar()
     {
-        QColor windowColor = palette().window().color();
-        QColor buttonBgColor = windowColor.lighter(105);
-        QColor buttonBorderBgColor = windowColor.darker(112);
-        QColor buttonPressedColor = windowColor.darker(102);
-
         QToolButton *log = new QToolButton(this);
         log->setText("Logs");
         log->setCheckable(true);
         log->setDefaultAction(_logDock->toggleViewAction());
-        log->setStyleSheet(QString(
-            "QToolButton {"
-            "   background-color: %1;"
-            "   border-style: outset;"
-            "   border-width: 1px;"
-            "   border-radius: 4px;"
-            "   border-color: %2;"
-            "   padding: 1px 10px 1px 10px;"
-            "} \n"
-            ""
-            "QToolButton:checked, QToolButton:pressed {"
-            "   background-color: %3;"
-            "   border-style: inset;"
-            "}")
-            .arg(buttonBgColor.name())
-            .arg(buttonBorderBgColor.name())
-            .arg(buttonPressedColor.name()));
+        // Derive the button colours from the theme and re-apply on a colour-scheme
+        // change — otherwise the light-mode colours stay baked in and the button
+        // reads as a white box in dark mode. Read from Theme (not palette()): this
+        // runs synchronously from the notifier, before the async palette change
+        // reaches the widget, so palette() would still be the previous scheme.
+        auto styleLogButton = [log] {
+            const QColor windowColor = Theme::current().window;
+            const QColor textColor   = Theme::current().text;
+            log->setStyleSheet(QString(
+                "QToolButton {"
+                "   background-color: %1;"
+                "   color: %4;"
+                "   border: 1px solid %2;"
+                "   border-radius: 4px;"
+                "   padding: 1px 10px 1px 10px;"
+                "} \n"
+                "QToolButton:checked, QToolButton:pressed {"
+                "   background-color: %3;"
+                "}")
+                .arg(windowColor.lighter(105).name())
+                .arg(windowColor.darker(112).name())
+                .arg(windowColor.darker(102).name())
+                .arg(textColor.name()));
+        };
+        styleLogButton();
+        VERIFY(connect(Theme::Notifier::instance(), &Theme::Notifier::changed,
+                       log, styleLogButton));
 
         statusBar()->insertWidget(0, log);
         statusBar()->setStyleSheet("QStatusBar::item { border: 0px solid black };");
