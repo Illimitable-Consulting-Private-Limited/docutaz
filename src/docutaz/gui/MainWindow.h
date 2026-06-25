@@ -61,7 +61,6 @@ namespace Docutaz
         void open();
         void save();
         void saveAs();
-        void changeStyle(QAction *);
         void exit();
 
         void setDefaultUuidEncoding();
@@ -132,7 +131,6 @@ namespace Docutaz
         void updateConnectionsMenu();
         void createDatabaseExplorer();
         void createTabs();
-        void createStylesMenu();
         void createStatusBar();
         // Show/hide the persistent "mongosh not detected" status-bar item based
         // on current detection.

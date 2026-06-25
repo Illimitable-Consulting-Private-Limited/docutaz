@@ -32,7 +32,6 @@ namespace Docutaz
         QCheckBox *_loadMongoRcJsCheckBox;
         QCheckBox *_disabelConnectionShortcutsCheckBox;
         QCheckBox *_shareShellPerConnectionCheckBox;
-        QComboBox *_stylesComboBox;
         QFontComboBox *_editorFontComboBox;
         QSpinBox *_editorFontSizeSpinBox;
         QLineEdit *_mongoshPathEdit;

@@ -16,7 +16,6 @@
 #include "docutaz/gui/widgets/workarea/ScriptWidget.h"
 
 #include "docutaz/gui/GuiRegistry.h"
-#include "docutaz/gui/AppStyle.h"
 #include "docutaz/gui/Theme.h"
 #include "docutaz/gui/utils/ComboBoxUtils.h"
 #include "docutaz/core/utils/QtUtils.h"
@@ -100,14 +99,6 @@ namespace Docutaz
             "query in one tab blocks its sibling tabs. Takes effect for new tabs.");
         layout->addWidget(_shareShellPerConnectionCheckBox);
 
-        QHBoxLayout *stylesLayout = new QHBoxLayout(this);
-        QLabel *stylesLabel = new QLabel("Styles:");
-        stylesLayout->addWidget(stylesLabel);
-        _stylesComboBox = new QComboBox();
-        _stylesComboBox->addItems(AppStyleUtils::getSupportedStyles());
-        stylesLayout->addWidget(_stylesComboBox);
-        layout->addLayout(stylesLayout);
-
         // Editor font — configured separately from the UI typeface. The combo
         // lists every font in the database, which includes the bundled Inter
         // (registered at startup) alongside the user's installed fonts; leaving
@@ -160,7 +151,6 @@ namespace Docutaz
         _loadMongoRcJsCheckBox->setChecked(AppRegistry::instance().settingsManager()->loadMongoRcJs());
         _disabelConnectionShortcutsCheckBox->setChecked(AppRegistry::instance().settingsManager()->disableConnectionShortcuts());
         _shareShellPerConnectionCheckBox->setChecked(AppRegistry::instance().settingsManager()->shareShellPerConnection());
-        utils::setCurrentText(_stylesComboBox, Docutaz::AppRegistry::instance().settingsManager()->currentStyle());
 
         // Editor font: show the resolved family (falls back to the monospace
         // default when the user hasn't picked one) and the configured size (0 =
@@ -194,8 +184,6 @@ namespace Docutaz
         AppRegistry::instance().settingsManager()->setLoadMongoRcJs(_loadMongoRcJsCheckBox->isChecked());
         AppRegistry::instance().settingsManager()->setDisableConnectionShortcuts(_disabelConnectionShortcutsCheckBox->isChecked());
         AppRegistry::instance().settingsManager()->setShareShellPerConnection(_shareShellPerConnectionCheckBox->isChecked());
-        Docutaz::AppRegistry::instance().settingsManager()->setCurrentStyle(_stylesComboBox->currentText());
-        AppStyleUtils::applyStyle(_stylesComboBox->currentText());
 
         // Editor font (separate from the UI typeface). Size 0 → platform default.
         AppRegistry::instance().settingsManager()->setEditorFontFamily(

@@ -297,8 +297,6 @@ namespace Docutaz
         // adds option to toggle Explorer and Logs panels
         createDatabaseExplorer();
         _toolbarsMenu = _viewMenu->addMenu(tr("Toolbars"));
-        // adds Themes submenu
-        createStylesMenu();
 
 
     /*** Options menu ***/
@@ -452,9 +450,9 @@ namespace Docutaz
         VERIFY(connect(changeShellTimeout, SIGNAL(triggered()), this, SLOT(openShellTimeoutDialog())));
         optionsMenu->addAction(changeShellTimeout);
 
-        QAction *preferencesAction = new QAction("Preferences", this);
+        optionsMenu->addSeparator();
+        QAction *preferencesAction = new QAction("Preferences...", this);
         VERIFY(connect(preferencesAction, SIGNAL(triggered()), this, SLOT(openPreferences())));
-        preferencesAction->setVisible(false);
         optionsMenu->addAction(preferencesAction);
 
         QActionGroup *uuidEncodingGroup = new QActionGroup(this);
@@ -620,24 +618,6 @@ namespace Docutaz
         setUnifiedTitleAndToolBarOnMac(false); // https://bugreports.qt.io/browse/QTBUG-68946
     }
 
-    void MainWindow::createStylesMenu()
-    {
-        _viewMenu->addSeparator();
-         QMenu *styles = _viewMenu->addMenu("Theme");
-         QStringList supportedStyles = AppStyleUtils::getSupportedStyles();
-         QActionGroup *styleGroup = new QActionGroup(this);
-         VERIFY(connect(styleGroup, SIGNAL(triggered(QAction *)), this, SLOT(changeStyle(QAction *))));
-         const QString &currentStyle = AppRegistry::instance().settingsManager()->currentStyle();
-         for (QStringList::const_iterator it = supportedStyles.begin(); it != supportedStyles.end(); ++it) {
-             const QString &style = *it;
-             QAction *styleAction = new QAction(style, this);
-             styleAction->setCheckable(true);
-             styleAction->setChecked(style == currentStyle);
-             styleGroup->addAction(styleAction);
-             styles->addAction(styleAction);             
-         }
-    }
-
     void MainWindow::applyChromeStyleSheet()
     {
         // The explorer panel sits on the window tone; the query backdrop and the
@@ -711,14 +691,6 @@ namespace Docutaz
     {
         if (_mongoshStatusLabel)
             _mongoshStatusLabel->setVisible(!MongoshEngine::isMongoshAvailable());
-    }
-
-    void MainWindow::changeStyle(QAction *ac)
-    {
-        const QString &text = ac->text();
-        AppStyleUtils::applyStyle(text);
-        AppRegistry::instance().settingsManager()->setCurrentStyle(text);
-        AppRegistry::instance().settingsManager()->save();
     }
 
     void MainWindow::exit()
