@@ -87,6 +87,18 @@
     .shot a:hover img { box-shadow: 0 10px 28px rgba(15,23,42,.16); transform: translateY(-2px); }
     .shot figcaption { margin-top: 10px; color: var(--muted); font-size: .92rem; text-align: center; }
 
+    /* Light/Dark screenshot toggle (segmented control) */
+    .shot-toggle {
+      display: inline-flex; margin: 0 0 22px; border: 1px solid var(--border);
+      border-radius: 9px; overflow: hidden; background: #fff;
+    }
+    .shot-toggle .seg {
+      background: transparent; color: var(--muted); border: 0;
+      padding: 8px 20px; font: inherit; font-weight: 600; cursor: pointer;
+    }
+    .shot-toggle .seg + .seg { border-left: 1px solid var(--border); }
+    .shot-toggle .seg[aria-pressed="true"] { background: var(--accent); color: #fff; }
+
     .install { background: var(--panel); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
     .install code, code.inline {
       background: #eaeef3; padding: 2px 6px; border-radius: 5px;
@@ -132,34 +144,48 @@
 
   <section class="wrap">
     <h2>Screenshots</h2>
+    <div class="shot-toggle" role="group" aria-label="Screenshot theme">
+      <button type="button" class="seg" data-theme="light" aria-pressed="true">Light</button>
+      <button type="button" class="seg" data-theme="dark" aria-pressed="false">Dark</button>
+    </div>
     <div class="shots">
       <figure class="shot">
-        <a href="screenshot-explorer.png" target="_blank" rel="noopener">
-          <img src="screenshot-explorer.png" loading="lazy" alt="Browsing databases and collections alongside query results">
+        <a href="light-screenshot-explorer.png" target="_blank" rel="noopener"
+           data-light="light-screenshot-explorer.png" data-dark="dark-screenshot-explorer.png">
+          <img src="light-screenshot-explorer.png" loading="lazy" alt="Browsing databases and collections alongside query results"
+               data-light="light-screenshot-explorer.png" data-dark="dark-screenshot-explorer.png">
         </a>
         <figcaption>Browsing databases and collections alongside query results</figcaption>
       </figure>
       <figure class="shot">
-        <a href="screenshot-editor.png" target="_blank" rel="noopener">
-          <img src="screenshot-editor.png" loading="lazy" alt="Editing a document in the visual editor">
+        <a href="light-screenshot-editor.png" target="_blank" rel="noopener"
+           data-light="light-screenshot-editor.png" data-dark="dark-screenshot-editor.png">
+          <img src="light-screenshot-editor.png" loading="lazy" alt="Editing a document in the visual editor"
+               data-light="light-screenshot-editor.png" data-dark="dark-screenshot-editor.png">
         </a>
         <figcaption>Editing a document in the visual editor</figcaption>
       </figure>
       <figure class="shot">
-        <a href="screenshot-export.png" target="_blank" rel="noopener">
-          <img src="screenshot-export.png" loading="lazy" alt="Exporting results to JSON, CSV or XLSX">
+        <a href="light-screenshot-export.png" target="_blank" rel="noopener"
+           data-light="light-screenshot-export.png" data-dark="dark-screenshot-export.png">
+          <img src="light-screenshot-export.png" loading="lazy" alt="Exporting results to JSON, CSV or XLSX"
+               data-light="light-screenshot-export.png" data-dark="dark-screenshot-export.png">
         </a>
         <figcaption>Exporting results to JSON, CSV or XLSX</figcaption>
       </figure>
       <figure class="shot">
-        <a href="screenshot-format.png" target="_blank" rel="noopener">
-          <img src="screenshot-format.png" loading="lazy" alt="Formatting a query or aggregation">
+        <a href="light-screenshot-format.png" target="_blank" rel="noopener"
+           data-light="light-screenshot-format.png" data-dark="dark-screenshot-format.png">
+          <img src="light-screenshot-format.png" loading="lazy" alt="Formatting a query or aggregation"
+               data-light="light-screenshot-format.png" data-dark="dark-screenshot-format.png">
         </a>
         <figcaption>Formatting a query or aggregation</figcaption>
       </figure>
       <figure class="shot">
-        <a href="screenshot-syntax.png" target="_blank" rel="noopener">
-          <img src="screenshot-syntax.png" loading="lazy" alt="Catching syntax errors inline before you run">
+        <a href="light-screenshot-syntax.png" target="_blank" rel="noopener"
+           data-light="light-screenshot-syntax.png" data-dark="dark-screenshot-syntax.png">
+          <img src="light-screenshot-syntax.png" loading="lazy" alt="Catching syntax errors inline before you run"
+               data-light="light-screenshot-syntax.png" data-dark="dark-screenshot-syntax.png">
         </a>
         <figcaption>Catching syntax errors inline before you run</figcaption>
       </figure>
@@ -192,5 +218,37 @@
          <a href="https://github.com/Illimitable-Consulting-Private-Limited/docutaz/issues">Report an issue</a></p>
     </div>
   </footer>
+
+  <script>
+    // Light/Dark screenshot toggle: swap each shot's <img> src (and its
+    // click-to-open <a> href) between the data-light / data-dark variants.
+    // Defaults to the visitor's OS colour-scheme preference. With JS off, the
+    // page just shows the light set (the markup default).
+    (function () {
+      var toggle = document.querySelector('.shot-toggle');
+      var shots = document.querySelector('.shots');
+      if (!toggle || !shots) return;
+
+      function setTheme(theme) {
+        shots.querySelectorAll('[data-' + theme + ']').forEach(function (el) {
+          var src = el.getAttribute('data-' + theme);
+          if (!src) return;
+          if (el.tagName === 'IMG') el.src = src; else el.href = src;
+        });
+        toggle.querySelectorAll('.seg').forEach(function (b) {
+          b.setAttribute('aria-pressed', b.dataset.theme === theme ? 'true' : 'false');
+        });
+      }
+
+      toggle.addEventListener('click', function (e) {
+        var b = e.target.closest('.seg');
+        if (b) setTheme(b.dataset.theme);
+      });
+
+      var prefersDark = window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setTheme(prefersDark ? 'dark' : 'light');
+    })();
+  </script>
 </body>
 </html>
