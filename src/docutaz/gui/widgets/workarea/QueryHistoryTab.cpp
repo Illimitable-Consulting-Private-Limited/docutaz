@@ -32,6 +32,7 @@
 
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
 #include "docutaz/gui/editors/JSLexer.h"
+#include "docutaz/gui/utils/DialogUtils.h"
 #include "docutaz/gui/Theme.h"
 
 namespace Docutaz
@@ -565,9 +566,8 @@ namespace Docutaz
     {
         if (QueryHistoryManager::instance().entries().isEmpty())
             return;
-        if (QMessageBox::question(this, tr("Clear Query History"),
-                                  tr("Remove all saved query history?"))
-            == QMessageBox::Yes)
+        if (utils::destructiveConfirm(this, tr("Clear Query History"),
+                                      tr("Remove all saved query history?"), tr("Clear")))
             QueryHistoryManager::instance().clear();
     }
 }

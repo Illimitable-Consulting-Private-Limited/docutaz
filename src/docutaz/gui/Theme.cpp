@@ -217,6 +217,16 @@ namespace Docutaz
                 "QPushButton[primary=\"true\"]:disabled { background: %3; color: %6; border-color: %3; }"
             ).arg(base, text, mid, hover, accent, muted, window, onAccent, accentPress);
 
+            // Destructive/commit buttons: filled danger red with white text, the
+            // only place red is used as a fill (reserved for irreversible-action
+            // confirmations). Keyed off the `danger` dynamic property.
+            s += QString(
+                "QPushButton[danger=\"true\"] { background: %1; color: %2; border: 1px solid %1; }"
+                "QPushButton[danger=\"true\"]:hover { background: %3; border-color: %3; }"
+                "QPushButton[danger=\"true\"]:pressed { background: %3; }"
+                "QPushButton[danger=\"true\"]:disabled { background: %4; color: %5; border-color: %4; }"
+            ).arg(t.danger.name(), onAccent, t.dangerPress.name(), mid, muted);
+
             // --- inputs ---
             // Flat fields and combos (rounded 1px border, brand-green focus ring).
             // A stylesheet'd non-editable QComboBox drops its current-item icon, so
@@ -350,6 +360,15 @@ namespace Docutaz
             button->setProperty("primary", true);
             // The button was already polished when created, so force a re-polish
             // for the [primary="true"] rule to apply.
+            button->style()->unpolish(button);
+            button->style()->polish(button);
+        }
+
+        void markDanger(QAbstractButton *button)
+        {
+            if (!button)
+                return;
+            button->setProperty("danger", true);
             button->style()->unpolish(button);
             button->style()->polish(button);
         }

@@ -15,6 +15,7 @@
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/EventBus.h"
 
+#include "docutaz/gui/utils/DialogUtils.h"
 #include "docutaz/gui/widgets/explorer/ExplorerCollectionTreeItem.h"
 #include "docutaz/gui/widgets/explorer/ExplorerDatabaseCategoryTreeItem.h"
 #include "docutaz/gui/widgets/explorer/ExplorerUserTreeItem.h"
@@ -293,9 +294,7 @@ namespace Docutaz
     void ExplorerDatabaseTreeItem::ui_dbDrop()
     {
         auto const& buff = QString("Drop <b>%1</b> database?").arg(QtUtils::toQString(_database->name()));
-        int const answer = QMessageBox::question(treeWidget(), "Drop Database", buff, 
-                                                 QMessageBox::Yes, QMessageBox::No, QMessageBox::NoButton);
-        if (answer != QMessageBox::Yes)
+        if (!utils::destructiveConfirm(treeWidget(), "Drop Database", buff, "Drop"))
             return;
 
         _database->server()->dropDatabase(_database->name());

@@ -29,6 +29,7 @@
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/GlyphIcons.h"
+#include "docutaz/gui/utils/DialogUtils.h"
 #include "docutaz/gui/Theme.h"
 #include "docutaz/gui/ConnectionEnvironment.h"
 #include "docutaz/gui/dialogs/ConnectionDialog.h"
@@ -403,13 +404,9 @@ namespace Docutaz
         ConnectionSettings *connSettings = currentItem->connection();
 
         // Ask user
-        QString const question { "Are you sure you want to delete \"%1\" connection?" };
-        int const answer = QMessageBox::question(this,
-            "Connections",
-            question.arg(QtUtils::toQString(connSettings->getReadableName())),
-            QMessageBox::Yes, QMessageBox::No, QMessageBox::NoButton);
-
-        if (answer != QMessageBox::Yes)
+        QString const question { "Are you sure you want to remove the <b>%1</b> connection?" };
+        if (!utils::destructiveConfirm(this, "Remove Connection",
+                question.arg(QtUtils::toQString(connSettings->getReadableName())), "Remove"))
             return;
 
         /* Temporarily disabling Recent Connections feature

@@ -64,6 +64,12 @@ namespace Docutaz
         // so the rule takes effect even though the button was already polished.
         void markPrimary(QAbstractButton *button);
 
+        // Tag a button as the destructive/commit button (filled danger red).
+        // Used on the confirm button of an irreversible-action dialog (Drop /
+        // Remove / Clear). Same dynamic-property + repolish mechanism as
+        // markPrimary, keyed off `danger` instead.
+        void markDanger(QAbstractButton *button);
+
         // Single application-wide source of theme-change notifications. Widgets
         // that paint or cache theme colours imperatively (the editors, the
         // work-area tab strip, the result chrome) connect to changed() and
