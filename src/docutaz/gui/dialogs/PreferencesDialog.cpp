@@ -38,6 +38,16 @@ namespace Docutaz
 
         QVBoxLayout *layout = new QVBoxLayout(this);
 
+        // Appearance: follow the OS colour scheme, or force light/dark. Order
+        // matches Theme::Scheme (System=0, Light=1, Dark=2).
+        QHBoxLayout *appearanceLayout = new QHBoxLayout(this);
+        QLabel *appearanceLabel = new QLabel("Appearance:");
+        appearanceLayout->addWidget(appearanceLabel);
+        _appearanceComboBox = new QComboBox();
+        _appearanceComboBox->addItems({ "System (follow OS)", "Light", "Dark" });
+        appearanceLayout->addWidget(_appearanceComboBox);
+        layout->addLayout(appearanceLayout);
+
         QHBoxLayout *defLayout = new QHBoxLayout(this);
         QLabel *defDisplayModeLabel = new QLabel("Default display mode:");
         defLayout->addWidget(defDisplayModeLabel);
@@ -140,6 +150,10 @@ namespace Docutaz
     void PreferencesDialog::syncWithSettings()
     {
 
+        {
+            const int pref = AppRegistry::instance().settingsManager()->colorSchemePreference();
+            _appearanceComboBox->setCurrentIndex((pref >= 0 && pref <= 2) ? pref : 0);
+        }
         utils::setCurrentText(_defDisplayModeComboBox, convertViewModeToString(Docutaz::AppRegistry::instance().settingsManager()->viewMode()));
         utils::setCurrentText(_timeZoneComboBox, convertTimesToString(Docutaz::AppRegistry::instance().settingsManager()->timeZone()));
         utils::setCurrentText(_uuidEncodingComboBox, convertUUIDEncodingToString(Docutaz::AppRegistry::instance().settingsManager()->uuidEncoding()));
@@ -160,6 +174,14 @@ namespace Docutaz
 
     void PreferencesDialog::accept()
     {
+        // Appearance preference — persist and apply live (re-pick palette/QSS for
+        // the new scheme, then notify the imperatively-themed widgets).
+        const int scheme = _appearanceComboBox->currentIndex();
+        AppRegistry::instance().settingsManager()->setColorSchemePreference(scheme);
+        Theme::setSchemePreference(static_cast<Theme::Scheme>(scheme));
+        Theme::apply();
+        Theme::Notifier::instance()->notify();
+
         ViewMode mode = convertStringToViewMode(QtUtils::toStdString(_defDisplayModeComboBox->currentText()).c_str());
         Docutaz::AppRegistry::instance().settingsManager()->setViewMode(mode);
 

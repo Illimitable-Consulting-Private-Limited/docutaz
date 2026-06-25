@@ -265,9 +265,28 @@ namespace Docutaz
             return dark ? kDark : kLight;
         }
 
+        // Active appearance preference (default: follow the OS).
+        static Scheme g_scheme = Scheme::System;
+
+        void setSchemePreference(Scheme scheme)
+        {
+            g_scheme = scheme;
+        }
+
+        Scheme schemePreference()
+        {
+            return g_scheme;
+        }
+
         bool isDark()
         {
-            return QtUtils::isDarkMode();
+            switch (g_scheme)
+            {
+            case Scheme::Light: return false;
+            case Scheme::Dark:  return true;
+            case Scheme::System:
+            default:            return QtUtils::isDarkMode();
+            }
         }
 
         QString uiFontFamily()

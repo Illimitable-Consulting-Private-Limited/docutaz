@@ -25,6 +25,7 @@ namespace Docutaz
     private:
         void syncWithSettings();
     private:
+        QComboBox *_appearanceComboBox;
         QComboBox *_defDisplayModeComboBox;
         QComboBox *_timeZoneComboBox;
         QComboBox *_uuidEncodingComboBox;

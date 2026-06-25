@@ -87,6 +87,7 @@ namespace Docutaz
         _textFontPointSize(-1),
         _editorFontFamily(""),
         _editorFontPointSize(-1),
+        _colorSchemePreference(0),
         _mongoTimeoutSec(10),
         _shellTimeoutSec(15),
         _imported(false)
@@ -263,6 +264,7 @@ namespace Docutaz
         _editorFontFamily = map.value("editorFontFamily").toString();
         _editorFontPointSize = map.contains("editorFontPointSize")
             ? map.value("editorFontPointSize").toInt() : -1;
+        _colorSchemePreference = map.value("colorSchemePreference").toInt();   // 0 = System
 
         if (map.contains("mongoTimeoutSec")) {
             _mongoTimeoutSec = map.value("mongoTimeoutSec").toInt();
@@ -363,6 +365,7 @@ namespace Docutaz
         map.insert("textFontPointSize", _textFontPointSize);
         map.insert("editorFontFamily", _editorFontFamily);
         map.insert("editorFontPointSize", _editorFontPointSize);
+        map.insert("colorSchemePreference", _colorSchemePreference);
 
         // 12. Save connections
         QVariantList list;
@@ -440,6 +443,12 @@ namespace Docutaz
 
     void SettingsManager::setEditorFontPointSize(int pointSize) {
         _editorFontPointSize = pointSize > 0 ? pointSize : -1;
+    }
+
+    void SettingsManager::setColorSchemePreference(int scheme)
+    {
+        // Clamp to the known range (0 = System, 1 = Light, 2 = Dark).
+        _colorSchemePreference = (scheme >= 0 && scheme <= 2) ? scheme : 0;
     }
 
     void SettingsManager::reorderConnections(const ConnectionSettingsContainerType &connections)

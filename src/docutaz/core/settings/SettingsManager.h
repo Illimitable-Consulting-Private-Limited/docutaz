@@ -172,6 +172,11 @@ namespace Docutaz
         QString currentStyle() const { return _currentStyle; }
         void setCurrentStyle(const QString& style);
 
+        // Appearance preference: 0 = follow OS (System), 1 = Light, 2 = Dark.
+        // Maps to Theme::Scheme; default System.
+        int colorSchemePreference() const { return _colorSchemePreference; }
+        void setColorSchemePreference(int scheme);
+
         QString textFontFamily() const { return _textFontFamily; }
         void setTextFontFamily(const QString& fontFamily);
 
@@ -275,6 +280,7 @@ namespace Docutaz
         int _textFontPointSize;
         QString _editorFontFamily;
         int _editorFontPointSize;
+        int _colorSchemePreference;
 
         int _mongoTimeoutSec;
         int _shellTimeoutSec;

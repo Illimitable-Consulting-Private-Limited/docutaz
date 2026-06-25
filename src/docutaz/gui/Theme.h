@@ -35,8 +35,18 @@ namespace Docutaz
         // Locked light/dark token tables.
         const Tokens &tokens(bool dark);
 
-        // True when the UI should render dark (follows QtUtils::isDarkMode,
-        // i.e. the OS colour scheme on Qt 6.5+, palette heuristic below).
+        // User appearance preference: follow the OS, or force light/dark.
+        enum class Scheme { System, Light, Dark };
+
+        // Set/get the active appearance preference. Default is System (follow the
+        // OS colour scheme). Set from the persisted setting at startup and when
+        // the user changes it in Preferences; callers then re-run apply().
+        void setSchemePreference(Scheme scheme);
+        Scheme schemePreference();
+
+        // True when the UI should render dark. Honours the appearance preference:
+        // Light/Dark force the result; System follows QtUtils::isDarkMode (OS
+        // colour scheme on Qt 6.5+, palette heuristic below).
         bool isDark();
 
         // Tokens for the currently active scheme.
