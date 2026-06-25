@@ -617,6 +617,30 @@ namespace Docutaz
             return -1;
         }
 
+        // Heuristic: does a driver exception message describe the server being
+        // unreachable (host down, network dropped, connection refused/reset,
+        // server-selection timeout) as opposed to a query/command error? Used to
+        // give a clear "can't reach the server" message instead of falling
+        // through to mongosh, which would fail to connect too and report the
+        // misleading "mongosh process not running".
+        bool looksLikeConnectionError(const std::string &what) {
+            const QString w = QString::fromStdString(what).toLower();
+            return w.contains("no suitable servers")
+                || w.contains("server selection")
+                || w.contains("connection refused")
+                || w.contains("connection reset")
+                || w.contains("connection closed")
+                || w.contains("network error")
+                || w.contains("socket")
+                || w.contains("not reachable")
+                || w.contains("no primary")
+                || w.contains("end of file")
+                || w.contains("connection timed out")
+                || w.contains("connection pool")
+                || w.contains("host unreachable")
+                || w.contains("timed out");
+        }
+
         // True if `args` has a top-level comma — i.e. find(filter, projection).
         // We only fast-path the single-argument form; anything else falls back.
         bool hasTopLevelComma(const QString &args) {
@@ -741,8 +765,23 @@ namespace Docutaz
             client->done();
             const auto t1 = std::chrono::steady_clock::now();
             elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count();
+        } catch (const std::exception &ex) {
+            // This find was fully mappable onto the driver, so a failure here is a
+            // real execution error. If the server is unreachable, that connection
+            // error is the helpful cause — report it directly instead of falling
+            // through to mongosh (which would only fail to connect too and emit
+            // the misleading "mongosh process not running"). Other errors still
+            // fall through so the mongosh path can retry transient glitches.
+            if (looksLikeConnectionError(ex.what())) {
+                reply(event->sender(), new ExecuteScriptResponse(this,
+                    EventError(std::string(
+                        "Cannot reach the MongoDB server. It may be offline, or the "
+                        "network connection was lost.\n\nDetails: ") + ex.what())));
+                return true;
+            }
+            return false;
         } catch (...) {
-            // Let the mongosh path (with its retry) handle anything that fails here.
+            // Non-std failure: let the mongosh path (with its retry) handle it.
             return false;
         }
 

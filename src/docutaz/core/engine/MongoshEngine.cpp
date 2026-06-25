@@ -78,7 +78,13 @@ MongoShellExecResult MongoshEngine::exec(const std::string& script,
     if (_failed || !_proc || _proc->state() != QProcess::Running) {
         _failed = !startProcess(dbName.empty() ? _currentDb : dbName);
         if (_failed)
-            return MongoShellExecResult(true, "mongosh process not running.");
+            // startProcess fails either because mongosh couldn't launch or —
+            // far more often in practice — because it launched but couldn't
+            // reach the server (host down / network lost), so it never reached
+            // a prompt. Name both causes rather than blaming the process.
+            return MongoShellExecResult(true,
+                "Could not start the MongoDB shell session. The server may be "
+                "unreachable (host down or network lost), or mongosh failed to launch.");
     }
 
     if (!dbName.empty() && dbName != _currentDb) {
