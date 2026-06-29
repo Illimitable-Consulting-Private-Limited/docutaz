@@ -105,6 +105,19 @@ Section "Install"
     ; _?=$INSTDIR keeps the uninstaller from copying itself to %TEMP%, so the
     ; call is synchronous and we can install over it immediately afterwards.
     ExecWait '$0 _?=$INSTDIR'
+
+    ; Sweep stray per-user shortcuts left by older versions. Releases before
+    ; the All-Users switch placed the Desktop/Start-menu shortcuts on the
+    ; *interactive user's* profile; that old uninstaller, running elevated,
+    ; can't reliably reach them, so they'd survive next to the new All-Users
+    ; shortcut and the user would see TWO launchers. remove-shortcut.ps1
+    ; resolves the console user's own Desktop/Programs (and the current
+    ; profile) and deletes Docutaz.lnk there — it never touches the All-Users
+    ; (Public) shortcut this installer creates below. Best-effort.
+    InitPluginsDir
+    File "/oname=$PLUGINSDIR\remove-shortcut.ps1" "remove-shortcut.ps1"
+    nsExec::ExecToLog 'powershell -NoProfile -ExecutionPolicy Bypass -File "$PLUGINSDIR\remove-shortcut.ps1"'
+    Pop $0
   ${EndIf}
 
   ; Pull in the entire assembled portable directory (exe, all DLLs, plugins).
