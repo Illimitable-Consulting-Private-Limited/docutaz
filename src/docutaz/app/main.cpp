@@ -27,10 +27,8 @@ int main(int argc, char *argv[])
     // Must be created before any mongocxx objects and destroyed last.
     mongocxx::instance mongocxxInstance{};
 
-    // Cross Platform High DPI support - Qt 5.7
-    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
-
-    // Initialize Qt application
+    // Initialize Qt application. (High-DPI scaling is always on in Qt 6, so the
+    // old Qt::AA_EnableHighDpiScaling opt-in is no longer needed.)
     QApplication app(argc, argv);
 
     // Identify the application so the desktop environment can match the
