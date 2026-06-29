@@ -197,3 +197,70 @@ TEST(bson_bridge_roundtrip, mixed_types)
         kvp("bool", true),
         kvp("null", bsoncxx::types::b_null{}))));
 }
+
+// ── BSONObjBuilder::append(BSONElement) ──────────────────────────────────────
+//
+// Regression test for the catastrophic delete-all bug: this overload used to be
+// a no-op stub. Notifier::deleteDocuments builds its per-document delete filter
+// by copying the document's _id element into a fresh builder; when the copy was
+// dropped the filter became {} and delete_many({}) wiped the whole collection.
+// These pin that an appended element actually survives, for the _id types we
+// can encounter.
+
+namespace {
+using namespace bsoncxx::builder::basic;
+
+// Copy field `name` from `src` into a new BSONObj via the BSONElement overload,
+// exactly as the delete path does.
+mongo::BSONObj copyFieldViaBuilder(const mongo::BSONObj& src, const char* name)
+{
+    mongo::BSONObjBuilder builder;
+    builder.append(src.getField(name));
+    return builder.obj();
+}
+}
+
+TEST(bson_builder_append_element, objectid_id_survives)
+{
+    const bsoncxx::oid oid{};
+    const mongo::BSONObj src(make_document(kvp("_id", oid), kvp("x", 1)).view());
+
+    const mongo::BSONObj filter = copyFieldViaBuilder(src, "_id");
+
+    ASSERT_FALSE(filter.isEmpty());  // the bug produced {}
+    EXPECT_EQ(fieldOrder(filter), (std::vector<std::string>{"_id"}));
+    EXPECT_EQ(filter.getField("_id").type(), mongo::jstOID);
+    // Same 12 ObjectId bytes as the source.
+    EXPECT_EQ(std::memcmp(filter.getField("_id").__oid().data, oid.bytes(), 12), 0);
+}
+
+TEST(bson_builder_append_element, string_id_survives)
+{
+    const mongo::BSONObj src(make_document(kvp("_id", "abc123")).view());
+
+    const mongo::BSONObj filter = copyFieldViaBuilder(src, "_id");
+
+    ASSERT_FALSE(filter.isEmpty());
+    EXPECT_EQ(filter.getField("_id").String(), "abc123");
+}
+
+TEST(bson_builder_append_element, int_id_survives)
+{
+    const mongo::BSONObj src(make_document(kvp("_id", 42)).view());
+
+    const mongo::BSONObj filter = copyFieldViaBuilder(src, "_id");
+
+    ASSERT_FALSE(filter.isEmpty());
+    EXPECT_EQ(filter.getField("_id").Int(), 42);
+}
+
+TEST(bson_builder_append_element, eoo_element_appends_nothing)
+{
+    // Missing field -> EOO element -> nothing appended (filter stays empty),
+    // which the delete path guards against before issuing the query.
+    const mongo::BSONObj src(make_document(kvp("_id", 1)).view());
+
+    const mongo::BSONObj filter = copyFieldViaBuilder(src, "does_not_exist");
+
+    EXPECT_TRUE(filter.isEmpty());
+}

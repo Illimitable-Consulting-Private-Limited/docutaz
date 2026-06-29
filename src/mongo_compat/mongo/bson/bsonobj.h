@@ -8,6 +8,7 @@
 #include <bsoncxx/array/view.hpp>
 #include <bsoncxx/array/element.hpp>
 #include <bsoncxx/types.hpp>
+#include <bsoncxx/types/bson_value/view.hpp>
 #include <bsoncxx/json.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/array.hpp>
@@ -151,6 +152,10 @@ public:
         if (eoo()) return "";
         return reinterpret_cast<const char*>(_raw) + 1;
     }
+
+    // Raw element bytes: [type][key\0][value]. Valid only while the owning
+    // BSONObj is alive. Used to copy an element verbatim into a builder.
+    const uint8_t* rawData() const { return _raw; }
 
     // Raw value pointer (varies by type)
     const char* value() const { return rawValue(); }
@@ -615,7 +620,25 @@ public:
 
 // Defined here so BSONObjBuilder and BSONObj are both complete
 inline BSONObjBuilder& BSONObjBuilder::append(const BSONElement& e) {
-    (void)e;
+    if (e.eoo()) return *this;
+    // The element's raw bytes ([type][key\0][value]) are a fragment of its
+    // parent document. Wrap them in a minimal standalone BSON document so
+    // bsoncxx can parse the value generically (ObjectId, string, int, binary
+    // UUID, …), then copy that value into this builder under the same key.
+    // Previously this was a no-op stub, which silently dropped the element and
+    // produced an empty {} document. For the delete path that meant the filter
+    // built from a document's _id was empty, so delete_many matched and wiped
+    // the *entire* collection instead of the selected rows.
+    const int elemLen = e.size();
+    const int32_t total = 4 + elemLen + 1;
+    std::vector<uint8_t> doc(static_cast<size_t>(total), 0);
+    std::memcpy(doc.data(), &total, 4);
+    std::memcpy(doc.data() + 4, e.rawData(), static_cast<size_t>(elemLen));
+    // doc.back() stays 0: the document's terminating EOO byte.
+    bsoncxx::document::view v(doc.data(), static_cast<std::size_t>(total));
+    auto parsed = v[e.fieldName()];
+    if (parsed)
+        _b.append(bsoncxx::builder::basic::kvp(_k(e.fieldName()), parsed.get_value()));
     return *this;
 }
 inline BSONObjBuilder& BSONObjBuilder::append(const char* name, const BSONObj& obj) {

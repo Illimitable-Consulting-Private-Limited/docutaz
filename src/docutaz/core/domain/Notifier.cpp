@@ -208,6 +208,20 @@ namespace Docutaz
             mongo::BSONObjBuilder builder;
             builder.append(id);
             mongo::BSONObj bsonQuery = builder.obj();
+
+            // Defence in depth: a per-document delete must always be scoped by
+            // _id. An empty filter here would become delete_many({}) and wipe
+            // the whole collection, so refuse it outright rather than trust the
+            // builder. (The intentional "Remove All Documents" path is separate
+            // and uses RemoveDocumentCount::ALL.)
+            if (bsonQuery.isEmpty()) {
+                QMessageBox::warning(dynamic_cast<QWidget*>(_observer), "Cannot delete",
+                    "Could not build a delete filter for the selected document "
+                    "(its _id could not be encoded). Aborting to avoid deleting "
+                    "the entire collection.");
+                break;
+            }
+
             mongo::Query query(bsonQuery);
 
             if (!force) {
