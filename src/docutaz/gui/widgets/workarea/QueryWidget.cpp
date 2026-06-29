@@ -30,6 +30,8 @@
 #include "docutaz/core/settings/SettingsManager.h"
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/core/utils/Logger.h"
+#include "docutaz/core/utils/ScriptClassifier.h"
+#include "docutaz/gui/utils/DialogUtils.h"
 
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/Theme.h"
@@ -140,6 +142,13 @@ namespace Docutaz
 
         if (query.isEmpty())
             query = _scriptWidget->text();
+
+        // Production-safety net (Preferences-controlled): if the script looks
+        // like it writes and the connection is guarded, confirm before running.
+        if (ScriptClassifier::mayModifyData(query) && _shell->server() &&
+            !utils::confirmGuardedWrite(this, _shell->server()->connectionRecord(),
+                "run a script that may modify data"))
+            return;
 
         _lastExecutedQuery = query;   // captured for query history; consumed in handle()
 

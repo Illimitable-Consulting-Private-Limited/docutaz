@@ -249,6 +249,9 @@ namespace Docutaz
     void ExplorerCollectionTreeItem::ui_removeAllDocuments()
     {
         MongoDatabase *database = _collection->database();
+        if (!utils::confirmGuardedWrite(treeWidget(), database->server()->connectionRecord(),
+                "remove every document from a collection"))
+            return;
         // Ask user
         int answer = QMessageBox::question(treeWidget(),
             "Remove All Documents",
@@ -294,6 +297,11 @@ namespace Docutaz
 
     void ExplorerCollectionTreeItem::ui_dropCollection()
     {
+        if (!utils::confirmGuardedWrite(treeWidget(),
+                _collection->database()->server()->connectionRecord(),
+                "drop a collection"))
+            return;
+
         // Ask user
         int answer = utils::questionDialog(treeWidget(), "Drop", "collection", QtUtils::toQString(_collection->name()));
 

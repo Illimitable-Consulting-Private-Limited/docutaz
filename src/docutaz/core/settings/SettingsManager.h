@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QString>
+#include <QStringList>
 #include <QVariantMap>
 #include <QSet>
 #include <QDir>
@@ -169,6 +170,25 @@ namespace Docutaz
         void setSaveQueryHistory(bool value) { _saveQueryHistory = value; }
         bool saveQueryHistory() const { return _saveQueryHistory; }
 
+        // Production-safety net. When enabled, an update/delete (GUI document op,
+        // drop, or a shell script that looks like a write) on a connection whose
+        // environment tag is in guardedEnvironments() pops a confirmation. The
+        // confirmation dialog's "Don't ask me again" checkbox clears this flag;
+        // it is re-enabled from Preferences. Default on, guarding "production".
+        void setConfirmDestructiveOps(bool value) { _confirmDestructiveOps = value; }
+        bool confirmDestructiveOps() const { return _confirmDestructiveOps; }
+
+        void setGuardedEnvironments(const QStringList &envs) { _guardedEnvironments = envs; }
+        QStringList guardedEnvironments() const { return _guardedEnvironments; }
+
+        // True when a confirmation is owed for an operation on `env` (the
+        // ConnectionSettings::environment() key). The empty/"None" tag is never
+        // guarded. Independent of confirmDestructiveOps() (the master toggle).
+        bool isEnvironmentGuarded(const std::string &env) const {
+            return !env.empty() &&
+                   _guardedEnvironments.contains(QString::fromStdString(env));
+        }
+
         QString currentStyle() const { return _currentStyle; }
         void setCurrentStyle(const QString& style);
 
@@ -278,6 +298,8 @@ namespace Docutaz
         bool _disableHttpsFeatures = false;
         bool _checkForUpdates = true;
         bool _saveQueryHistory = true;
+        bool _confirmDestructiveOps = true;
+        QStringList _guardedEnvironments = { QStringLiteral("production") };
         bool _debugMode = false;
         QSet<QString> _acceptedEulaVersions;
         int _batchSize;

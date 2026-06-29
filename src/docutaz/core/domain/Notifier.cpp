@@ -188,6 +188,14 @@ namespace Docutaz
 
     void Notifier::deleteDocuments(std::vector<BsonTreeItem*> const& items, bool force)
     {
+        // Production-safety net (Preferences-controlled): confirm a delete on a
+        // guarded connection before touching anything.
+        if (!utils::confirmGuardedWrite(dynamic_cast<QWidget*>(_observer),
+                _shell->server()->connectionRecord(),
+                items.size() == 1 ? "delete the selected document"
+                                   : "delete the selected documents"))
+            return;
+
         bool isNeededRefresh = false;
 
         int index = 0;
@@ -404,6 +412,10 @@ namespace Docutaz
         int result = editor.exec();
 
         if (result == QDialog::Accepted) {
+            if (!utils::confirmGuardedWrite(dynamic_cast<QWidget*>(_observer),
+                    _shell->server()->connectionRecord(),
+                    "save changes to the selected document"))
+                return;
             _shell->server()->saveDocuments(editor.bsonObj(), _queryInfo._info._ns);
             mainWindow()->showQueryWidgetProgressBar();
         }

@@ -19,6 +19,7 @@ set(SOURCES
     core/HexUtils.cpp
     core/utils/BsonUtils.cpp
     core/utils/Exporter.cpp
+    core/utils/ScriptClassifier.cpp
     core/settings/CredentialSettings.cpp
     core/settings/ConnectionSettings.cpp
     core/Event.cpp

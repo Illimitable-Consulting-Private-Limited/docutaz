@@ -293,6 +293,10 @@ namespace Docutaz
 
     void ExplorerDatabaseTreeItem::ui_dbDrop()
     {
+        if (!utils::confirmGuardedWrite(treeWidget(), _database->server()->connectionRecord(),
+                "drop a database"))
+            return;
+
         auto const& buff = QString("Drop <b>%1</b> database?").arg(QtUtils::toQString(_database->name()));
         if (!utils::destructiveConfirm(treeWidget(), "Drop Database", buff, "Drop"))
             return;

@@ -1,6 +1,7 @@
 #pragma  once
 
 #include <QDialog>
+#include <QMap>
 QT_BEGIN_NAMESPACE
 class QComboBox;
 class QFontComboBox;
@@ -22,6 +23,9 @@ namespace Docutaz
     public Q_SLOTS:
         virtual void accept();
         void browseMongoshPath();
+    private Q_SLOTS:
+        // Enable/disable the per-environment checkboxes with the master toggle.
+        void updateGuardedEnvEnabled();
     private:
         void syncWithSettings();
     private:
@@ -36,5 +40,9 @@ namespace Docutaz
         QFontComboBox *_editorFontComboBox;
         QSpinBox *_editorFontSizeSpinBox;
         QLineEdit *_mongoshPathEdit;
+        QCheckBox *_confirmDestructiveOpsCheckBox;
+        // Environment-key (production/staging/...) -> "guard this environment"
+        // checkbox. Built from ConnectionEnvironment::presets() minus "None".
+        QMap<QString, QCheckBox*> _guardedEnvChecks;
     };
 }

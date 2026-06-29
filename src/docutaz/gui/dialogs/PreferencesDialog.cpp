@@ -12,8 +12,10 @@
 #include <QSpinBox>
 #include <QFileDialog>
 #include <QApplication>
+#include <QGroupBox>
 
 #include "docutaz/gui/widgets/workarea/ScriptWidget.h"
+#include "docutaz/gui/ConnectionEnvironment.h"
 
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/Theme.h"
@@ -98,6 +100,35 @@ namespace Docutaz
             "Lower memory and instant tab opening, but queries serialize — a long\n"
             "query in one tab blocks its sibling tabs. Takes effect for new tabs.");
         layout->addWidget(_shareShellPerConnectionCheckBox);
+
+        // Production-safety net: confirm update/delete operations on connections
+        // whose environment tag is checked below. The master checkbox is the
+        // same flag the in-dialog "Don't ask me again" toggles off.
+        QGroupBox *safetyBox = new QGroupBox("Destructive-operation safety", this);
+        QVBoxLayout *safetyLayout = new QVBoxLayout(safetyBox);
+        _confirmDestructiveOpsCheckBox =
+            new QCheckBox("Confirm before update/delete on protected connections");
+        _confirmDestructiveOpsCheckBox->setToolTip(
+            "Pop a confirmation before any update or delete (document edit/delete,\n"
+            "remove-all, drop, or a shell script that looks like a write) runs on a\n"
+            "connection tagged as one of the protected environments below.");
+        safetyLayout->addWidget(_confirmDestructiveOpsCheckBox);
+        VERIFY(connect(_confirmDestructiveOpsCheckBox, SIGNAL(toggled(bool)),
+                       this, SLOT(updateGuardedEnvEnabled())));
+
+        QLabel *protectedLabel = new QLabel("Protected environments:");
+        safetyLayout->addWidget(protectedLabel);
+        // One checkbox per environment preset except "None" (the empty tag is
+        // never guarded). Production is the default-protected environment.
+        for (const auto &preset : ConnectionEnvironment::presets()) {
+            const QString key = QString::fromLatin1(preset.key);
+            if (key.isEmpty())
+                continue;
+            QCheckBox *check = new QCheckBox(QString::fromLatin1(preset.name));
+            safetyLayout->addWidget(check);
+            _guardedEnvChecks.insert(key, check);
+        }
+        layout->addWidget(safetyBox);
 
         // Interface font — the UI + result-view typeface (everything except the
         // code editor). Defaults to the bundled Inter; size is not exposed (the
@@ -187,6 +218,20 @@ namespace Docutaz
         _editorFontSizeSpinBox->setValue(editorPt > 0 ? editorPt : 0);
 
         _mongoshPathEdit->setText(AppRegistry::instance().settingsManager()->mongoshPath());
+
+        SettingsManager *sm = AppRegistry::instance().settingsManager();
+        _confirmDestructiveOpsCheckBox->setChecked(sm->confirmDestructiveOps());
+        const QStringList guarded = sm->guardedEnvironments();
+        for (auto it = _guardedEnvChecks.cbegin(); it != _guardedEnvChecks.cend(); ++it)
+            it.value()->setChecked(guarded.contains(it.key()));
+        updateGuardedEnvEnabled();
+    }
+
+    void PreferencesDialog::updateGuardedEnvEnabled()
+    {
+        const bool on = _confirmDestructiveOpsCheckBox->isChecked();
+        for (QCheckBox *check : _guardedEnvChecks)
+            check->setEnabled(on);
     }
 
     void PreferencesDialog::accept()
@@ -228,6 +273,15 @@ namespace Docutaz
                 sw->reapplyEditorFont();
 
         AppRegistry::instance().settingsManager()->setMongoshPath(_mongoshPathEdit->text().trimmed());
+
+        AppRegistry::instance().settingsManager()->setConfirmDestructiveOps(
+            _confirmDestructiveOpsCheckBox->isChecked());
+        QStringList guarded;
+        for (auto it = _guardedEnvChecks.cbegin(); it != _guardedEnvChecks.cend(); ++it)
+            if (it.value()->isChecked())
+                guarded.append(it.key());
+        AppRegistry::instance().settingsManager()->setGuardedEnvironments(guarded);
+
         Docutaz::AppRegistry::instance().settingsManager()->save();
 
         // Notify the "mongosh not detected" indicators (status bar + Welcome

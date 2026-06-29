@@ -221,6 +221,12 @@ namespace Docutaz
         _saveQueryHistory = map.contains("saveQueryHistory") ?
                             map.value("saveQueryHistory").toBool() : true;
 
+        _confirmDestructiveOps = map.contains("confirmDestructiveOps") ?
+                                 map.value("confirmDestructiveOps").toBool() : true;
+        _guardedEnvironments = map.contains("guardedEnvironments")
+                                   ? map.value("guardedEnvironments").toStringList()
+                                   : QStringList{ QStringLiteral("production") };
+
         _debugMode = map.contains("debugMode") ? map.value("debugMode").toBool() : false;
 
         // 4. Load TimeZone
@@ -384,6 +390,8 @@ namespace Docutaz
         map.insert("disableHttpsFeatures", _disableHttpsFeatures);
         map.insert("checkForUpdates", _checkForUpdates);
         map.insert("saveQueryHistory", _saveQueryHistory);
+        map.insert("confirmDestructiveOps", _confirmDestructiveOps);
+        map.insert("guardedEnvironments", _guardedEnvironments);
         map.insert("debugMode", _debugMode);
         
         return map;
