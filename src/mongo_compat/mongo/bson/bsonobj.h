@@ -9,6 +9,7 @@
 #include <bsoncxx/array/element.hpp>
 #include <bsoncxx/types.hpp>
 #include <bsoncxx/types/bson_value/view.hpp>
+#include <bsoncxx/decimal128.hpp>
 #include <bsoncxx/json.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/array.hpp>
@@ -104,9 +105,16 @@ struct Timestamp_t {
     uint32_t getInc()  const { return i; }
 };
 
-// ─── Decimal128 stub ───────────────────────────────────────────────────────
+// ─── Decimal128 ────────────────────────────────────────────────────────────
+// Holds the already-rendered decimal string. The value is decoded from the raw
+// 16 BSON bytes by BSONElement::numberDecimal() (via bsoncxx::decimal128).
+// (This used to be a stub whose toString() always returned "0.0", so every
+// NumberDecimal field rendered and exported as 0.0 regardless of its value.)
 struct Decimal128 {
-    std::string toString() const { return "0.0"; }
+    std::string _str = "0.0";
+    Decimal128() = default;
+    explicit Decimal128(std::string s) : _str(std::move(s)) {}
+    std::string toString() const { return _str; }
 };
 
 // ─── OID ───────────────────────────────────────────────────────────────────
@@ -220,8 +228,17 @@ public:
     int64_t _numberLong() const { return Long(); }
     int32_t _numberInt() const { return Int(); }
 
-    Decimal128 _numberDecimal() const { return {}; }
-    Decimal128 numberDecimal() const { return {}; }
+    // Decimal128 is stored as 16 little-endian bytes: low 64 bits then high 64.
+    Decimal128 numberDecimal() const {
+        if (type() != NumberDecimal) return {};
+        const char* v = rawValue();
+        if (!v) return {};
+        uint64_t low, high;
+        memcpy(&low, v, 8);
+        memcpy(&high, v + 8, 8);
+        return Decimal128{ bsoncxx::decimal128(high, low).to_string() };
+    }
+    Decimal128 _numberDecimal() const { return numberDecimal(); }
 
     // ── Bool ──
     bool Bool() const {

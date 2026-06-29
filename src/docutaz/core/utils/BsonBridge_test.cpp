@@ -7,6 +7,7 @@
 #include <bsoncxx/builder/basic/array.hpp>
 #include <bsoncxx/builder/basic/document.hpp>
 #include <bsoncxx/builder/basic/kvp.hpp>
+#include <bsoncxx/decimal128.hpp>
 #include <bsoncxx/document/value.hpp>
 #include <bsoncxx/json.hpp>
 #include <bsoncxx/oid.hpp>
@@ -263,4 +264,30 @@ TEST(bson_builder_append_element, eoo_element_appends_nothing)
     const mongo::BSONObj filter = copyFieldViaBuilder(src, "does_not_exist");
 
     EXPECT_TRUE(filter.isEmpty());
+}
+
+// ── BSONElement::numberDecimal ───────────────────────────────────────────────
+//
+// Regression test for the Decimal128 stub: numberDecimal()/_numberDecimal()
+// used to always return a default Decimal128 whose toString() was "0.0", so
+// every NumberDecimal field rendered and exported as 0.0. Pin that the real
+// value is decoded from the raw 16 BSON bytes (this also validates byte order).
+
+TEST(bson_element_decimal128, decodes_real_value)
+{
+    const mongo::BSONObj obj(
+        make_document(kvp("d", bsoncxx::decimal128{"3.14159265358979"})).view());
+
+    EXPECT_EQ(obj.getField("d").type(), mongo::NumberDecimal);
+    EXPECT_EQ(obj.getField("d").numberDecimal().toString(), "3.14159265358979");
+    EXPECT_EQ(obj.getField("d")._numberDecimal().toString(), "3.14159265358979");
+}
+
+TEST(bson_element_decimal128, decodes_negative_and_special)
+{
+    const mongo::BSONObj neg(make_document(kvp("d", bsoncxx::decimal128{"-0.5"})).view());
+    EXPECT_EQ(neg.getField("d").numberDecimal().toString(), "-0.5");
+
+    const mongo::BSONObj nan(make_document(kvp("d", bsoncxx::decimal128{"NaN"})).view());
+    EXPECT_EQ(nan.getField("d").numberDecimal().toString(), "NaN");
 }
