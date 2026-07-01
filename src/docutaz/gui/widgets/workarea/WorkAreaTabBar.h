@@ -70,6 +70,18 @@ namespace Docutaz
          */
         void mouseDoubleClickEvent(QMouseEvent *);
 
+        /**
+         * @brief Overrides QTabBar::paintEvent() to draw a per-tab
+         * environment accent strip. A tab whose tabData() holds a valid QColor
+         * (set from the connection's environment tag) gets a coloured strip
+         * along its left edge — clear of the brand-green selected-tab marker on
+         * the top edge. This is done in paint code rather than via
+         * setTabTextColor(), because the widget stylesheet sets an explicit
+         * `color` on QTabBar::tab which always overrides per-tab text colours;
+         * custom painting is not overridden by the stylesheet.
+         */
+        void paintEvent(QPaintEvent *event);
+
     private:
         /**
          * @brief Handles middle-mouse release event in order to close tab.

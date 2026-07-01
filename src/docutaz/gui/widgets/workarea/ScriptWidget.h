@@ -163,7 +163,8 @@ namespace Docutaz
         Q_OBJECT
 
     public:
-        TopStatusBar(const std::string &connectionName, const std::string &serverName, const std::string &dbName);
+        TopStatusBar(const std::string &connectionName, const std::string &serverName,
+                     const std::string &dbName, const std::string &environment = std::string());
         void setCurrentDatabase(const std::string &database, bool isValid = true);
         void setCurrentServer(const std::string &address, bool isValid = true);
         void showProgress();

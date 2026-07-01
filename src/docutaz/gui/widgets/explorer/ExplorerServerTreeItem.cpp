@@ -4,6 +4,9 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QBrush>
+#include <QPainter>
+#include <QPixmap>
+#include <QTreeWidget>
 
 #include "docutaz/core/domain/MongoServer.h"
 #include "docutaz/core/domain/MongoDatabase.h"
@@ -24,11 +27,37 @@
 
 namespace
 {
-     void openCurrentServerShell(Docutaz::MongoServer *const server, const QString &script, bool execute = true, 
+     void openCurrentServerShell(Docutaz::MongoServer *const server, const QString &script, bool execute = true,
                                  const Docutaz::CursorPosition &cursor = Docutaz::CursorPosition())
      {
          QString const connName = Docutaz::QtUtils::toQString(server->connectionRecord()->getReadableName());
          Docutaz::AppRegistry::instance().app()->openShell(server, script, std::string(), execute, connName, cursor);
+     }
+
+     // Badge the base server glyph with a solid environment-colour dot in the
+     // bottom-left corner. The composited icon stays SQUARE and the same size as
+     // sibling rows' icons (a wider dot-before-glyph icon would be scaled down by
+     // the view to fit the square decoration slot, shrinking the glyph). A thin
+     // ring in the view background colour keeps the dot legible over the glyph.
+     // Rendered at the tree's device-pixel ratio to stay crisp on HiDPI.
+     QIcon withEnvironmentDot(const QIcon &base, const QColor &color, const QColor &ring,
+                              int sz, qreal dpr)
+     {
+         const qreal d = sz * 9.0 / 16.0;   // badge diameter, scaled with the glyph
+         QPixmap canvas(QSize(sz, sz) * dpr);
+         canvas.setDevicePixelRatio(dpr);
+         canvas.fill(Qt::transparent);
+         QPainter p(&canvas);
+         p.setRenderHint(QPainter::Antialiasing, true);
+         p.drawPixmap(0, 0, base.pixmap(QSize(sz, sz), dpr));
+         const QPointF c(d / 2.0, sz - d / 2.0);   // bottom-left corner
+         p.setPen(Qt::NoPen);
+         p.setBrush(ring);
+         p.drawEllipse(c, d / 2.0 + 1.0, d / 2.0 + 1.0);
+         p.setBrush(color);
+         p.drawEllipse(c, d / 2.0, d / 2.0);
+         p.end();
+         return QIcon(canvas);
      }
 }
 
@@ -86,15 +115,23 @@ namespace Docutaz
         _bus->subscribe(this, ConnectionFailedEvent::Type, _server);
 
         setText(0, buildServerName());
-        setIcon(0, _server->connectionRecord()->isReplicaSet() ? GuiRegistry::instance().replicaSetIcon()
-                                                               : GuiRegistry::instance().serverIcon());
-        // Colour-code by environment (prod/staging/…). Foreground persists across
-        // later setText() refreshes, so setting it once here is enough.
+        // Flag the environment (prod/staging/…) with a solid colour dot badge on
+        // the server glyph, rather than tinting the whole row: the row text then
+        // stays in the normal foreground and the environment can't be confused
+        // with the (green) selection highlight. No tag → plain glyph, no dot.
         {
+            const QIcon baseIcon = _server->connectionRecord()->isReplicaSet()
+                ? GuiRegistry::instance().replicaSetIcon()
+                : GuiRegistry::instance().serverIcon();
             const QColor envColor =
                 ConnectionEnvironment::color(_server->connectionRecord()->environment());
-            if (envColor.isValid())
-                setForeground(0, QBrush(envColor));
+            const qreal dpr = treeWidget() ? treeWidget()->devicePixelRatioF() : 1.0;
+            const QSize isz = treeWidget() ? treeWidget()->iconSize() : QSize();
+            const int sz = (isz.isValid() && isz.width() > 0) ? isz.width() : 16;
+            const QColor ring = treeWidget() ? treeWidget()->palette().base().color()
+                                             : QColor(Qt::white);
+            setIcon(0, envColor.isValid() ? withEnvironmentDot(baseIcon, envColor, ring, sz, dpr)
+                                          : baseIcon);
         }
         setExpanded(true);
         setChildIndicatorPolicy(QTreeWidgetItem::ShowIndicator);

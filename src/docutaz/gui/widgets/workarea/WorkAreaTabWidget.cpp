@@ -348,13 +348,18 @@ namespace Docutaz
 #if !defined(Q_OS_MAC)
         setTabIcon(count() - 1, GuiRegistry::instance().mongodbIcon());
 #endif
-        // Tint the tab text by the connection's environment (prod/staging/…) so
-        // an open production shell stands out in the tab bar.
+        // Flag the tab with the connection's environment (prod/staging/…) so an
+        // open production shell stands out in the tab bar. Stored in tabData()
+        // and painted as an accent bar by WorkAreaTabBar — setTabTextColor()
+        // can't be used because the tab bar's stylesheet sets an explicit text
+        // colour that overrides per-tab colours.
         if (event->shell->server() && event->shell->server()->connectionRecord()) {
             const QColor envColor = ConnectionEnvironment::color(
                 event->shell->server()->connectionRecord()->environment());
-            if (envColor.isValid())
-                tabBar()->setTabTextColor(count() - 1, envColor);
+            if (envColor.isValid()) {
+                tabBar()->setTabData(count() - 1, QVariant::fromValue(envColor));
+                tabBar()->update();
+            }
         }
         if (!event->shell->isExecutable()) {
             queryWidget->hideProgress();

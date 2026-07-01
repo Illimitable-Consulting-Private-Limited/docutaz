@@ -23,12 +23,16 @@ namespace Docutaz
         // First entry ("None") is the default / no-tint option.
         inline const std::vector<Preset> &presets()
         {
+            // Environment hues deliberately avoid the brand green (#119E66),
+            // which is reserved for functional chrome (selection/focus/active
+            // marker/primary buttons). Keeping them distinct stops a green
+            // selection from reading as a "development" tag, and vice-versa.
             static const std::vector<Preset> kPresets = {
                 { "",            "None",        QColor()              },
                 { "production",  "Production",  QColor(0xC0, 0x39, 0x2B) }, // red
                 { "staging",     "Staging",     QColor(0xE6, 0x7E, 0x22) }, // amber
-                { "development", "Development", QColor(0x27, 0xAE, 0x60) }, // green
-                { "other",       "Other",       QColor(0x29, 0x80, 0xB9) }, // blue
+                { "development", "Development", QColor(0x29, 0x80, 0xB9) }, // blue
+                { "other",       "Other",       QColor(0x8E, 0x44, 0xAD) }, // violet
             };
             return kPresets;
         }

@@ -4,6 +4,7 @@
 #include <QTabWidget>
 #include <QScrollArea>
 #include <QPalette>
+#include <QPainter>
 
 #include "docutaz/core/utils/QtUtils.h"
 #include "docutaz/gui/Theme.h"
@@ -78,6 +79,32 @@ namespace Docutaz
 
         emit newTabRequested(currentTab);
         QTabBar::mouseDoubleClickEvent(event);
+    }
+
+    void WorkAreaTabBar::paintEvent(QPaintEvent *event)
+    {
+        // Let the style/stylesheet paint the tabs normally first.
+        QTabBar::paintEvent(event);
+
+        // Then stamp the environment accent. WorkAreaTabWidget stores the
+        // connection's environment colour (prod/staging/…) in each tab's
+        // tabData(); paint it as a 3px strip along the tab's LEFT edge. The left
+        // edge is chosen deliberately: the top edge carries the brand-green
+        // selected-tab marker (functional chrome), so a left strip keeps the
+        // environment cue visible on every tab without colliding with selection.
+        QPainter painter(this);
+        for (int i = 0; i < count(); ++i) {
+            const QVariant data = tabData(i);
+            if (!data.canConvert<QColor>())
+                continue;
+            const QColor color = data.value<QColor>();
+            if (!color.isValid())
+                continue;
+            const QRect r = tabRect(i);
+            if (r.isNull())
+                continue;
+            painter.fillRect(QRect(r.left(), r.top(), 3, r.height()), color);
+        }
     }
 
     /**

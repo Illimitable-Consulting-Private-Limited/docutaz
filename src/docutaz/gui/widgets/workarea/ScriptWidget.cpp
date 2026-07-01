@@ -7,6 +7,7 @@
 #include <QStringListModel>
 #include <QTimer>
 #include <QRegularExpression>
+#include <QLabel>
 #include <Qsci/qscilexerjavascript.h>
 #include <Qsci/qsciscintilla.h>
 
@@ -23,6 +24,7 @@
 #include "docutaz/gui/widgets/workarea/QueryWidget.h"
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/Theme.h"
+#include "docutaz/gui/ConnectionEnvironment.h"
 #include "docutaz/gui/editors/JSLexer.h"
 #include "docutaz/gui/editors/FindFrame.h"
 #include "docutaz/gui/editors/PlainJavaScriptEditor.h"
@@ -112,8 +114,9 @@ namespace Docutaz
         _disableTextAndCursorNotifications(false)
     {
         _queryText = new FindFrame(this);
-        _topStatusBar = new TopStatusBar(_shell->server()->connectionRecord()->connectionName(), 
-                                         _shell->server()->connectionRecord()->getFullAddress(), "loading...");
+        _topStatusBar = new TopStatusBar(_shell->server()->connectionRecord()->connectionName(),
+                                         _shell->server()->connectionRecord()->getFullAddress(), "loading...",
+                                         _shell->server()->connectionRecord()->environment());
 
         QVBoxLayout *layout = new QVBoxLayout;
         layout->setSpacing(0);
@@ -607,7 +610,8 @@ namespace Docutaz
         return AutoCompletionInfo(final, row, leftStop, rightStop);
     }
 
-    TopStatusBar::TopStatusBar(const std::string &connectionName, const std::string &serverName, const std::string &dbName)
+    TopStatusBar::TopStatusBar(const std::string &connectionName, const std::string &serverName,
+                               const std::string &dbName, const std::string &environment)
     {
         setContentsMargins(0, 0, 0, 0);
         _textColor = palette().text().color().lighter(200);
@@ -631,6 +635,35 @@ namespace Docutaz
     #else
         topLayout->setContentsMargins(2, 7, 2, 3);
     #endif
+
+        // Environment banner: for a tagged connection, lead the breadcrumb with a
+        // solid colour accent strip + an uppercased env-name pill (PRODUCTION,
+        // STAGING, …) in the environment colour, so it is unmistakable which
+        // environment this editor is pointed at — right above where destructive
+        // queries get typed. Untagged connections add nothing (neutral strip).
+        // Both use #objectName selectors so the parent ScriptWidget's `QFrame`
+        // stylesheet (set in applyTheme) can't override them, and so a live
+        // theme switch leaves the banner untouched.
+        const QColor envColor = ConnectionEnvironment::color(environment);
+        if (envColor.isValid()) {
+            QFrame *accent = new QFrame;
+            accent->setObjectName("envAccentStrip");
+            accent->setFixedWidth(3);
+            accent->setStyleSheet(
+                QString("QFrame#envAccentStrip { background-color: %1; border: none; }")
+                    .arg(envColor.name()));
+            topLayout->addWidget(accent);
+            topLayout->addSpacing(6);
+
+            QLabel *pill = new QLabel(ConnectionEnvironment::displayName(environment).toUpper());
+            pill->setObjectName("envPill");
+            pill->setStyleSheet(QString(
+                "QLabel#envPill { background-color: %1; color: white; font-weight: bold;"
+                " border-radius: 3px; padding: 1px 6px; }").arg(envColor.name()));
+            topLayout->addWidget(pill, 0, Qt::AlignVCenter);
+            topLayout->addSpacing(6);
+        }
+
         topLayout->addWidget(_currentConnectionLabel, 0, Qt::AlignLeft);
         topLayout->addWidget(_currentServerLabel, 0, Qt::AlignLeft);
         topLayout->addWidget(_currentDatabaseLabel, 0, Qt::AlignLeft);
