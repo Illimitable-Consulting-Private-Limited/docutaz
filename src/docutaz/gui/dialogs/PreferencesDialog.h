@@ -19,7 +19,10 @@ namespace Docutaz
     public:
         typedef QDialog BaseClass;
         explicit PreferencesDialog(QWidget *parent);
-        enum { height = 640, width = 480};
+        // Fixed dialog size. Tall enough to hold the destructive-operation
+        // safety group (master toggle + per-environment checkboxes) without
+        // the QVBoxLayout squeezing it to a clipped, empty strip.
+        enum { dialogWidth = 640, dialogHeight = 680 };
     public Q_SLOTS:
         virtual void accept();
         void browseMongoshPath();

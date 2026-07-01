@@ -35,7 +35,7 @@ namespace Docutaz
 
         setWindowTitle("Preferences " PROJECT_NAME_TITLE);
         setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
-        setFixedSize(height, width);
+        setFixedSize(dialogWidth, dialogHeight);
 
         QVBoxLayout *layout = new QVBoxLayout(this);
 
