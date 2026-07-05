@@ -63,9 +63,16 @@ ShowUnInstDetails show
 !define MUI_UNWELCOMEFINISHPAGE_BITMAP "nsis-sidebar.bmp"
 !define MUI_ABORTWARNING
 
-; Offer to launch the app from the finish page.
-!define MUI_FINISHPAGE_RUN "$INSTDIR\${EXE_NAME}"
+; Offer to launch the app from the finish page. The installer runs elevated
+; (RequestExecutionLevel admin), and MUI's built-in run would start the app with
+; that elevated token — so it would inherit the *elevating* account's
+; environment (e.g. %USERPROFILE%=C:\Users\Admin) and read/write its config
+; under the wrong profile, hiding the real user's saved connections. Launch it
+; de-elevated via LaunchAppAsUser instead. An empty MUI_FINISHPAGE_RUN still
+; shows the checkbox; MUI_FINISHPAGE_RUN_FUNCTION replaces the default exec.
+!define MUI_FINISHPAGE_RUN ""
 !define MUI_FINISHPAGE_RUN_TEXT "Launch ${APP_NAME}"
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchAppAsUser"
 
 ; ---- Pages ----
 !insertmacro MUI_PAGE_WELCOME
@@ -85,6 +92,18 @@ ShowUnInstDetails show
 ; automatic InstallDirRegKey lookup runs (end of .onInit).
 Function .onInit
   SetRegView 64
+FunctionEnd
+
+; Launch the freshly installed app as the logged-in (non-elevated) user, called
+; from the finish page instead of MUI's default exec. Because this installer is
+; elevated, running the exe directly would start it under the elevating admin's
+; token/profile — so it would look for connections under the wrong
+; %USERPROFILE%\.Docutaz. Handing the path to the already-running shell
+; (explorer.exe, medium integrity) makes Windows start the child under the
+; interactive user's own token and profile, so it reads the correct config.
+; Fire-and-forget: explorer returns immediately.
+Function LaunchAppAsUser
+  Exec '"$WINDIR\explorer.exe" "$INSTDIR\${EXE_NAME}"'
 FunctionEnd
 
 ; ---------------------------------------------------------------------------
