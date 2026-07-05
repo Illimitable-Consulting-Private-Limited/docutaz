@@ -47,7 +47,8 @@ namespace Docutaz
 
         QScrollArea* _parent;
         QLabel*      _logo;
-        QPixmap      _logoPx;
+        QPixmap      _logoPx;       // light-theme wordmark (dark ink)
+        QPixmap      _logoPxDark;   // dark-theme wordmark (light ink)
         QLabel*      _body = nullptr;
         QFrame*      _mongoshCard = nullptr;
     };
