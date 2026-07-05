@@ -147,7 +147,9 @@ namespace Docutaz
 #else  
         layout->setContentsMargins(2, 0, 5, 1);
 #endif
-        layout->setSpacing(0);
+        // A small uniform gap so the result-header buttons (copy, export, paging,
+        // view-mode toggles, dock) don't sit flush against each other.
+        layout->setSpacing(4);
         layout->addWidget(_collectionIndicator);
         layout->addWidget(_timeIndicator);
         QSpacerItem *hSpacer = new QSpacerItem(2000, 24, QSizePolicy::Preferred, QSizePolicy::Minimum);
