@@ -44,7 +44,8 @@ namespace Docutaz
         }
 
         bool confirmGuardedWrite(QWidget *parent, const ConnectionSettings *conn,
-                                 const QString &actionText)
+                                 const QString &actionText,
+                                 ScriptClassifier::WriteScope scope)
         {
             if (!conn)
                 return true;
@@ -55,6 +56,13 @@ namespace Docutaz
 
             const std::string env = conn->environment();
             if (!sm->isEnvironmentGuarded(env))
+                return true;
+
+            // Not a write, or a single-document op while single-doc warnings are
+            // off (the default) — let it through. A Multi scope always prompts.
+            if (scope == ScriptClassifier::WriteScope::None)
+                return true;
+            if (scope == ScriptClassifier::WriteScope::Single && !sm->warnOnSingleDocOps())
                 return true;
 
             const QString envName = ConnectionEnvironment::displayName(env);

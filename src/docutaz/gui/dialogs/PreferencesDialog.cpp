@@ -116,6 +116,14 @@ namespace Docutaz
         VERIFY(connect(_confirmDestructiveOpsCheckBox, SIGNAL(toggled(bool)),
                        this, SLOT(updateGuardedEnvEnabled())));
 
+        _warnOnSingleDocOpsCheckBox =
+            new QCheckBox("Also confirm single-document changes");
+        _warnOnSingleDocOpsCheckBox->setToolTip(
+            "By default only operations that can affect more than one document\n"
+            "(or mass/structural ops like drop) prompt. Enable this to also\n"
+            "confirm single-document edits and deletes.");
+        safetyLayout->addWidget(_warnOnSingleDocOpsCheckBox);
+
         QLabel *protectedLabel = new QLabel("Protected environments:");
         safetyLayout->addWidget(protectedLabel);
         // One checkbox per environment preset except "None" (the empty tag is
@@ -221,6 +229,7 @@ namespace Docutaz
 
         SettingsManager *sm = AppRegistry::instance().settingsManager();
         _confirmDestructiveOpsCheckBox->setChecked(sm->confirmDestructiveOps());
+        _warnOnSingleDocOpsCheckBox->setChecked(sm->warnOnSingleDocOps());
         const QStringList guarded = sm->guardedEnvironments();
         for (auto it = _guardedEnvChecks.cbegin(); it != _guardedEnvChecks.cend(); ++it)
             it.value()->setChecked(guarded.contains(it.key()));
@@ -230,6 +239,7 @@ namespace Docutaz
     void PreferencesDialog::updateGuardedEnvEnabled()
     {
         const bool on = _confirmDestructiveOpsCheckBox->isChecked();
+        _warnOnSingleDocOpsCheckBox->setEnabled(on);
         for (QCheckBox *check : _guardedEnvChecks)
             check->setEnabled(on);
     }
@@ -276,6 +286,8 @@ namespace Docutaz
 
         AppRegistry::instance().settingsManager()->setConfirmDestructiveOps(
             _confirmDestructiveOpsCheckBox->isChecked());
+        AppRegistry::instance().settingsManager()->setWarnOnSingleDocOps(
+            _warnOnSingleDocOpsCheckBox->isChecked());
         QStringList guarded;
         for (auto it = _guardedEnvChecks.cbegin(); it != _guardedEnvChecks.cend(); ++it)
             if (it.value()->isChecked())

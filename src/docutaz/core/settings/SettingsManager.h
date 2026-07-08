@@ -181,6 +181,14 @@ namespace Docutaz
         void setGuardedEnvironments(const QStringList &envs) { _guardedEnvironments = envs; }
         QStringList guardedEnvironments() const { return _guardedEnvironments; }
 
+        // Opt-in extension of the guard: when off (default) only operations that
+        // can touch more than one document (or mass/structural ops) prompt on a
+        // guarded connection; single-document edits/deletes pass silently. When
+        // on, single-document changes prompt too. Only meaningful while
+        // confirmDestructiveOps() is enabled.
+        void setWarnOnSingleDocOps(bool value) { _warnOnSingleDocOps = value; }
+        bool warnOnSingleDocOps() const { return _warnOnSingleDocOps; }
+
         // True when a confirmation is owed for an operation on `env` (the
         // ConnectionSettings::environment() key). The empty/"None" tag is never
         // guarded. Independent of confirmDestructiveOps() (the master toggle).
@@ -300,6 +308,7 @@ namespace Docutaz
         bool _saveQueryHistory = true;
         bool _confirmDestructiveOps = true;
         QStringList _guardedEnvironments = { QStringLiteral("production") };
+        bool _warnOnSingleDocOps = false;
         bool _debugMode = false;
         QSet<QString> _acceptedEulaVersions;
         int _batchSize;

@@ -250,7 +250,8 @@ namespace Docutaz
     {
         MongoDatabase *database = _collection->database();
         if (!utils::confirmGuardedWrite(treeWidget(), database->server()->connectionRecord(),
-                "remove every document from a collection"))
+                "remove every document from a collection",
+                ScriptClassifier::WriteScope::Multi))
             return;
         // Ask user
         int answer = QMessageBox::question(treeWidget(),
@@ -299,7 +300,8 @@ namespace Docutaz
     {
         if (!utils::confirmGuardedWrite(treeWidget(),
                 _collection->database()->server()->connectionRecord(),
-                "drop a collection"))
+                "drop a collection",
+                ScriptClassifier::WriteScope::Multi))
             return;
 
         // Ask user

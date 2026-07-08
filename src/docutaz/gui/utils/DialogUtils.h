@@ -2,6 +2,8 @@
 
 #include <QMessageBox>
 
+#include "docutaz/core/utils/ScriptClassifier.h"
+
 namespace Docutaz
 {
     class ConnectionSettings;
@@ -21,14 +23,17 @@ namespace Docutaz
 
         // Production-safety gate for an update/delete. Returns true (proceed)
         // immediately when no confirmation is owed — `conn` is null, the master
-        // "confirm destructive ops" preference is off, or the connection's
-        // environment is not in the guarded set. Otherwise shows a prominent
-        // confirmation naming the connection and its environment, with a "Don't
-        // ask me again" checkbox that clears the preference, and returns whether
-        // the user chose to proceed. `actionText` completes "You are about to
-        // <actionText>" (e.g. "delete the selected document(s)").
+        // "confirm destructive ops" preference is off, the connection's
+        // environment is not in the guarded set, or `scope` is a single-document
+        // op while single-doc warnings are disabled (the default). A `Multi`
+        // scope always prompts on a guarded connection. Otherwise shows a
+        // prominent confirmation naming the connection and its environment, with a
+        // "Don't ask me again" checkbox that clears the preference, and returns
+        // whether the user chose to proceed. `actionText` completes "You are about
+        // to <actionText>" (e.g. "delete the selected document(s)").
         bool confirmGuardedWrite(QWidget *parent, const ConnectionSettings *conn,
-                                 const QString &actionText);
+                                 const QString &actionText,
+                                 ScriptClassifier::WriteScope scope);
     }
 }
 

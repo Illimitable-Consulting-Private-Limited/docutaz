@@ -226,6 +226,8 @@ namespace Docutaz
         _guardedEnvironments = map.contains("guardedEnvironments")
                                    ? map.value("guardedEnvironments").toStringList()
                                    : QStringList{ QStringLiteral("production") };
+        _warnOnSingleDocOps = map.contains("warnOnSingleDocOps") ?
+                              map.value("warnOnSingleDocOps").toBool() : false;
 
         _debugMode = map.contains("debugMode") ? map.value("debugMode").toBool() : false;
 
@@ -392,6 +394,7 @@ namespace Docutaz
         map.insert("saveQueryHistory", _saveQueryHistory);
         map.insert("confirmDestructiveOps", _confirmDestructiveOps);
         map.insert("guardedEnvironments", _guardedEnvironments);
+        map.insert("warnOnSingleDocOps", _warnOnSingleDocOps);
         map.insert("debugMode", _debugMode);
         
         return map;

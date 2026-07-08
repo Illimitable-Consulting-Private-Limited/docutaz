@@ -44,6 +44,9 @@ namespace Docutaz
         QSpinBox *_editorFontSizeSpinBox;
         QLineEdit *_mongoshPathEdit;
         QCheckBox *_confirmDestructiveOpsCheckBox;
+        // Opt-in: also confirm single-document edits/deletes (off by default, so
+        // only multi/mass writes prompt). Enabled only while the master toggle is.
+        QCheckBox *_warnOnSingleDocOpsCheckBox;
         // Environment-key (production/staging/...) -> "guard this environment"
         // checkbox. Built from ConnectionEnvironment::presets() minus "None".
         QMap<QString, QCheckBox*> _guardedEnvChecks;

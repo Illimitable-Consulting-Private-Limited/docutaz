@@ -193,7 +193,9 @@ namespace Docutaz
         if (!utils::confirmGuardedWrite(dynamic_cast<QWidget*>(_observer),
                 _shell->server()->connectionRecord(),
                 items.size() == 1 ? "delete the selected document"
-                                   : "delete the selected documents"))
+                                   : "delete the selected documents",
+                items.size() > 1 ? ScriptClassifier::WriteScope::Multi
+                                 : ScriptClassifier::WriteScope::Single))
             return;
 
         bool isNeededRefresh = false;
@@ -414,7 +416,8 @@ namespace Docutaz
         if (result == QDialog::Accepted) {
             if (!utils::confirmGuardedWrite(dynamic_cast<QWidget*>(_observer),
                     _shell->server()->connectionRecord(),
-                    "save changes to the selected document"))
+                    "save changes to the selected document",
+                    ScriptClassifier::WriteScope::Single))
                 return;
             _shell->server()->saveDocuments(editor.bsonObj(), _queryInfo._info._ns);
             mainWindow()->showQueryWidgetProgressBar();
