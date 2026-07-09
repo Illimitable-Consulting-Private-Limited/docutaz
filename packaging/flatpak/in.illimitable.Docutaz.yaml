@@ -128,6 +128,68 @@ modules:
         url: https://downloads.mongodb.com/compass/mongosh-2.8.3-linux-arm64.tgz
         sha256: 68b4894acac60bf49902d6342d5ef91782473490e55100b4dc5db2ce1ff01fb2
 
+  # ── MIT krb5 (GSSAPI runtime for the Database Tools) ────────────────────────
+  # The prebuilt mongodump/restore/export/import have a hard NEEDED dependency on
+  # libgssapi_krb5.so.2 (for optional Kerberos auth), and org.kde.Platform//6.10
+  # does NOT ship it — verified: the runtime has libcom_err but no libgssapi_krb5
+  # / libkrb5 / libk5crypto. Without this the tools fail to start with
+  # "error while loading shared libraries: libgssapi_krb5.so.2". We build a lean
+  # shared-only krb5 that installs libgssapi_krb5 (+ libkrb5/libk5crypto/
+  # libkrb5support) into /app/lib, which is on Flatpak's default library path.
+  # The tools import GSS symbols under the stable `gssapi_krb5_2_MIT` version node
+  # that 1.21 provides, so the newer lib satisfies the older binaries.
+  - name: krb5
+    buildsystem: autotools
+    subdir: src
+    # Pin C17: krb5 1.21.3 uses old-style empty `()` prototypes that a C23-default
+    # compiler (GCC >= 14) rejects with "too many arguments" in util/ss. The KDE
+    # 6.10 SDK's GCC is older, but this keeps the build working if it ever bumps.
+    build-options:
+      append-cflags: -std=gnu17
+    config-opts:
+      - --disable-static
+      - --disable-nls
+      - --without-keyutils
+      - --without-libedit
+    cleanup:
+      # Only the shared libraries are needed at runtime; drop the CLI tools,
+      # daemons and locale/doc data.
+      - /bin
+      - /sbin
+      - /share
+    sources:
+      - type: archive
+        url: https://kerberos.org/dist/krb5/1.21/krb5-1.21.3.tar.gz
+        sha256: b7a4cd5ead67fb08b980b21abd150ff7217e85ea320c9ed0c6dadd304840ad35
+
+  # ── MongoDB Database Tools (bundled; Apache-2.0) ────────────────────────────
+  # Backup/Restore shells out to mongodump/mongorestore (+ mongoexport/import);
+  # a sandboxed app can't exec the host copies, so we ship MongoDB's official
+  # prebuilt bundle. MongoTools::candidateDirs() picks them up at /app/bin.
+  #
+  # There is no generic-Linux build — the Tools are published per-distro — so we
+  # take a conservative old-glibc build (ubuntu2004 = glibc 2.31, rhel88 = glibc
+  # 2.28); glibc is forward-compatible, so these run on the runtime's newer libc
+  # (the binaries need only GLIBC <= 2.14). Only the four tools we use are
+  # installed; bsondump/mongofiles/mongostat/mongotop are dropped. Their
+  # libgssapi_krb5 dependency is provided by the krb5 module above.
+  - name: mongodb-database-tools
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 bin/mongodump    /app/bin/mongodump
+      - install -Dm755 bin/mongorestore /app/bin/mongorestore
+      - install -Dm755 bin/mongoexport  /app/bin/mongoexport
+      - install -Dm755 bin/mongoimport  /app/bin/mongoimport
+    sources:
+      - type: archive
+        only-arches: [x86_64]
+        url: https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2004-x86_64-100.17.0.tgz
+        sha256: cac92d138114eae405e0eec2f553b94ef63014f34d566331e63dffddb52ca7fc
+      - type: archive
+        only-arches: [aarch64]
+        url: https://fastdl.mongodb.org/tools/db/mongodb-database-tools-rhel88-aarch64-100.17.0.tgz
+        sha256: f5ef95fde059058c234e67152ad938cd1d3a52f055b73c981fc062f866620419
+
   # ── Docutaz itself ──────────────────────────────────────────────────────────
   - name: docutaz
     buildsystem: cmake-ninja
