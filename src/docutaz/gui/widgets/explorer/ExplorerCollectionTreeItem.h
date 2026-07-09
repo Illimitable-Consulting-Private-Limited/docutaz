@@ -55,6 +55,7 @@ namespace Docutaz
         void ui_duplicateCollection();
         void ui_copyToCollectionToDiffrentServer();
         void ui_viewCollection();
+        void ui_backupCollection();
 
     private:
         QString buildToolTip(MongoCollection *collection);

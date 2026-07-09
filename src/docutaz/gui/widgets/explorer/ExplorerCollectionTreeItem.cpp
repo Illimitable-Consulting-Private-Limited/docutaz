@@ -10,6 +10,7 @@
 #include "docutaz/gui/dialogs/CreateDatabaseDialog.h"
 #include "docutaz/gui/dialogs/CopyCollectionDialog.h"
 #include "docutaz/gui/dialogs/DocumentTextEditor.h"
+#include "docutaz/gui/dialogs/BackupDialog.h"
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/utils/DialogUtils.h"
 
@@ -84,6 +85,9 @@ namespace Docutaz
         QAction *viewCollection = new QAction("View Documents", this);
         VERIFY(connect(viewCollection, SIGNAL(triggered()), SLOT(ui_viewCollection())));
 
+        QAction *backupCollection = new QAction("Backup Collection...", this);
+        VERIFY(connect(backupCollection, SIGNAL(triggered()), SLOT(ui_backupCollection())));
+
         BaseClass::_contextMenu->addAction(viewCollection);
         BaseClass::_contextMenu->addSeparator();
         BaseClass::_contextMenu->addAction(addDocument);
@@ -96,6 +100,8 @@ namespace Docutaz
         // Disabling for 0.8.5 release as this is currently a broken misfeature (see discussion on issue #398)
         // BaseClass::_contextMenu->addAction(copyCollectionToDiffrentServer);
         BaseClass::_contextMenu->addAction(dropCollection);
+        BaseClass::_contextMenu->addSeparator();
+        BaseClass::_contextMenu->addAction(backupCollection);
         BaseClass::_contextMenu->addSeparator();
         BaseClass::_contextMenu->addAction(collectionStats);
         BaseClass::_contextMenu->addSeparator();
@@ -373,6 +379,16 @@ namespace Docutaz
     {
         CursorPosition cp(0, -2);
         openCurrentCollectionShell("find({})", true, cp);
+    }
+
+    void ExplorerCollectionTreeItem::ui_backupCollection()
+    {
+        MongoDatabase *database = _collection->database();
+        BackupDialog dlg(database->server(),
+                         QtUtils::toQString(database->name()),
+                         QtUtils::toQString(_collection->name()),
+                         treeWidget());
+        dlg.exec();
     }
 
     void ExplorerCollectionTreeItem::ui_storageSize()

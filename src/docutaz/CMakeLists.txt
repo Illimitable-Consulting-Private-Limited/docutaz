@@ -20,6 +20,8 @@ set(SOURCES
     core/utils/BsonUtils.cpp
     core/utils/Exporter.cpp
     core/utils/ScriptClassifier.cpp
+    core/utils/ConnectionUri.cpp
+    core/utils/ToolCommand.cpp
     core/settings/CredentialSettings.cpp
     core/settings/ConnectionSettings.cpp
     core/Event.cpp
@@ -44,6 +46,7 @@ set(SOURCES
 
     # Isolated Scope #2
     core/engine/MongoshEngine.cpp
+    core/utils/MongoTools.cpp
     core/events/MongoEvents.cpp
     core/domain/MongoDocument.cpp
     gui/AppStyle.cpp
@@ -87,6 +90,9 @@ set(SOURCES
     gui/dialogs/ConnectionsDialog.cpp
     gui/dialogs/ExportDialog.cpp
     gui/dialogs/ChangeShellTimeoutDialog.cpp
+    gui/dialogs/ToolRunnerDialog.cpp
+    gui/dialogs/BackupDialog.cpp
+    gui/dialogs/RestoreDialog.cpp
 
     # Isolated scope #5
     gui/editors/PlainJavaScriptEditor.cpp

@@ -57,6 +57,8 @@ namespace Docutaz
         void ui_dbRepair();
         void ui_dbOpenShell();
         void ui_refreshDatabase();
+        void ui_dbBackup();
+        void ui_dbRestore();
 
     private:
         void addCollectionItem(MongoCollection *collection);

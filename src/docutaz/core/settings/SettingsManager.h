@@ -148,6 +148,12 @@ namespace Docutaz
         void setMongoshPath(const QString& path) { _mongoshPath = path; }
         QString mongoshPath() const { return _mongoshPath; }
 
+        // Folder containing the MongoDB Database Tools (mongodump/mongorestore/
+        // mongoexport/mongoimport) used by backup/restore. May be a folder or one
+        // tool's executable; empty means auto-detect. See MongoTools::findTool.
+        void setDatabaseToolsPath(const QString& path) { _databaseToolsPath = path; }
+        QString databaseToolsPath() const { return _databaseToolsPath; }
+
         // When true, all shell tabs of one connection share a single mongosh
         // subprocess instead of each spawning its own. Lower memory and instant
         // tab opening, at the cost of serialized execution (a long query in one
@@ -297,6 +303,7 @@ namespace Docutaz
         AutocompletionMode _autocompletionMode;
         bool _loadMongoRcJs;
         QString _mongoshPath;
+        QString _databaseToolsPath;
         bool _shareShellPerConnection = false;
         bool _autoExpand;
         bool _autoExec;
