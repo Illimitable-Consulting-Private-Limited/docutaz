@@ -141,11 +141,13 @@ modules:
   - name: krb5
     buildsystem: autotools
     subdir: src
-    # Pin C17: krb5 1.21.3 uses old-style empty `()` prototypes that a C23-default
-    # compiler (GCC >= 14) rejects with "too many arguments" in util/ss. The KDE
-    # 6.10 SDK's GCC is older, but this keeps the build working if it ever bumps.
+    # Pin C17: krb5 1.21.3 uses old-style empty `()` prototypes that the KDE 6.10
+    # SDK's C23-default GCC rejects with "too many arguments" in util/ss. The
+    # `cflags` key is concatenated onto the SDK's default CFLAGS (there is no
+    # `append-cflags` key — an invalid key is silently ignored, which is what
+    # broke the first CI build).
     build-options:
-      append-cflags: -std=gnu17
+      cflags: -std=gnu17
     config-opts:
       - --disable-static
       - --disable-nls
