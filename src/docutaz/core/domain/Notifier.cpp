@@ -485,6 +485,21 @@ namespace Docutaz
             return;
 
         QClipboard *clipboard = QApplication::clipboard();
+
+        // A Date renders in the tree as a bare, space-separated string
+        // ("2026-07-13 16:47:16.786Z"). Copying that loses the type; emit the
+        // shell's own literal ISODate("<ISO-8601>") so the value round-trips.
+        if (mongo::Date == documentItem->type()) {
+            mongo::BSONElement elem = documentItem->root()[documentItem->fieldName()];
+            long long ms = (long long) elem.date().toMillisSinceEpoch();
+            bool isSupportedDate = (miutil::minDate < ms) && (ms < miutil::maxDate);
+            if (isSupportedDate) {
+                std::string date = miutil::isotimeString(ms, true, false);
+                clipboard->setText("ISODate(\"" + QString::fromStdString(date) + "\")");
+                return;
+            }
+        }
+
         clipboard->setText(documentItem->value());
     }
 
