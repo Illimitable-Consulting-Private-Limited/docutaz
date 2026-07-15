@@ -202,6 +202,15 @@ namespace Docutaz
             "Specifies a <i>time to live</i>, in seconds, to control how long MongoDB retains documents in this collection",
             20, -2, 0, 20);
 
+        _partialFilterEdit = createFindFrame(advanced,
+            QtUtils::toQString(_info._partialFilterExpression));
+
+        QLabel *partialHelpLabel = createHelpLabel(
+            "If set, only documents matching this filter are included in the index "
+            "(a <i>partial</i> index). For example: { qty: { $gt: 0 } }. Leave empty "
+            "for a normal index.",
+            0, -2, 0, 20);
+
         QGridLayout *layout = new QGridLayout;
         layout->addWidget(_sparceCheckBox,           0, 0, 1, 2);
         layout->addWidget(sparseHelpLabel,           1, 0, 1, 2);
@@ -210,6 +219,9 @@ namespace Docutaz
         layout->addWidget(expireCheckBox,            4, 0);
         layout->addLayout(expireLayout,              4, 1);
         layout->addWidget(expireHelpLabel,           5, 0, 1, 2);
+        layout->addWidget(new QLabel(tr("Partial filter:")), 6, 0, Qt::AlignTop);
+        layout->addWidget(_partialFilterEdit,        6, 1, Qt::AlignTop);
+        layout->addWidget(partialHelpLabel,          7, 0, 1, 2);
         layout->setAlignment(Qt::AlignTop);
         advanced->setLayout(layout);
 
@@ -270,7 +282,8 @@ namespace Docutaz
             expAftInt,
             QtUtils::toStdString(_defaultLanguageLineEdit->text()),
             QtUtils::toStdString(_languageOverrideLineEdit->text()),
-            QtUtils::toStdString(_textWeightsLineEdit->sciScintilla()->text()));
+            QtUtils::toStdString(_textWeightsLineEdit->sciScintilla()->text()),
+            QtUtils::toStdString(_partialFilterEdit->sciScintilla()->text()));
     }
 
     void AddEditIndexDialog::accept()
@@ -280,6 +293,14 @@ namespace Docutaz
             if (!weightText.isEmpty() && !isValidJson(weightText)) {
                 QMessageBox::warning(this, "Invalid json", "Please check json text.\n");
                 _textWeightsLineEdit->setFocus();
+                return ;
+            }
+
+            const QString &partialText = _partialFilterEdit->sciScintilla()->text();
+            if (!partialText.isEmpty() && !isValidJson(partialText)) {
+                QMessageBox::warning(this, "Invalid json",
+                    "Please check the partial filter expression.\n");
+                _partialFilterEdit->setFocus();
                 return ;
             }
 

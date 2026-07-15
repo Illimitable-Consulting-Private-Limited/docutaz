@@ -16,7 +16,8 @@ namespace Docutaz
             int expireAfter = -1,
             const std::string &defaultLanguage = std::string(),
             const std::string &languageOverride = std::string(),
-            const std::string &textWeights = std::string());
+            const std::string &textWeights = std::string(),
+            const std::string &partialFilterExpression = std::string());
 
         MongoCollectionInfo _collection;
         std::string _name;
@@ -28,6 +29,9 @@ namespace Docutaz
         std::string _defaultLanguage;
         std::string _languageOverride;
         std::string _textWeights;
+        // Mongo-shell JSON for a partial index's filter (partialFilterExpression);
+        // empty means a normal, non-partial index.
+        std::string _partialFilterExpression;
     };
 
     struct ConnectionInfo
