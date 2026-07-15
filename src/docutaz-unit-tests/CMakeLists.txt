@@ -28,6 +28,7 @@ set(SOURCES_TEST
     ${DOCUTAZ_SRC_DIR}/core/utils/ScriptClassifier_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/utils/ToolCommand_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/mongodb/MongoClient_connection_test.cpp
+    ${DOCUTAZ_SRC_DIR}/core/mongodb/MongoClient_index_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/settings/ConnectionSettings_test.cpp
     ${DOCUTAZ_SRC_DIR}/core/settings/SettingsManager_test.cpp
     ${DOCUTAZ_SRC_DIR}/gui/GuiResources_test.cpp
