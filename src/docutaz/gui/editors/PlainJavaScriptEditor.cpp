@@ -237,11 +237,21 @@ namespace Docutaz
 
         // Text-selection colour. QsciScintilla::setSelectionBackgroundColor is a
         // no-op while a lexer is attached (like setPaper/setColor), so drive
-        // Scintilla directly: opaque mid tone for the main and additional
-        // selections. Selected text keeps its syntax foreground.
-        SendScintilla(SCI_SETSELBACK, 1UL, sciColor(th.mid));
+        // Scintilla directly. This (older) Scintilla has no element-colour/layer
+        // API and ignores SCI_SETSELALPHA, so a translucent wash is not possible
+        // — the selection is always drawn OPAQUE. An opaque background that keeps
+        // the syntax foreground therefore either washed coloured text out (grey
+        // on the light theme) or hid it under a solid fill. So paint an opaque
+        // brand-accent background AND force a single high-contrast foreground:
+        // selected text becomes white-on-green, uniformly legible in both themes
+        // and matching the app-wide selection chrome (tree rows, line edits).
+        const long selBack = sciColor(th.highlight);
+        const long selFore = sciColor(th.highlightedText);
+        SendScintilla(SCI_SETSELBACK, 1UL, selBack);
+        SendScintilla(SCI_SETSELFORE, 1UL, selFore);
         SendScintilla(SCI_SETSELALPHA, (long)256 /* SC_ALPHA_NOALPHA */);
-        SendScintilla(SCI_SETADDITIONALSELBACK, sciColor(th.mid), 0L);
+        SendScintilla(SCI_SETADDITIONALSELBACK, selBack, 0L);
+        SendScintilla(SCI_SETADDITIONALSELFORE, selFore, 0L);
 
         // Margin/gutter colours. STYLE_LINENUMBER's background colours the
         // line-number margin AND the symbol (error) margin, so the whole gutter

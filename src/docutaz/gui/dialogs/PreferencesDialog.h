@@ -26,6 +26,7 @@ namespace Docutaz
     public Q_SLOTS:
         virtual void accept();
         void browseMongoshPath();
+        void browseDatabaseToolsPath();
     private Q_SLOTS:
         // Enable/disable the per-environment checkboxes with the master toggle.
         void updateGuardedEnvEnabled();
@@ -43,7 +44,11 @@ namespace Docutaz
         QFontComboBox *_editorFontComboBox;
         QSpinBox *_editorFontSizeSpinBox;
         QLineEdit *_mongoshPathEdit;
+        QLineEdit *_databaseToolsPathEdit;
         QCheckBox *_confirmDestructiveOpsCheckBox;
+        // Opt-in: also confirm single-document edits/deletes (off by default, so
+        // only multi/mass writes prompt). Enabled only while the master toggle is.
+        QCheckBox *_warnOnSingleDocOpsCheckBox;
         // Environment-key (production/staging/...) -> "guard this environment"
         // checkbox. Built from ConnectionEnvironment::presets() minus "None".
         QMap<QString, QCheckBox*> _guardedEnvChecks;

@@ -5,7 +5,8 @@ namespace Docutaz
     IndexInfo::IndexInfo(
         const MongoCollectionInfo &collection, const std::string &name, const std::string &keys,
         bool isUnique, bool isBackGround, bool isSparce, int expireAfter,
-        const std::string &defaultLanguage, const std::string &languageOverride, const std::string &textWeights) :
+        const std::string &defaultLanguage, const std::string &languageOverride, const std::string &textWeights,
+        const std::string &partialFilterExpression) :
         _name(name),
         _collection(collection),
         _keys(keys),
@@ -15,7 +16,8 @@ namespace Docutaz
         _ttl(expireAfter),
         _defaultLanguage(defaultLanguage),
         _languageOverride(languageOverride),
-        _textWeights(textWeights) {}
+        _textWeights(textWeights),
+        _partialFilterExpression(partialFilterExpression) {}
 
         ConnectionInfo::ConnectionInfo(std::string const& uuid) :
             _address(),

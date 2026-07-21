@@ -143,11 +143,14 @@ namespace Docutaz
         if (query.isEmpty())
             query = _scriptWidget->text();
 
-        // Production-safety net (Preferences-controlled): if the script looks
-        // like it writes and the connection is guarded, confirm before running.
-        if (ScriptClassifier::mayModifyData(query) && _shell->server() &&
+        // Production-safety net (Preferences-controlled): classify the script's
+        // write scope and, on a guarded connection, confirm before running. A
+        // multi/mass write always prompts; a single-document write prompts only
+        // when the user opted into single-doc warnings (handled in the guard).
+        if (_shell->server() &&
             !utils::confirmGuardedWrite(this, _shell->server()->connectionRecord(),
-                "run a script that may modify data"))
+                "run a script that may modify data",
+                ScriptClassifier::classify(query)))
             return;
 
         _lastExecutedQuery = query;   // captured for query history; consumed in handle()

@@ -16,6 +16,8 @@
 #include "docutaz/core/EventBus.h"
 
 #include "docutaz/gui/utils/DialogUtils.h"
+#include "docutaz/gui/dialogs/BackupDialog.h"
+#include "docutaz/gui/dialogs/RestoreDialog.h"
 #include "docutaz/gui/widgets/explorer/ExplorerCollectionTreeItem.h"
 #include "docutaz/gui/widgets/explorer/ExplorerDatabaseCategoryTreeItem.h"
 #include "docutaz/gui/widgets/explorer/ExplorerUserTreeItem.h"
@@ -77,6 +79,11 @@ namespace Docutaz
         QAction *refreshDatabase = new QAction("Refresh", this);
         VERIFY(connect(refreshDatabase, SIGNAL(triggered()), SLOT(ui_refreshDatabase())));
 
+        QAction *dbBackup = new QAction("Backup Database...", this);
+        VERIFY(connect(dbBackup, SIGNAL(triggered()), SLOT(ui_dbBackup())));
+        QAction *dbRestore = new QAction("Restore...", this);
+        VERIFY(connect(dbRestore, SIGNAL(triggered()), SLOT(ui_dbRestore())));
+
         BaseClass::_contextMenu->addAction(openDbShellAction);
         BaseClass::_contextMenu->addAction(refreshDatabase);
         BaseClass::_contextMenu->addSeparator();
@@ -84,6 +91,9 @@ namespace Docutaz
         BaseClass::_contextMenu->addSeparator();
         BaseClass::_contextMenu->addAction(dbCurrOps);
         BaseClass::_contextMenu->addAction(dbKillOp);
+        BaseClass::_contextMenu->addSeparator();
+        BaseClass::_contextMenu->addAction(dbBackup);
+        BaseClass::_contextMenu->addAction(dbRestore);
         BaseClass::_contextMenu->addSeparator();
         BaseClass::_contextMenu->addAction(dbRepair);
         BaseClass::_contextMenu->addAction(dbDrop);
@@ -294,7 +304,8 @@ namespace Docutaz
     void ExplorerDatabaseTreeItem::ui_dbDrop()
     {
         if (!utils::confirmGuardedWrite(treeWidget(), _database->server()->connectionRecord(),
-                "drop a database"))
+                "drop a database",
+                ScriptClassifier::WriteScope::Multi))
             return;
 
         auto const& buff = QString("Drop <b>%1</b> database?").arg(QtUtils::toQString(_database->name()));
@@ -318,5 +329,19 @@ namespace Docutaz
     void ExplorerDatabaseTreeItem::ui_dbOpenShell()
     {
         openCurrentDatabaseShell(_database, "");
+    }
+
+    void ExplorerDatabaseTreeItem::ui_dbBackup()
+    {
+        BackupDialog dlg(_database->server(), QtUtils::toQString(_database->name()),
+                         QString(), treeWidget());
+        dlg.exec();
+    }
+
+    void ExplorerDatabaseTreeItem::ui_dbRestore()
+    {
+        RestoreDialog dlg(_database->server(), QtUtils::toQString(_database->name()),
+                          treeWidget());
+        dlg.exec();
     }
 }

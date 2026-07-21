@@ -77,6 +77,10 @@ Docutaz::IndexInfo makeIndexInfoFromBsonObj(
     if (weightsObj.isValid())
         info._textWeights = jsonString(weightsObj, mongo::TenGen, 1, Docutaz::DefaultEncoding,
                                        Docutaz::Utc);
+    mongo::BSONObj partialObj = obj.getObjectField("partialFilterExpression");
+    if (partialObj.isValid() && !partialObj.isEmpty())
+        info._partialFilterExpression = jsonString(partialObj, mongo::TenGen, 1,
+                                                    Docutaz::DefaultEncoding, Docutaz::Utc);
     return info;
 }
 } // namespace
@@ -224,34 +228,55 @@ void MongoClient::addEditIndex(const IndexInfo &oldInfo, const IndexInfo &newInf
     if (editIndex)
         _client[db][coll].indexes().drop_one(oldInfo._name);
 
-    try {
-        bsoncxx::document::value keysDoc =
-            bsoncxx::from_json(newInfo._keys.empty() ? "{}" : newInfo._keys);
+    // Create the index described by `info`. Keys/weights/partial-filter come from
+    // the index dialog, which validates them with the lenient mongo-shell JSON
+    // parser (mongo::Docutaz::fromjson) — so they may use shell syntax like
+    // unquoted field names ({ sid: 1 }). Parse them the same way here; strict
+    // bsoncxx::from_json would reject that and fail even though the dialog
+    // accepted it. toView() is non-owning, so the backing BSONObjs (keysObj etc.)
+    // must — and do — outlive create_index() within this lambda's scope.
+    auto createFrom = [&](const IndexInfo &info) {
+        mongo::BSONObj keysObj =
+            mongo::Docutaz::fromjson(info._keys.empty() ? "{}" : info._keys);
 
         mongocxx::options::index opts;
-        opts.name(newInfo._name);
-        if (newInfo._unique)    opts.unique(true);
-        if (newInfo._backGround) opts.background(true);
-        if (newInfo._sparse)    opts.sparse(true);
-        if (!newInfo._defaultLanguage.empty())
-            opts.default_language(newInfo._defaultLanguage);
-        if (!newInfo._languageOverride.empty())
-            opts.language_override(newInfo._languageOverride);
-        if (newInfo._ttl > 0)
-            opts.expire_after(std::chrono::seconds(newInfo._ttl));
-        if (!newInfo._textWeights.empty()) {
-            try { opts.weights(bsoncxx::from_json(newInfo._textWeights)); } catch (...) {}
+        opts.name(info._name);
+        if (info._unique)     opts.unique(true);
+        if (info._backGround) opts.background(true);
+        if (info._sparse)     opts.sparse(true);
+        if (!info._defaultLanguage.empty())
+            opts.default_language(info._defaultLanguage);
+        if (!info._languageOverride.empty())
+            opts.language_override(info._languageOverride);
+        if (info._ttl > 0)
+            opts.expire_after(std::chrono::seconds(info._ttl));
+        mongo::BSONObj weightsObj;
+        if (!info._textWeights.empty()) {
+            try {
+                weightsObj = mongo::Docutaz::fromjson(info._textWeights);
+                opts.weights(toView(weightsObj));
+            } catch (...) {}
+        }
+        // A malformed partial filter must fail the whole op (a partial index
+        // silently created as a full one would be a data-safety surprise), so
+        // this parse is intentionally NOT swallowed.
+        mongo::BSONObj partialObj;
+        if (!info._partialFilterExpression.empty()) {
+            partialObj = mongo::Docutaz::fromjson(info._partialFilterExpression);
+            opts.partial_filter_expression(toView(partialObj));
         }
 
-        _client[db][coll].create_index(keysDoc.view(), opts);
+        _client[db][coll].create_index(toView(keysObj), opts);
+    };
+
+    try {
+        createFrom(newInfo);
     } catch (...) {
+        // On an edit, we already dropped the original index; best-effort recreate
+        // it (with its full option set, so a partial/unique/TTL index isn't
+        // resurrected as a bare one) before surfacing the failure.
         if (editIndex) {
-            try {
-                auto keysDoc = bsoncxx::from_json(oldInfo._keys.empty() ? "{}" : oldInfo._keys);
-                mongocxx::options::index opts;
-                opts.name(oldInfo._name);
-                _client[db][coll].create_index(keysDoc.view(), opts);
-            } catch (...) {}
+            try { createFrom(oldInfo); } catch (...) {}
         }
         throw;
     }

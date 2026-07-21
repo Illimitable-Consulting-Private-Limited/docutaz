@@ -226,6 +226,8 @@ namespace Docutaz
         _guardedEnvironments = map.contains("guardedEnvironments")
                                    ? map.value("guardedEnvironments").toStringList()
                                    : QStringList{ QStringLiteral("production") };
+        _warnOnSingleDocOps = map.contains("warnOnSingleDocOps") ?
+                              map.value("warnOnSingleDocOps").toBool() : false;
 
         _debugMode = map.contains("debugMode") ? map.value("debugMode").toBool() : false;
 
@@ -237,6 +239,7 @@ namespace Docutaz
         _timeZone = (SupportedTimes)timeZone;
         _loadMongoRcJs = map.value("loadMongoRcJs").toBool();
         _mongoshPath = map.value("mongoshPath").toString();
+        _databaseToolsPath = map.value("databaseToolsPath").toString();
         _shareShellPerConnection = map.value("shareShellPerConnection", false).toBool();
         _disableConnectionShortcuts = map.value("disableConnectionShortcuts").toBool();
         
@@ -348,6 +351,7 @@ namespace Docutaz
         // 6. Save loadInitJs
         map.insert("loadMongoRcJs", _loadMongoRcJs);
         map.insert("mongoshPath", _mongoshPath);
+        map.insert("databaseToolsPath", _databaseToolsPath);
         map.insert("shareShellPerConnection", _shareShellPerConnection);
 
         // 7. Save disableConnectionShortcuts
@@ -392,6 +396,7 @@ namespace Docutaz
         map.insert("saveQueryHistory", _saveQueryHistory);
         map.insert("confirmDestructiveOps", _confirmDestructiveOps);
         map.insert("guardedEnvironments", _guardedEnvironments);
+        map.insert("warnOnSingleDocOps", _warnOnSingleDocOps);
         map.insert("debugMode", _debugMode);
         
         return map;

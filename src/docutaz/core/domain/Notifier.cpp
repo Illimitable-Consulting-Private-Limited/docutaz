@@ -193,7 +193,9 @@ namespace Docutaz
         if (!utils::confirmGuardedWrite(dynamic_cast<QWidget*>(_observer),
                 _shell->server()->connectionRecord(),
                 items.size() == 1 ? "delete the selected document"
-                                   : "delete the selected documents"))
+                                   : "delete the selected documents",
+                items.size() > 1 ? ScriptClassifier::WriteScope::Multi
+                                 : ScriptClassifier::WriteScope::Single))
             return;
 
         bool isNeededRefresh = false;
@@ -414,7 +416,8 @@ namespace Docutaz
         if (result == QDialog::Accepted) {
             if (!utils::confirmGuardedWrite(dynamic_cast<QWidget*>(_observer),
                     _shell->server()->connectionRecord(),
-                    "save changes to the selected document"))
+                    "save changes to the selected document",
+                    ScriptClassifier::WriteScope::Single))
                 return;
             _shell->server()->saveDocuments(editor.bsonObj(), _queryInfo._info._ns);
             mainWindow()->showQueryWidgetProgressBar();
@@ -482,6 +485,21 @@ namespace Docutaz
             return;
 
         QClipboard *clipboard = QApplication::clipboard();
+
+        // A Date renders in the tree as a bare, space-separated string
+        // ("2026-07-13 16:47:16.786Z"). Copying that loses the type; emit the
+        // shell's own literal ISODate("<ISO-8601>") so the value round-trips.
+        if (mongo::Date == documentItem->type()) {
+            mongo::BSONElement elem = documentItem->root()[documentItem->fieldName()];
+            long long ms = (long long) elem.date().toMillisSinceEpoch();
+            bool isSupportedDate = (miutil::minDate < ms) && (ms < miutil::maxDate);
+            if (isSupportedDate) {
+                std::string date = miutil::isotimeString(ms, true, false);
+                clipboard->setText("ISODate(\"" + QString::fromStdString(date) + "\")");
+                return;
+            }
+        }
+
         clipboard->setText(documentItem->value());
     }
 

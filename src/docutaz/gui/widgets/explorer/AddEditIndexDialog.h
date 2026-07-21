@@ -44,6 +44,7 @@ namespace Docutaz
        QCheckBox *_backGroundCheckBox;
        QCheckBox *_sparceCheckBox;
        QLineEdit *_expireAfterLineEdit;
+       FindFrame *_partialFilterEdit;
 
        QLineEdit *_defaultLanguageLineEdit;
        QLineEdit *_languageOverrideLineEdit;

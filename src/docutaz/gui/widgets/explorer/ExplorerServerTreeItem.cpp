@@ -21,6 +21,8 @@
 #include "docutaz/gui/widgets/explorer/ExplorerReplicaSetFolderItem.h"
 #include "docutaz/gui/widgets/explorer/ExplorerReplicaSetTreeItem.h"
 #include "docutaz/gui/dialogs/CreateDatabaseDialog.h"
+#include "docutaz/gui/dialogs/BackupDialog.h"
+#include "docutaz/gui/dialogs/RestoreDialog.h"
 #include "docutaz/gui/GuiRegistry.h"
 #include "docutaz/gui/ConnectionEnvironment.h"
 
@@ -97,6 +99,11 @@ namespace Docutaz
         disconnectAction->setIconText("Disconnect");
         VERIFY(connect(disconnectAction, SIGNAL(triggered()), SLOT(ui_disconnectServer())));
 
+        _backupAction = new QAction("Backup All Databases...", this);
+        VERIFY(connect(_backupAction, SIGNAL(triggered()), SLOT(ui_backup())));
+        _restoreAction = new QAction("Restore...", this);
+        VERIFY(connect(_restoreAction, SIGNAL(triggered()), SLOT(ui_restore())));
+
         BaseClass::_contextMenu->addAction(openShellAction);
         BaseClass::_contextMenu->addAction(refreshServer);
         BaseClass::_contextMenu->addSeparator();
@@ -107,6 +114,11 @@ namespace Docutaz
         BaseClass::_contextMenu->addSeparator();
         BaseClass::_contextMenu->addAction(showLog);
         BaseClass::_contextMenu->addAction(disconnectAction);
+        // Appended AFTER the fixed items above so indices [0..9] used by
+        // disableSomeContextMenuActions() are unchanged.
+        BaseClass::_contextMenu->addSeparator();
+        BaseClass::_contextMenu->addAction(_backupAction);
+        BaseClass::_contextMenu->addAction(_restoreAction);
 
         _bus->subscribe(this, DatabaseListLoadedEvent::Type, _server);
         _bus->subscribe(this, MongoServerLoadingDatabasesEvent::Type, _server);
@@ -166,6 +178,10 @@ namespace Docutaz
         BaseClass::_contextMenu->actions().at(5)->setDisabled(disable);
         BaseClass::_contextMenu->actions().at(6)->setDisabled(disable);
         BaseClass::_contextMenu->actions().at(8)->setDisabled(disable);
+        // Appended actions are disabled by pointer (their positions are past the
+        // fixed block above).
+        if (_backupAction)  _backupAction->setDisabled(disable);
+        if (_restoreAction) _restoreAction->setDisabled(disable);
     }
 
     void ExplorerServerTreeItem::databaseRefreshed(const QList<MongoDatabase *> &dbs)
@@ -373,7 +389,19 @@ namespace Docutaz
             }
         }
     }
-    
+
+    void ExplorerServerTreeItem::ui_backup()
+    {
+        BackupDialog dlg(_server, QString(), QString(), treeWidget());
+        dlg.exec();
+    }
+
+    void ExplorerServerTreeItem::ui_restore()
+    {
+        RestoreDialog dlg(_server, QString(), treeWidget());
+        dlg.exec();
+    }
+
     void ExplorerServerTreeItem::buildReplicaSetServerItem()
     {
         // Delete all children (replica set folder, system folder and database items)

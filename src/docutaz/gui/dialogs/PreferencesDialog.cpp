@@ -116,6 +116,14 @@ namespace Docutaz
         VERIFY(connect(_confirmDestructiveOpsCheckBox, SIGNAL(toggled(bool)),
                        this, SLOT(updateGuardedEnvEnabled())));
 
+        _warnOnSingleDocOpsCheckBox =
+            new QCheckBox("Also confirm single-document changes");
+        _warnOnSingleDocOpsCheckBox->setToolTip(
+            "By default only operations that can affect more than one document\n"
+            "(or mass/structural ops like drop) prompt. Enable this to also\n"
+            "confirm single-document edits and deletes.");
+        safetyLayout->addWidget(_warnOnSingleDocOpsCheckBox);
+
         QLabel *protectedLabel = new QLabel("Protected environments:");
         safetyLayout->addWidget(protectedLabel);
         // One checkbox per environment preset except "None" (the empty tag is
@@ -177,6 +185,22 @@ namespace Docutaz
         mongoshLayout->addWidget(mongoshBrowseButton);
         layout->addLayout(mongoshLayout);
 
+        // Folder holding the MongoDB Database Tools (mongodump/mongorestore/
+        // mongoexport/mongoimport) used by backup/restore.
+        QHBoxLayout *dbToolsLayout = new QHBoxLayout(this);
+        dbToolsLayout->addWidget(new QLabel("Database Tools folder:"));
+        _databaseToolsPathEdit = new QLineEdit();
+        _databaseToolsPathEdit->setPlaceholderText("Auto-detect (leave empty)");
+        _databaseToolsPathEdit->setToolTip(
+            "Folder containing mongodump, mongorestore, mongoexport and mongoimport\n"
+            "(used by Backup/Restore). Leave empty to auto-detect from standard\n"
+            "install locations and PATH.");
+        dbToolsLayout->addWidget(_databaseToolsPathEdit);
+        QPushButton *dbToolsBrowseButton = new QPushButton("Browse...");
+        VERIFY(connect(dbToolsBrowseButton, SIGNAL(clicked()), this, SLOT(browseDatabaseToolsPath())));
+        dbToolsLayout->addWidget(dbToolsBrowseButton);
+        layout->addLayout(dbToolsLayout);
+
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);
         buttonBox->setOrientation(Qt::Horizontal);
         buttonBox->setStandardButtons(QDialogButtonBox::Cancel | QDialogButtonBox::Save);
@@ -218,9 +242,11 @@ namespace Docutaz
         _editorFontSizeSpinBox->setValue(editorPt > 0 ? editorPt : 0);
 
         _mongoshPathEdit->setText(AppRegistry::instance().settingsManager()->mongoshPath());
+        _databaseToolsPathEdit->setText(AppRegistry::instance().settingsManager()->databaseToolsPath());
 
         SettingsManager *sm = AppRegistry::instance().settingsManager();
         _confirmDestructiveOpsCheckBox->setChecked(sm->confirmDestructiveOps());
+        _warnOnSingleDocOpsCheckBox->setChecked(sm->warnOnSingleDocOps());
         const QStringList guarded = sm->guardedEnvironments();
         for (auto it = _guardedEnvChecks.cbegin(); it != _guardedEnvChecks.cend(); ++it)
             it.value()->setChecked(guarded.contains(it.key()));
@@ -230,6 +256,7 @@ namespace Docutaz
     void PreferencesDialog::updateGuardedEnvEnabled()
     {
         const bool on = _confirmDestructiveOpsCheckBox->isChecked();
+        _warnOnSingleDocOpsCheckBox->setEnabled(on);
         for (QCheckBox *check : _guardedEnvChecks)
             check->setEnabled(on);
     }
@@ -273,9 +300,12 @@ namespace Docutaz
                 sw->reapplyEditorFont();
 
         AppRegistry::instance().settingsManager()->setMongoshPath(_mongoshPathEdit->text().trimmed());
+        AppRegistry::instance().settingsManager()->setDatabaseToolsPath(_databaseToolsPathEdit->text().trimmed());
 
         AppRegistry::instance().settingsManager()->setConfirmDestructiveOps(
             _confirmDestructiveOpsCheckBox->isChecked());
+        AppRegistry::instance().settingsManager()->setWarnOnSingleDocOps(
+            _warnOnSingleDocOpsCheckBox->isChecked());
         QStringList guarded;
         for (auto it = _guardedEnvChecks.cbegin(); it != _guardedEnvChecks.cend(); ++it)
             if (it.value()->isChecked())
@@ -298,5 +328,14 @@ namespace Docutaz
             _mongoshPathEdit->text().isEmpty() ? "/usr/bin" : _mongoshPathEdit->text());
         if (!path.isEmpty())
             _mongoshPathEdit->setText(path);
+    }
+
+    void PreferencesDialog::browseDatabaseToolsPath()
+    {
+        QString path = QFileDialog::getExistingDirectory(this,
+            "Select the MongoDB Database Tools folder",
+            _databaseToolsPathEdit->text().isEmpty() ? "/usr/bin" : _databaseToolsPathEdit->text());
+        if (!path.isEmpty())
+            _databaseToolsPathEdit->setText(path);
     }
 }

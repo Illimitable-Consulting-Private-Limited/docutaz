@@ -5,6 +5,7 @@
 #include <mongocxx/uri.hpp>
 
 #include "docutaz/core/mongodb/MongoClient.h"
+#include "docutaz/core/mongodb/MongoTestSupport.h"
 
 // Regression guard for the "connect to an unavailable server" handling.
 //
@@ -22,12 +23,7 @@
 using Docutaz::MongoClient;
 
 namespace {
-    // mongocxx requires exactly one instance per process, created before any
-    // client and outliving them all. A function-local static gives us that
-    // without fighting gtest_main over a custom main().
-    void ensureMongocxxInstance() {
-        static mongocxx::instance instance{};
-    }
+    using docutaz_test::ensureMongocxxInstance;
 
     // An address that reliably refuses: port 1 is never a mongod. directConnection
     // skips topology discovery and the short selection timeout bounds the wait, so

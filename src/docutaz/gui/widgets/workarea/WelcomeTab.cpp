@@ -78,7 +78,11 @@ WelcomeTab::WelcomeTab(QScrollArea* parent)
 {
     setContentsMargins(0, 0, 0, 0);
 
+    // Two wordmark variants: the default has dark ink (for the light theme); the
+    // dark variant recolours "Docu"/tagline/magnifier to light ink so it stays
+    // visible on the dark canvas. resize() picks the one matching the theme.
     _logoPx.load(":/docutaz/docutaz-branding-trans.png");
+    _logoPxDark.load(":/docutaz/docutaz-branding-dark-trans.png");
 
     _logo = new QLabel(this);
     _logo->setAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -169,6 +173,9 @@ void WelcomeTab::applyTheme()
         : "QFrame#mongoshCard { background-color: #FFF4E5; border: 1px solid #E6A23C;"
           " border-radius: 6px; }"
           " QFrame#mongoshCard QLabel { color: #5c4612; background: transparent; }");
+
+    // Re-select and re-scale the wordmark for the current theme (light vs dark ink).
+    resize();
 }
 
 void WelcomeTab::handle(MongoshSettingsChangedEvent*)
@@ -197,15 +204,18 @@ void WelcomeTab::resizeEvent(QResizeEvent* event)
 
 void WelcomeTab::resize()
 {
-    if (_logoPx.isNull()) return;
+    // Pick the wordmark that matches the current theme (fall back to the light
+    // one if the dark asset failed to load).
+    const QPixmap& src = (Theme::isDark() && !_logoPxDark.isNull()) ? _logoPxDark : _logoPx;
+    if (src.isNull()) return;
 
     // On the first showEvent the parent scroll area may not be laid out yet, so
     // its width can be 0/tiny. Clamp to a sane minimum so we never compute a
     // non-positive target width (which would scale the logo down to nothing).
     const int availW = (_parent ? _parent->width() - 64 : 480);
     const int maxW   = qBound(240, availW, 520);
-    const int h      = (_logoPx.height() * maxW) / _logoPx.width();
-    _logo->setPixmap(_logoPx.scaled(maxW, h, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    const int h      = (src.height() * maxW) / src.width();
+    _logo->setPixmap(src.scaled(maxW, h, Qt::KeepAspectRatio, Qt::SmoothTransformation));
 }
 
 } // namespace Docutaz

@@ -18,8 +18,13 @@ Built and tested against **MongoDB 8.x**; earlier supported server versions (rou
 - Copy query results into another open connection / database / collection — for
   pulling a slice of data somewhere safe to debug
 - Export query and aggregation results to **JSON**, **CSV**, or **Excel (.xlsx)**
+- Back up and restore databases and collections with the
+  [MongoDB Database Tools](https://www.mongodb.com/try/download/database-tools)
+  (`mongodump`/`mongorestore`, plus single-collection JSON via `mongoexport`/`mongoimport`)
 - Insert, edit, and delete documents with a visual editor
-- Manage indexes, users, and collection structure
+- Tag connections by environment (production, staging, …) and get a confirmation
+  prompt before destructive writes on guarded ones
+- Manage indexes (unique, sparse, TTL, text, partial, geo) and users, and collection structure
 - Page through large result sets with configurable batch sizes
 - Use `<database>` directly in the shell to switch contexts
 - SSH tunnel and TLS/SSL connection support

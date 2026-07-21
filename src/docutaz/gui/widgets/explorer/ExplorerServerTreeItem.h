@@ -3,6 +3,10 @@
 #include "docutaz/core/events/MongoEvents.h"
 #include "docutaz/gui/widgets/explorer/ExplorerTreeItem.h"
 
+QT_BEGIN_NAMESPACE
+class QAction;
+QT_END_NAMESPACE
+
 namespace Docutaz
 {
     class EventBus;
@@ -52,6 +56,8 @@ namespace Docutaz
         void ui_serverHostInfo();
         void ui_serverStatus();
         void ui_serverVersion();
+        void ui_backup();
+        void ui_restore();
 
     private:
 
@@ -82,6 +88,12 @@ namespace Docutaz
 
         MongoServer *const _server;
         EventBus *_bus;
+
+        // Backup/Restore entries, appended after the fixed menu so the positional
+        // indices in disableSomeContextMenuActions() stay valid; disabled here too
+        // by pointer when a replica-set primary is unreachable.
+        QAction *_backupAction = nullptr;
+        QAction *_restoreAction = nullptr;
 
         // Flag to track last replica set connection's primary status
         bool _primaryWasUnreachable = false;

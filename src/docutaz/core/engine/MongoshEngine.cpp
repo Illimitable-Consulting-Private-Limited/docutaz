@@ -26,6 +26,7 @@
 #include "docutaz/core/domain/MongoDocument.h"
 #include "docutaz/core/utils/BsonBridge.h"
 #include "docutaz/core/utils/BsonUtils.h"
+#include "docutaz/core/utils/ConnectionUri.h"
 #include "docutaz/core/utils/Logger.h"
 #include "docutaz/core/AppRegistry.h"
 #include "docutaz/core/settings/SettingsManager.h"
@@ -557,74 +558,9 @@ std::vector<MongoShellResult> MongoshEngine::parseExecOutput(
 // ── URI building ─────────────────────────────────────────────────────────────
 
 std::string MongoshEngine::buildConnectionUri(const std::string& dbName) const {
-    const bool isSrv = _settings->isSrv();
-    std::string uri = isSrv ? "mongodb+srv://" : "mongodb://";
-    const CredentialSettings* cred = _settings->primaryCredential();
-    if (cred && !cred->userName().empty())
-        uri += ConnectionSettings::percentEncodeUserInfo(cred->userName()) + ":" +
-               ConnectionSettings::percentEncodeUserInfo(cred->userPassword()) + "@";
-
-    if (isSrv) {
-        // DNS seed list (Atlas): SRV hostname only, no port; the driver resolves
-        // hosts / replica-set / TLS from DNS.
-        uri += _settings->serverHost();
-    } else if (_settings->isReplicaSet()) {
-        const auto& members = _settings->replicaSetSettings()->members();
-        for (int i = 0; i < members.size(); ++i) {
-            if (i) uri += ",";
-            uri += members[i];
-        }
-    } else {
-        uri += _settings->serverHost() + ":" +
-               std::to_string(_settings->serverPort());
-    }
-    uri += "/" + (dbName.empty() ? _settings->defaultDatabase() : dbName);
-
-    std::vector<std::string> opts;
-    if (cred && !cred->userName().empty()) {
-        // For SRV/Atlas, let the driver negotiate the auth mechanism (picks
-        // SCRAM-SHA-256); forcing one (URI import defaults to SCRAM-SHA-1) fails.
-        if (!isSrv) {
-            const std::string mech = cred->mechanism();
-            opts.push_back("authMechanism=" + (mech.empty() ? "SCRAM-SHA-256" : mech));
-        }
-        if (!cred->databaseName().empty())
-            opts.push_back("authSource=" + cred->databaseName());
-    }
-    if (_settings->isReplicaSet()) {
-        const std::string& entered = _settings->replicaSetSettings()->setNameUserEntered();
-        const std::string& cached  = _settings->replicaSetSettings()->cachedSetName();
-        const std::string& name = !entered.empty() ? entered : cached;
-        if (!name.empty())
-            opts.push_back("replicaSet=" + name);
-    }
-    if (_settings->sslSettings() && _settings->sslSettings()->sslEnabled()) {
-        opts.push_back("tls=true");
-        if (!_settings->sslSettings()->caFile().empty())
-            opts.push_back("tlsCAFile=" + _settings->sslSettings()->caFile());
-        if (!_settings->sslSettings()->pemKeyFile().empty())
-            opts.push_back("tlsCertificateKeyFile=" +
-                           _settings->sslSettings()->pemKeyFile());
-        if (_settings->sslSettings()->allowInvalidCertificates())
-            opts.push_back("tlsAllowInvalidCertificates=true");
-    }
-    // Fail fast if the server is unreachable, and connect directly to a single
-    // host so mongosh doesn't spin on SDAM topology monitoring.
-    opts.push_back("serverSelectionTimeoutMS=10000");
-    opts.push_back("connectTimeoutMS=10000");
-    // Not for SRV: a seed list resolves to multiple hosts / a replica set, so
-    // directConnection would defeat discovery.
-    if (!_settings->isReplicaSet() && !isSrv)
-        opts.push_back("directConnection=true");
-
-    if (!opts.empty()) {
-        uri += "?";
-        for (size_t i = 0; i < opts.size(); ++i) {
-            if (i) uri += "&";
-            uri += opts[i];
-        }
-    }
-    return uri;
+    // Shared with the MongoDB Database Tools; mongosh wants the database in the
+    // path plus fail-fast timeouts and directConnection for a single host.
+    return ConnectionUri::build(_settings, dbName, ConnectionUri::Options{});
 }
 
 QStringList MongoshEngine::buildMongoshArgs(const std::string& uri) const {

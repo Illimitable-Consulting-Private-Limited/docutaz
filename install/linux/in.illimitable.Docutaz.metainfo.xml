@@ -31,6 +31,8 @@
       <li>Insert, edit and delete documents with a full-featured visual editor</li>
       <li>Manage indexes, users and collection structure</li>
       <li>Export query and aggregation results to JSON, CSV or XLSX</li>
+      <li>Back up and restore databases and collections with the MongoDB Database Tools</li>
+      <li>Tag connections by environment and confirm destructive writes on guarded ones</li>
       <li>Inline syntax checking flags unbalanced brackets and missing commas before you run</li>
     </ul>
   </description>
@@ -48,23 +50,23 @@
   <screenshots>
     <screenshot type="default">
       <caption>Browsing databases and collections alongside query results</caption>
-      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-explorer.png</image>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/light-screenshot-explorer.png</image>
     </screenshot>
     <screenshot>
       <caption>Editing a document in the visual editor</caption>
-      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-editor.png</image>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/light-screenshot-editor.png</image>
     </screenshot>
     <screenshot>
       <caption>Exporting results to JSON, CSV or XLSX</caption>
-      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-export.png</image>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/light-screenshot-export.png</image>
     </screenshot>
     <screenshot>
       <caption>Formatting a query or aggregation</caption>
-      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-format.png</image>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/light-screenshot-format.png</image>
     </screenshot>
     <screenshot>
       <caption>Catching syntax errors inline before you run</caption>
-      <image>https://illimitable-consulting-private-limited.github.io/docutaz/screenshot-syntax.png</image>
+      <image>https://illimitable-consulting-private-limited.github.io/docutaz/light-screenshot-syntax.png</image>
     </screenshot>
   </screenshots>
 
@@ -91,6 +93,28 @@
   <!-- Keep the newest entry's version in sync with the built tag; the release
        automation can prepend new entries here. -->
   <releases>
+    <release version="2.6.0" date="2026-07-21">
+      <description>
+        <ul>
+          <li>Back up and restore databases and collections using the MongoDB Database Tools</li>
+          <li>Destructive-write confirmations now target multi-document updates and deletes by default</li>
+          <li>Index creation accepts shell syntax for keys, and partial indexes are supported</li>
+          <li>Copying a date from the results tree yields an ISODate() literal</li>
+          <li>Various GUI fixes</li>
+        </ul>
+      </description>
+    </release>
+    <release version="2.5.0" date="2026-07-02">
+      <description>
+        <ul>
+          <li>Light/Dark/System appearance preference with live colour-scheme switching</li>
+          <li>Configurable interface and editor fonts, monochrome glyph icons and flat dialogs</li>
+          <li>Instant query-editor autocomplete for operators, methods and collection names</li>
+          <li>Confirmation prompts for updates and deletes on connections tagged as production</li>
+          <li>Fixes: NumberDecimal values decoded correctly, multi-select delete no longer clears the collection</li>
+        </ul>
+      </description>
+    </release>
     <release version="2.4.0" date="2026-06-20">
       <description>
         <ul>

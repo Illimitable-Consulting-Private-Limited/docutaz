@@ -148,6 +148,12 @@ namespace Docutaz
         void setMongoshPath(const QString& path) { _mongoshPath = path; }
         QString mongoshPath() const { return _mongoshPath; }
 
+        // Folder containing the MongoDB Database Tools (mongodump/mongorestore/
+        // mongoexport/mongoimport) used by backup/restore. May be a folder or one
+        // tool's executable; empty means auto-detect. See MongoTools::findTool.
+        void setDatabaseToolsPath(const QString& path) { _databaseToolsPath = path; }
+        QString databaseToolsPath() const { return _databaseToolsPath; }
+
         // When true, all shell tabs of one connection share a single mongosh
         // subprocess instead of each spawning its own. Lower memory and instant
         // tab opening, at the cost of serialized execution (a long query in one
@@ -180,6 +186,14 @@ namespace Docutaz
 
         void setGuardedEnvironments(const QStringList &envs) { _guardedEnvironments = envs; }
         QStringList guardedEnvironments() const { return _guardedEnvironments; }
+
+        // Opt-in extension of the guard: when off (default) only operations that
+        // can touch more than one document (or mass/structural ops) prompt on a
+        // guarded connection; single-document edits/deletes pass silently. When
+        // on, single-document changes prompt too. Only meaningful while
+        // confirmDestructiveOps() is enabled.
+        void setWarnOnSingleDocOps(bool value) { _warnOnSingleDocOps = value; }
+        bool warnOnSingleDocOps() const { return _warnOnSingleDocOps; }
 
         // True when a confirmation is owed for an operation on `env` (the
         // ConnectionSettings::environment() key). The empty/"None" tag is never
@@ -289,6 +303,7 @@ namespace Docutaz
         AutocompletionMode _autocompletionMode;
         bool _loadMongoRcJs;
         QString _mongoshPath;
+        QString _databaseToolsPath;
         bool _shareShellPerConnection = false;
         bool _autoExpand;
         bool _autoExec;
@@ -300,6 +315,7 @@ namespace Docutaz
         bool _saveQueryHistory = true;
         bool _confirmDestructiveOps = true;
         QStringList _guardedEnvironments = { QStringLiteral("production") };
+        bool _warnOnSingleDocOps = false;
         bool _debugMode = false;
         QSet<QString> _acceptedEulaVersions;
         int _batchSize;
