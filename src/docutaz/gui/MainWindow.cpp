@@ -7,6 +7,8 @@
 #include <QMenuBar>
 #include <QMenu>
 #include <QKeyEvent>
+#include <QMoveEvent>
+#include <QWindowStateChangeEvent>
 #include <QToolBar>
 #include <QToolTip>
 #include <QDockWidget>
@@ -583,6 +585,13 @@ namespace Docutaz
         setWindowTitle(QString(PROJECT_NAME_TITLE) + " - " + QString(PROJECT_VERSION_SHORT));
         setWindowIcon(GuiRegistry::instance().mainWindowIcon());
 
+        // Export a minimum-size hint (PMinSize on X11). Without one, some window
+        // managers restore a minimized window to the tiny content size hint
+        // instead of its previous size, leaving it unusably small. This floor
+        // is well below the first-run "almost maximized" default, so it never
+        // fights normal sizing — it only stops the degenerate case.
+        setMinimumSize(800, 560);
+
         QTimer::singleShot(0, this, SLOT(manageConnections()));       
         updateMenus();
         _updateMenusAtStart = false;
@@ -702,30 +711,36 @@ namespace Docutaz
     void MainWindow::restoreWindowSettings()
     {
         QSettings settings("Docutaz", "Docutaz");
-        // Restore settings if registery key exists, otherwise resize as app started for the first time.
-        if (settings.contains("MainWindow/geometry"))
+        // Restore the saved geometry; if the key is missing or the blob is stale/
+        // unreadable (restoreGeometry returns false), size as if starting fresh.
+        if (settings.contains("MainWindow/geometry") &&
+            restoreGeometry(settings.value("MainWindow/geometry").toByteArray()))
         {
-            restoreGeometry(settings.value("MainWindow/geometry").toByteArray());
+            return;
         }
-        else
-        {
-            // Resize main window. We are trying to keep it "almost" maximized.
-            QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
-            int horizontalMargin = static_cast<int>(screenGeometry.width() * 0.1);
-            int verticalMargin = static_cast<int>(screenGeometry.height() * 0.1);
-            int _width = screenGeometry.width() - horizontalMargin;
-            int _height = screenGeometry.height() - verticalMargin;
-            resize(QSize(_width, _height));
 
-            // Center main window
-            int x = (screenGeometry.width() - width()) / 2;
-            int y = (screenGeometry.height() - height()) / 2;
-            move(x, y);
-        }
+        // Resize main window. We are trying to keep it "almost" maximized.
+        QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
+        int horizontalMargin = static_cast<int>(screenGeometry.width() * 0.1);
+        int verticalMargin = static_cast<int>(screenGeometry.height() * 0.1);
+        int _width = screenGeometry.width() - horizontalMargin;
+        int _height = screenGeometry.height() - verticalMargin;
+        resize(QSize(_width, _height));
+
+        // Center main window
+        int x = (screenGeometry.width() - width()) / 2;
+        int y = (screenGeometry.height() - height()) / 2;
+        move(x, y);
     }
 
     void MainWindow::saveWindowSettings() const
     {
+        // Never persist a minimized (or otherwise degenerate) geometry — restoring
+        // it on the next launch is what leaves the window unusably small. If we're
+        // minimized at save time, keep whatever good geometry was stored last.
+        if (isMinimized())
+            return;
+
         QSettings settings("Docutaz", "Docutaz");
         settings.setValue("MainWindow/geometry", saveGeometry());
     }
@@ -1187,7 +1202,41 @@ namespace Docutaz
 
     void MainWindow::resizeEvent(QResizeEvent* event)
     {
+        rememberNormalGeometry();
         QMainWindow::resizeEvent(event);
+    }
+
+    void MainWindow::moveEvent(QMoveEvent *event)
+    {
+        rememberNormalGeometry();
+        QMainWindow::moveEvent(event);
+    }
+
+    // Keep a copy of the geometry the window has while shown normally. We must
+    // NOT capture it while minimized/maximized/full-screen — those report the
+    // special-state geometry (a minimized window in particular reports a tiny
+    // size), and that is exactly the value we want to avoid restoring later.
+    void MainWindow::rememberNormalGeometry()
+    {
+        if (!isMinimized() && !isMaximized() && !isFullScreen())
+            _normalGeometry = geometry();
+    }
+
+    void MainWindow::changeEvent(QEvent *event)
+    {
+        if (event->type() == QEvent::WindowStateChange) {
+            auto *stateEvent = static_cast<QWindowStateChangeEvent *>(event);
+            const bool wasMinimized = stateEvent->oldState() & Qt::WindowMinimized;
+            // Restoring from minimized into a normal state: some window managers
+            // bring the window back at a tiny default size, so re-apply the last
+            // good normal geometry ourselves. A window restored to maximized/full
+            // screen is left to the WM (guarded below).
+            if (wasMinimized && !isMinimized() && !isMaximized() && !isFullScreen()
+                && _normalGeometry.isValid()) {
+                setGeometry(_normalGeometry);
+            }
+        }
+        QMainWindow::changeEvent(event);
     }
 
     void MainWindow::handle(QueryWidgetUpdatedEvent *event)

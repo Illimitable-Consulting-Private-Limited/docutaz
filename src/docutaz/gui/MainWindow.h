@@ -2,6 +2,7 @@
 
 #include <QMainWindow>
 #include <QSystemTrayIcon>
+#include <QRect>
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -88,6 +89,8 @@ namespace Docutaz
         void hideEvent(QHideEvent *event) override;
         void showEvent(QShowEvent *event) override;
         void resizeEvent(QResizeEvent* event) override;
+        void moveEvent(QMoveEvent *event) override;
+        void changeEvent(QEvent *event) override;
         
     private Q_SLOTS:
         void updateMenus();
@@ -137,6 +140,7 @@ namespace Docutaz
         void updateMongoshIndicator();
         void restoreWindowSettings();
         void saveWindowSettings() const;
+        void rememberNormalGeometry();
 
         QDockWidget *_logDock;
 
@@ -175,6 +179,13 @@ namespace Docutaz
 
         bool _allowExit;
         bool _updateMenusAtStart = true;
+
+        // Last geometry the window had while shown normally (not minimized,
+        // maximized or full screen). Captured on every move/resize and re-applied
+        // when the window is restored from minimized, so it comes back at exactly
+        // the size and position it had — some window managers otherwise restore a
+        // minimized window to a tiny default.
+        QRect _normalGeometry;
     };
 
 }
