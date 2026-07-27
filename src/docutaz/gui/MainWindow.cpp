@@ -1226,14 +1226,28 @@ namespace Docutaz
     {
         if (event->type() == QEvent::WindowStateChange) {
             auto *stateEvent = static_cast<QWindowStateChangeEvent *>(event);
-            const bool wasMinimized = stateEvent->oldState() & Qt::WindowMinimized;
+            const Qt::WindowStates oldState = stateEvent->oldState();
+            const bool wasMinimized = oldState & Qt::WindowMinimized;
+            // A window that was maximized/full screen *before* it was minimized
+            // must go back to that state, not to a normal geometry. The old state
+            // still carries those bits alongside Minimized, so key off the old
+            // state — the *current* state can momentarily read "not maximized"
+            // mid-transition, which is what made a maximize→minimize→restore come
+            // back at the wrong (normal) size.
+            const bool wasMaxOrFull =
+                oldState & (Qt::WindowMaximized | Qt::WindowFullScreen);
             // Restoring from minimized into a normal state: some window managers
             // bring the window back at a tiny default size, so re-apply the last
-            // good normal geometry ourselves. A window restored to maximized/full
-            // screen is left to the WM (guarded below).
-            if (wasMinimized && !isMinimized() && !isMaximized() && !isFullScreen()
+            // good normal geometry ourselves. Defer it — the WM applies its own
+            // (tiny) geometry *after* this handler returns, so setting it inline
+            // gets clobbered; a singleShot(0) runs once the transition settles.
+            if (wasMinimized && !wasMaxOrFull && !isMinimized()
                 && _normalGeometry.isValid()) {
-                setGeometry(_normalGeometry);
+                const QRect target = _normalGeometry;
+                QTimer::singleShot(0, this, [this, target] {
+                    if (!isMinimized() && !isMaximized() && !isFullScreen())
+                        setGeometry(target);
+                });
             }
         }
         QMainWindow::changeEvent(event);
