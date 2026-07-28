@@ -6,7 +6,7 @@ then follow the steps for your OS below.
 
 | Platform | Download |
 |----------|----------|
-| Linux (Intel/AMD) | `docutaz-<version>-linux-x86_64.tar.gz` · `docutaz-<version>-linux-x86_64.flatpak` |
+| Linux (Intel/AMD) | `docutaz-<version>-linux-x86_64.tar.gz` · `docutaz-<version>-linux-x86_64.flatpak` · `Docutaz-<version>-x86_64.AppImage` |
 | Linux (ARM)       | `docutaz-<version>-linux-aarch64.tar.gz` |
 | macOS (Apple Silicon) | `docutaz-<version>-macos-arm64.zip` |
 | Windows (64-bit)  | `docutaz-<version>-windows-x86_64-setup.exe` · `docutaz-<version>-windows-x86_64.zip` |
@@ -34,8 +34,8 @@ driver and your mongosh) generally work but aren't officially tested.
 
 ## Linux (x86_64 and arm64)
 
-Two ways to install: a portable **tarball** (any distro, x86_64 or arm64) or a
-**Flatpak** bundle (x86_64).
+Three ways to install: a portable **tarball** (any distro, x86_64 or arm64), a
+**Flatpak** bundle (x86_64), or a self-contained **AppImage** (x86_64).
 
 ### Tarball (x86_64 and arm64)
 
@@ -103,6 +103,41 @@ to install.
 **Updating:** the in-app notice links you to the new release; download the newer
 `.flatpak` and install it over the top. Your settings live in the Flatpak's own
 data dir and carry across updates.
+
+### AppImage (x86_64)
+
+A single self-contained file — Qt 6, QScintilla, the MongoDB drivers **and**
+`mongosh` plus the Database Tools are all bundled, so there are no dependencies
+to install. Good for a quick run or handing someone a build.
+
+1. Download `Docutaz-<version>-x86_64.AppImage` from the release.
+2. Make it executable and run it:
+   ```sh
+   chmod +x Docutaz-<version>-x86_64.AppImage
+   ./Docutaz-<version>-x86_64.AppImage
+   ```
+   It uses a statically-linked FUSE runtime, so it needs **neither libfuse2 nor
+   libfuse3** installed. On the rare host with FUSE fully disabled, run it with
+   `./Docutaz-<version>-x86_64.AppImage --appimage-extract-and-run` instead.
+
+**App-menu entry & icon:** by design an AppImage installs nothing, so it doesn't
+appear in your application menu and — on GNOME — the running window shows a
+generic icon in the dash (GNOME resolves the icon from an installed `.desktop`
+entry, which a bare AppImage doesn't provide). To get the menu entry and correct
+icon, use an AppImage integrator, which installs the AppImage's embedded
+`.desktop` file and icon into `~/.local/share/`:
+
+- **[Gear Lever](https://flathub.org/apps/it.mijorus.gearlever)** — GNOME-native,
+  install from Flathub; or
+- **[AppImageLauncher](https://github.com/TheAssassin/AppImageLauncher)** — prompts
+  to integrate on first launch.
+
+**Platform note:** the AppImage runs under XWayland (`xcb`) by default so window
+decorations and the taskbar behave correctly on GNOME. To run it as a native
+Wayland client instead: `QT_QPA_PLATFORM=wayland ./Docutaz-<version>-x86_64.AppImage`.
+
+**Updating:** download the newer `.AppImage` and replace the old file (re-run the
+integrator if you use one). Settings live in your normal config dir and carry across.
 
 ---
 
