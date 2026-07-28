@@ -102,12 +102,16 @@ jobs:
           cmake --install build-mongocxx
 
       - name: Configure Docutaz
+        # QT_ROOT_DIR (exported by install-qt-action) must be on CMAKE_PREFIX_PATH
+        # so the plain find_path/find_library for QScintilla — installed into the
+        # Qt prefix by `make install` above — locate <qt>/include/Qsci and
+        # <qt>/lib/libqscintilla2_qt6, exactly as the Windows job does.
         run: |
           mkdir build
           cmake -S . -B build -GNinja \
             -DCMAKE_BUILD_TYPE=Release \
             -DDOCUTAZ_BUILD_TESTS=OFF \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
+            -DCMAKE_PREFIX_PATH="${QT_ROOT_DIR};${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
 
       - name: Build
         run: cmake --build build --target docutaz --parallel
