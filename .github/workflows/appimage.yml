@@ -1,0 +1,143 @@
+name: AppImage
+
+# Builds a self-contained, dependency-free Linux AppImage that complements (does
+# NOT replace) the tarball from build.yml and the self-hosted Flatpak bundle.
+#
+# Kept as its own workflow (not a job in build.yml) so it can be triggered and
+# iterated on independently. Runs on manual dispatch, on release tags, and on
+# pushes to main that touch the build.
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+    branches: [main]
+    paths:
+      - "src/**"
+      - "cmake/**"
+      - "CMakeLists.txt"
+      - "bin/build-appimage.sh"
+      - ".github/workflows/appimage.yml"
+
+# Driver versions — keep in sync with build.yml.
+env:
+  MONGOC_VERSION: "2.3.0"
+  MONGOCXX_VERSION: "4.3.1"
+  QSCI_VERSION: "2.14.1"
+
+jobs:
+  # ──────────────────────────────────────────────────────────────────────────
+  # Built on ubuntu-22.04 (glibc 2.35) for portability: glibc is only forward
+  # compatible, so this runs on 2.35+ hosts (Ubuntu 22.04+, Debian 12+, Fedora,
+  # etc.). 22.04's apt Qt is 6.2 (too old — the app uses 6.5-guarded APIs and
+  # links QScintilla-qt6, which 22.04 doesn't package), so we install an official
+  # Qt 6.5 (old-glibc-linked) via aqt and build QScintilla from source.
+  # bin/build-appimage.sh does the AppDir assembly + linuxdeploy + a static-FUSE
+  # runtime (so end users need no libfuse).
+  # ──────────────────────────────────────────────────────────────────────────
+  appimage:
+    name: Linux AppImage (x86_64)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ninja-build libssl-dev libssh2-1-dev pkg-config \
+            libgl1-mesa-dev libxkbcommon-dev
+
+      # Official Qt 6.5 binaries are linked against an old glibc, so bundling them
+      # keeps the AppImage portable. Adds qmake/Qt to PATH and sets QT_ROOT_DIR.
+      - name: Install Qt 6.5
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.5.3"
+          host: linux
+          target: desktop
+          arch: gcc_64
+          modules: qtimageformats
+
+      - name: Build QScintilla (Qt6) from source
+        run: |
+          curl -Ls -o qscintilla.tar.gz \
+            "https://www.riverbankcomputing.com/static/Downloads/QScintilla/${QSCI_VERSION}/QScintilla_src-${QSCI_VERSION}.tar.gz"
+          tar xf qscintilla.tar.gz
+          cd "QScintilla_src-${QSCI_VERSION}/src"
+          qmake qscintilla.pro
+          make -j"$(nproc)"
+          make install   # installs into the Qt 6.5 prefix, so CMake + linuxdeploy find it
+
+      - name: Cache mongocxx install
+        id: cache-mongocxx
+        uses: actions/cache@v5
+        with:
+          path: ${{ github.workspace }}/mongocxx-prefix
+          key: mongocxx-${{ env.MONGOCXX_VERSION }}-mongoc-${{ env.MONGOC_VERSION }}-ubuntu22.04-v1
+
+      - name: Build mongo-c-driver
+        if: steps.cache-mongocxx.outputs.cache-hit != 'true'
+        run: |
+          wget -q "https://github.com/mongodb/mongo-c-driver/releases/download/${{ env.MONGOC_VERSION }}/mongo-c-driver-${{ env.MONGOC_VERSION }}.tar.gz"
+          tar xf "mongo-c-driver-${{ env.MONGOC_VERSION }}.tar.gz"
+          cmake -S "mongo-c-driver-${{ env.MONGOC_VERSION }}" -B build-mongoc -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/mongocxx-prefix" \
+            -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF \
+            -DENABLE_TESTS=OFF \
+            -DENABLE_EXAMPLES=OFF
+          cmake --build build-mongoc
+          cmake --install build-mongoc
+
+      - name: Build mongo-cxx-driver
+        if: steps.cache-mongocxx.outputs.cache-hit != 'true'
+        run: |
+          wget -q "https://github.com/mongodb/mongo-cxx-driver/releases/download/r${{ env.MONGOCXX_VERSION }}/mongo-cxx-driver-r${{ env.MONGOCXX_VERSION }}.tar.gz"
+          tar xf "mongo-cxx-driver-r${{ env.MONGOCXX_VERSION }}.tar.gz"
+          cmake -S "mongo-cxx-driver-r${{ env.MONGOCXX_VERSION }}" -B build-mongocxx -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/mongocxx-prefix" \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix"
+          cmake --build build-mongocxx
+          cmake --install build-mongocxx
+
+      - name: Configure Docutaz
+        run: |
+          mkdir build
+          cmake -S . -B build -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DDOCUTAZ_BUILD_TESTS=OFF \
+            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/mongocxx-prefix/lib64/cmake;${{ github.workspace }}/mongocxx-prefix/lib/cmake;${{ github.workspace }}/mongocxx-prefix"
+
+      - name: Build
+        run: cmake --build build --target docutaz --parallel
+
+      - name: Expose mongocxx libs to the linker/bundler
+        run: |
+          sudo mkdir -p /usr/local/lib64
+          sudo find "${{ github.workspace }}/mongocxx-prefix" \
+            \( -name "*.so" -o -name "*.so.*" \) \
+            -exec cp -Pf {} /usr/local/lib64/ \;
+          sudo ldconfig
+
+      - name: Build AppImage
+        env:
+          QMAKE: qmake
+        run: bash bin/build-appimage.sh
+
+      - name: Smoke test (AppImage launches)
+        run: |
+          # Run the packaged app via extract-and-run (no FUSE on the runner) and
+          # confirm it constructs a QApplication and prints its version.
+          chmod +x Docutaz-*-x86_64.AppImage
+          out=$(APPIMAGE_EXTRACT_AND_RUN=1 QT_QPA_PLATFORM=offscreen \
+                ./Docutaz-*-x86_64.AppImage --version)
+          echo "$out"
+          echo "$out" | grep -q "Docutaz" || { echo "ERROR: AppImage did not launch"; exit 1; }
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: docutaz-appimage
+          path: Docutaz-*-x86_64.AppImage
+          if-no-files-found: error
