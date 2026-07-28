@@ -132,13 +132,26 @@ export PATH="$TOOLS:$PATH"
 
 # ── Qt: point the Qt plugin at the qmake that built the app ───────────────────
 export QMAKE="${QMAKE:-qmake6}"
-# Bundle the Wayland platform plugin alongside the default xcb one — the app is
-# Wayland-sensitive (window minimize/restore handling), and without this it would
-# fall back to XWayland or fail on Wayland-only sessions. Also bundle the
-# offscreen plugin so the CI --version smoke test (QT_QPA_PLATFORM=offscreen) can
-# construct a QApplication without an X server.
+# Bundle the Wayland platform plugin alongside xcb so native Wayland is available
+# as an opt-in (QT_QPA_PLATFORM=wayland) even though the AppRun hook below
+# defaults to xcb for reliable window decorations. Also bundle the offscreen
+# plugin so the CI --version smoke test (QT_QPA_PLATFORM=offscreen) can construct
+# a QApplication without an X server.
 export EXTRA_PLATFORM_PLUGINS="libqwayland-generic.so;libqwayland-egl.so;libqoffscreen.so"
 export EXTRA_QT_PLUGINS="wayland-decoration-client;wayland-graphics-integration-client;wayland-shell-integration"
+
+# ── AppRun hook: default the Qt platform to xcb (XWayland) ───────────────────
+# Under GNOME Wayland there are NO server-side window decorations; Qt only draws
+# its own if a decoration plugin / libdecor loads, which isn't reliably bundled,
+# so a native-Wayland window comes up with no title bar (no close/min/max). XCB
+# via XWayland gets real decorations from the compositor, and the window
+# minimize/restore handling falls back to the solid X11 path. Native Wayland
+# stays available as an opt-in: run with QT_QPA_PLATFORM=wayland.
+# linuxdeploy sources every apprun-hooks/*.sh from the generated AppRun.
+mkdir -p "$APPDIR/apprun-hooks"
+cat > "$APPDIR/apprun-hooks/10-qt-platform.sh" <<'HOOK'
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-xcb}"
+HOOK
 
 # ── Assemble the AppDir and emit the AppImage ────────────────────────────────
 echo "==> Running linuxdeploy"
