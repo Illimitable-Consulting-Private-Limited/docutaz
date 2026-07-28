@@ -11,6 +11,7 @@ class QDockWidget;
 class QToolButton;
 class QPushButton;
 class QTreeWidgetItem;
+class QScreen;
 QT_END_NAMESPACE
 
 namespace Docutaz
@@ -91,6 +92,9 @@ namespace Docutaz
         void resizeEvent(QResizeEvent* event) override;
         void moveEvent(QMoveEvent *event) override;
         void changeEvent(QEvent *event) override;
+        // Catches Expose events on the native QWindow: the un/re-map transitions
+        // are how we detect a Wayland minimize/restore (see showEvent/eventFilter).
+        bool eventFilter(QObject *watched, QEvent *event) override;
         
     private Q_SLOTS:
         void updateMenus();
@@ -141,6 +145,10 @@ namespace Docutaz
         void restoreWindowSettings();
         void saveWindowSettings() const;
         void rememberNormalGeometry();
+        // "Almost maximized", centered on the given screen (nullptr = primary).
+        QRect almostMaximizedOn(const QScreen *screen) const;
+        // First-run / seed window geometry: almost maximized on the primary screen.
+        QRect defaultWindowGeometry() const;
 
         QDockWidget *_logDock;
 
@@ -179,6 +187,18 @@ namespace Docutaz
 
         bool _allowExit;
         bool _updateMenusAtStart = true;
+        // Guards the one-time QWindow signal wiring in showEvent().
+        bool _windowSignalsHooked = false;
+        // Wayland minimize/restore maximized-state preservation. On GNOME Wayland a
+        // minimize un-maximizes the window; visibilityChanged(Minimized) fires while
+        // it is still maximized (recorded as _tentativeReMax). Because that signal
+        // can also flicker without a real minimize, it is only promoted to _armedReMax
+        // when the surface actually unmaps (Expose 1->0), and consumed to reassert
+        // showMaximized() when it re-maps (Expose 0->1). _lastExposed tracks the
+        // previous expose state so those transitions can be detected.
+        bool _tentativeReMax = false;
+        bool _armedReMax = false;
+        bool _lastExposed = true;
 
         // Last geometry the window had while shown normally (not minimized,
         // maximized or full screen). Captured on every move/resize and re-applied

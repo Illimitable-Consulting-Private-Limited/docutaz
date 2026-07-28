@@ -9,6 +9,7 @@
 #include <QKeyEvent>
 #include <QMoveEvent>
 #include <QWindowStateChangeEvent>
+#include <QWindow>
 #include <QToolBar>
 #include <QToolTip>
 #include <QDockWidget>
@@ -57,6 +58,21 @@
 
 namespace
 {
+    // Minimum usable window size — also exported as the X11 PMinSize hint. A
+    // window whose *normal* (non-maximized) geometry is pinned at this floor is
+    // the degenerate case behind the "tiny window" bug: some window managers /
+    // stale saved blobs restore a maximized window whose underlying normal size
+    // is only the minimum, so un-maximizing or un-minimizing collapses it here.
+    constexpr int kMinWindowWidth  = 800;
+    constexpr int kMinWindowHeight = 560;
+
+    // True when a normal-state geometry is at (or below) the size floor in either
+    // dimension — i.e. collapsed, not a size the user meaningfully chose.
+    bool isFlooredGeometry(const QRect &g)
+    {
+        return g.width() <= kMinWindowWidth || g.height() <= kMinWindowHeight;
+    }
+
     void setToolBarIconSize(QToolBar *toolBar)
     {
 #if defined(Q_OS_MAC)
@@ -590,7 +606,7 @@ namespace Docutaz
         // instead of its previous size, leaving it unusably small. This floor
         // is well below the first-run "almost maximized" default, so it never
         // fights normal sizing — it only stops the degenerate case.
-        setMinimumSize(800, 560);
+        setMinimumSize(kMinWindowWidth, kMinWindowHeight);
 
         QTimer::singleShot(0, this, SLOT(manageConnections()));       
         updateMenus();
@@ -708,8 +724,36 @@ namespace Docutaz
         close();
     }
 
+    // "Almost maximized" (10% margin all round), centered on the given screen.
+    // Screen-relative so it lands correctly on multi-monitor setups with mixed
+    // DPI: geometry() is in the global logical desktop space, and each screen's
+    // availableGeometry() carries that screen's own origin and (scaled) size.
+    QRect MainWindow::almostMaximizedOn(const QScreen *screen) const
+    {
+        const QRect s = (screen ? screen : QApplication::primaryScreen())->availableGeometry();
+        const int w = s.width()  - static_cast<int>(s.width()  * 0.1);
+        const int h = s.height() - static_cast<int>(s.height() * 0.1);
+        const int x = s.x() + (s.width()  - w) / 2;
+        const int y = s.y() + (s.height() - h) / 2;
+        return QRect(x, y, w, h);
+    }
+
+    // First-run / seed geometry: almost maximized on the primary screen (no
+    // window has been shown yet, so there is no "current" screen to prefer).
+    QRect MainWindow::defaultWindowGeometry() const
+    {
+        return almostMaximizedOn(QApplication::primaryScreen());
+    }
+
     void MainWindow::restoreWindowSettings()
     {
+        // Always seed a sane normal geometry first, so we have a good value to
+        // fall back to even if the saved blob restores a maximized window whose
+        // underlying normal size is only the minimum floor (the "tiny window on
+        // un-maximize/un-minimize" bug). rememberNormalGeometry() will overwrite
+        // this once the window is shown at a real (non-floored) normal size.
+        _normalGeometry = defaultWindowGeometry();
+
         QSettings settings("Docutaz", "Docutaz");
         // Restore the saved geometry; if the key is missing or the blob is stale/
         // unreadable (restoreGeometry returns false), size as if starting fresh.
@@ -719,18 +763,7 @@ namespace Docutaz
             return;
         }
 
-        // Resize main window. We are trying to keep it "almost" maximized.
-        QRect screenGeometry = QApplication::primaryScreen()->availableGeometry();
-        int horizontalMargin = static_cast<int>(screenGeometry.width() * 0.1);
-        int verticalMargin = static_cast<int>(screenGeometry.height() * 0.1);
-        int _width = screenGeometry.width() - horizontalMargin;
-        int _height = screenGeometry.height() - verticalMargin;
-        resize(QSize(_width, _height));
-
-        // Center main window
-        int x = (screenGeometry.width() - width()) / 2;
-        int y = (screenGeometry.height() - height()) / 2;
-        move(x, y);
+        setGeometry(defaultWindowGeometry());
     }
 
     void MainWindow::saveWindowSettings() const
@@ -1193,11 +1226,69 @@ namespace Docutaz
     
     void MainWindow::showEvent(QShowEvent *event)
     {
+        // One-time wiring of the native-QWindow signals used to preserve the
+        // maximized state across a Wayland minimize/restore (windowHandle() only
+        // exists once the window is first shown). On GNOME Wayland changeEvent()
+        // never sees the minimize, but the QWindow does:
+        //   - visibilityChanged(Minimized) fires while still maximized -> we can
+        //     record the intent to come back maximized.
+        //   - Expose (isExposed 1->0 then 0->1) marks the surface un/re-mapping,
+        //     i.e. the actual minimize and restore (see eventFilter()).
+        if (!_windowSignalsHooked && windowHandle()) {
+            _windowSignalsHooked = true;
+
+            connect(windowHandle(), &QWindow::visibilityChanged, this,
+                    [this](QWindow::Visibility v) {
+                        // Fires while the window is still maximized, *before* the
+                        // compositor un-maximizes it — the one moment we can read
+                        // the maximized intent. It can also flicker without a real
+                        // minimize (Minimized->Windowed with no unmap), so it is
+                        // only TENTATIVE here; eventFilter() promotes it to armed
+                        // when an actual unmap follows. A deliberate un-maximize
+                        // never emits Minimized, so it is never captured.
+                        if (v == QWindow::Minimized)
+                            _tentativeReMax = isMaximized();
+                    });
+
+            // Expose events arrive on the QWindow, not the widget.
+            windowHandle()->installEventFilter(this);
+        }
+
 #if defined(Q_OS_WIN)
         if (_trayIcon->contextMenu()->actions().size() > 0) {
             _trayIcon->contextMenu()->actions().at(0)->setText("Minimize to Tray");
         }
 #endif
+    }
+
+    bool MainWindow::eventFilter(QObject *watched, QEvent *event)
+    {
+        if (watched == windowHandle() && event->type() == QEvent::Expose) {
+            const bool exposed = windowHandle()->isExposed();
+            const bool unmapped   = !exposed &&  _lastExposed;   // 1 -> 0
+            const bool remapped   =  exposed && !_lastExposed;   // 0 -> 1
+            _lastExposed = exposed;
+
+            // Promote the tentative maximized intent to "armed" only when the
+            // surface actually unmaps — that is a real minimize, not the transient
+            // Minimized->Windowed visibility flicker (which never unmaps).
+            if (unmapped) {
+                _armedReMax = _tentativeReMax;
+                _tentativeReMax = false;
+            }
+
+            // Re-map after a real unmap = restore from minimized. If the window was
+            // maximized when minimized, GNOME brings it back un-maximized — reassert.
+            if (remapped && _armedReMax) {
+                _armedReMax = false;
+                // Defer: let the remap/configure settle before re-maximizing.
+                QTimer::singleShot(0, this, [this] {
+                    if (!isMinimized() && !isMaximized())
+                        showMaximized();
+                });
+            }
+        }
+        return QMainWindow::eventFilter(watched, event);
     }
 
     void MainWindow::resizeEvent(QResizeEvent* event)
@@ -1216,10 +1307,15 @@ namespace Docutaz
     // NOT capture it while minimized/maximized/full-screen — those report the
     // special-state geometry (a minimized window in particular reports a tiny
     // size), and that is exactly the value we want to avoid restoring later.
+    // We also refuse to record a floor-pinned geometry: that is the collapsed
+    // state this whole mechanism exists to correct, not a size to restore to.
     void MainWindow::rememberNormalGeometry()
     {
-        if (!isMinimized() && !isMaximized() && !isFullScreen())
-            _normalGeometry = geometry();
+        if (isMinimized() || isMaximized() || isFullScreen())
+            return;
+        if (isFlooredGeometry(geometry()))
+            return;
+        _normalGeometry = geometry();
     }
 
     void MainWindow::changeEvent(QEvent *event)
@@ -1227,26 +1323,39 @@ namespace Docutaz
         if (event->type() == QEvent::WindowStateChange) {
             auto *stateEvent = static_cast<QWindowStateChangeEvent *>(event);
             const Qt::WindowStates oldState = stateEvent->oldState();
-            const bool wasMinimized = oldState & Qt::WindowMinimized;
-            // A window that was maximized/full screen *before* it was minimized
-            // must go back to that state, not to a normal geometry. The old state
-            // still carries those bits alongside Minimized, so key off the old
-            // state — the *current* state can momentarily read "not maximized"
-            // mid-transition, which is what made a maximize→minimize→restore come
-            // back at the wrong (normal) size.
-            const bool wasMaxOrFull =
-                oldState & (Qt::WindowMaximized | Qt::WindowFullScreen);
-            // Restoring from minimized into a normal state: some window managers
-            // bring the window back at a tiny default size, so re-apply the last
-            // good normal geometry ourselves. Defer it — the WM applies its own
-            // (tiny) geometry *after* this handler returns, so setting it inline
-            // gets clobbered; a singleShot(0) runs once the transition settles.
-            if (wasMinimized && !wasMaxOrFull && !isMinimized()
-                && _normalGeometry.isValid()) {
-                const QRect target = _normalGeometry;
-                QTimer::singleShot(0, this, [this, target] {
-                    if (!isMinimized() && !isMaximized() && !isFullScreen())
-                        setGeometry(target);
+            // Did the window just leave minimized/maximized/full-screen back to
+            // a plain normal window? Key off the *result* being normal, not the
+            // old state's bits: if the WM restores it straight back to maximized
+            // (e.g. maximize -> minimize -> restore), we leave it alone.
+            const bool leftSpecialState =
+                oldState & (Qt::WindowMinimized | Qt::WindowMaximized | Qt::WindowFullScreen);
+            const bool nowNormal =
+                !isMinimized() && !isMaximized() && !isFullScreen();
+
+            // The bug: some window managers (and stale saved geometry blobs)
+            // restore the underlying normal size as only the minimum floor, so
+            // un-maximizing or un-minimizing collapses the window to 800x560.
+            // Defer the check — the WM finalizes geometry AFTER this handler — and
+            // if it landed on the floor, resize back to a good normal SIZE.
+            //
+            // We deliberately fix only the SIZE (resize), not the position: a
+            // window's reported x/y are unreliable here — stale after a maximize,
+            // and outright meaningless under Wayland, which never tells a client
+            // its position. Placement stays the window manager's job. A size the
+            // user genuinely chose (above the floor) is left as-is.
+            if (leftSpecialState && nowNormal) {
+                QTimer::singleShot(0, this, [this] {
+                    const bool stillNormal =
+                        !isMinimized() && !isMaximized() && !isFullScreen();
+                    if (!stillNormal || !isFlooredGeometry(geometry()))
+                        return;
+                    // Target size: the last good remembered size if we have one,
+                    // else "almost maximized" on the window's current screen.
+                    const QScreen *scr = screen();
+                    const bool haveRemembered =
+                        _normalGeometry.isValid() && !isFlooredGeometry(_normalGeometry);
+                    resize(haveRemembered ? _normalGeometry.size()
+                                          : almostMaximizedOn(scr).size());
                 });
             }
         }
