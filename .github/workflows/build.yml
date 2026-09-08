@@ -560,6 +560,17 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # The macos-14 image bumped CMake 3.31.6 -> 4.x on 2026-09-08. mongo-c-driver's
+      # accept()-argument detection (mongoc_get_accept_args, src/libmongoc/CMakeLists.txt)
+      # runs a TRY_COMPILE that passes "-Werror -DCMAKE_CXX_LINK_EXECUTABLE='echo ...'"
+      # as a single CMAKE_FLAGS element; CMake 4.x now validates that as a -W category
+      # and aborts ("The warning category ... is not known"). Pin CMake back to the
+      # version the runner shipped until today until upstream fixes the flag passing.
+      - name: Pin CMake (mongo-c-driver TRY_COMPILE breaks on CMake 4.x)
+        uses: jwlawson/actions-setup-cmake@v2
+        with:
+          cmake-version: "3.31.6"
+
       - name: Install build tools and native arm64 Qt 6
         run: brew install ninja qt qscintilla2 libssh2 pkg-config
 
