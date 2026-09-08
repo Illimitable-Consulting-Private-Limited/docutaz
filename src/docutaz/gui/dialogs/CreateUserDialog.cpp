@@ -3,6 +3,7 @@
 #include <QHBoxLayout>
 #include <QPushButton>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QDialogButtonBox>
 #include <QLabel>
 #include <QLineEdit>
@@ -85,7 +86,7 @@ namespace Docutaz
         {
             int row = i%3;
             int col = i/3;
-            _rolesArray[i] = new QCheckBox(rolesText[i], this);
+            _rolesArray[i] = new Docutaz::ToggleSwitch(rolesText[i], this);
             MongoUser::RolesVector::const_iterator it = std::find(userRoles.begin(), userRoles.end(), rolesText[i]);
             _rolesArray[i]->setChecked(it!= userRoles.end());
             gridRoles->addWidget(_rolesArray[i], row, col);
@@ -149,7 +150,7 @@ namespace Docutaz
         _userPassLabel= new QLabel("Password:");
         _userPassEdit = new QLineEdit();
         _userPassEdit->setEchoMode(QLineEdit::Password);
-        _readOnlyCheckBox = new QCheckBox("Read Only");
+        _readOnlyCheckBox = new Docutaz::ToggleSwitch("Read Only");
         _readOnlyCheckBox->setChecked(user.readOnly());
 
         QDialogButtonBox *buttonBox = new QDialogButtonBox(this);

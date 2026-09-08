@@ -1,6 +1,7 @@
 #include "docutaz/gui/dialogs/CopyResultsDialog.h"
 
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFormLayout>
@@ -84,10 +85,10 @@ namespace Docutaz
         _limitSpin->setSpecialValueText("No limit");   // shown when value == 0
         _limitSpin->setToolTip("Maximum number of documents to copy. 0 = no limit.");
 
-        _dropCheck = new QCheckBox("Drop the target collection before copying", this);
+        _dropCheck = new Docutaz::ToggleSwitch("Drop the target collection before copying", this);
         _dropCheck->setChecked(false);
 
-        _indexCheck = new QCheckBox("Copy indexes (skips any already on the target)", this);
+        _indexCheck = new Docutaz::ToggleSwitch("Copy indexes (skips any already on the target)", this);
         _indexCheck->setChecked(false);
         _indexCheck->setToolTip(
             "Recreate the source collection's indexes on the target. A TTL index is "

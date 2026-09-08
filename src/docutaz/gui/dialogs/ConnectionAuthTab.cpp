@@ -4,6 +4,7 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QPushButton>
 #include <QComboBox>
 #include <QSizePolicy>
@@ -18,7 +19,7 @@ namespace Docutaz
     ConnectionAuthTab::ConnectionAuthTab(ConnectionSettings *settings) :
         _settings(settings)
     {
-        _useAuth = new QCheckBox("Perform authentication");
+        _useAuth = new Docutaz::ToggleSwitch("Perform authentication");
         _useAuth->setStyleSheet("margin-bottom: 7px");
         VERIFY(connect(_useAuth, SIGNAL(toggled(bool)), this, SLOT(authChecked(bool))));
 
@@ -59,7 +60,7 @@ namespace Docutaz
         );
         _manuallyVisibleDbsInfo->setWordWrap(true);
 
-        _useManuallyVisibleDbs = new QCheckBox("Manually specify visible databases");
+        _useManuallyVisibleDbs = new Docutaz::ToggleSwitch("Manually specify visible databases");
         _useManuallyVisibleDbs->setStyleSheet("margin-bottom: 7px");
         VERIFY(connect(_useManuallyVisibleDbs, SIGNAL(toggled(bool)), 
                        this, SLOT(useManuallyVisibleDbsChecked(bool))));

@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QPushButton>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QToolButton>
 #include <Qsci/qsciscintilla.h>
 #include <QMessageBox>
@@ -26,7 +27,7 @@ namespace Docutaz
         _findLine(new QLineEdit(this)),
         _next(new QPushButton("Next", this)),
         _prev(new QPushButton("Previous", this)),
-        _caseSensitive(new QCheckBox("Match case", this)),
+        _caseSensitive(new Docutaz::ToggleSwitch("Match case", this)),
         _commentSign("// "),
         _commentSignLength(3)
     {

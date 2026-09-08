@@ -2,6 +2,7 @@
 
 #include <QComboBox>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QGroupBox>
@@ -68,10 +69,10 @@ namespace Docutaz
         _targetDbHint->setEnabled(false);   // rendered muted
         form->addWidget(_targetDbHint);
 
-        _gzipCheck = new QCheckBox("Directory dump is gzip-compressed", this);
+        _gzipCheck = new Docutaz::ToggleSwitch("Directory dump is gzip-compressed", this);
         form->addWidget(_gzipCheck);
 
-        _dropCheck = new QCheckBox("Drop each collection before restoring (--drop)", this);
+        _dropCheck = new Docutaz::ToggleSwitch("Drop each collection before restoring (--drop)", this);
         _dropCheck->setToolTip("Existing documents in the target collections are removed first.");
         form->addWidget(_dropCheck);
 
@@ -82,7 +83,7 @@ namespace Docutaz
         _collEdit = new QLineEdit(_jsonBox);
         _modeCombo = new QComboBox(_jsonBox);
         _modeCombo->addItems({ "insert", "upsert", "merge" });
-        _jsonArrayCheck = new QCheckBox("Input is a single JSON array", _jsonBox);
+        _jsonArrayCheck = new Docutaz::ToggleSwitch("Input is a single JSON array", _jsonBox);
         jsonForm->addRow("Database:", _dbEdit);
         jsonForm->addRow("Collection:", _collEdit);
         jsonForm->addRow("Mode:", _modeCombo);

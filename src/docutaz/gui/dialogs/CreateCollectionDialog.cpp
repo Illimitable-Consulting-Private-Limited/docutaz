@@ -3,6 +3,7 @@
 #include <mongo/bson/bsonobjbuilder.h>
 #include <QApplication>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
@@ -280,7 +281,7 @@ namespace Docutaz
     {
         QWidget *optionsTab = new QWidget(this);
 
-        _cappedCheckBox = new QCheckBox(tr("Create capped collection"), optionsTab);
+        _cappedCheckBox = new Docutaz::ToggleSwitch(tr("Create capped collection"), optionsTab);
         _sizeInputLabel = new QLabel(tr("Maximum size in bytes: "));
         _sizeInputLabel->setContentsMargins(22, 0, 0, 0);
         _sizeInputEdit = new QLineEdit();
@@ -289,15 +290,15 @@ namespace Docutaz
         _maxDocNumberInputLabel->setContentsMargins(22, 0, 0, 0);
         _maxDocNumberInputEdit = new QLineEdit();
         _maxDocNumberInputEdit->setEnabled(false);
-        _autoIndexCheckBox = new QCheckBox(tr("Auto index _id"), optionsTab);
+        _autoIndexCheckBox = new Docutaz::ToggleSwitch(tr("Auto index _id"), optionsTab);
         _autoIndexCheckBox->setChecked(true);
-        _usePowerOfTwoSizeCheckBox = new QCheckBox(tr("Use power-of-2 sizes"), optionsTab);
+        _usePowerOfTwoSizeCheckBox = new Docutaz::ToggleSwitch(tr("Use power-of-2 sizes"), optionsTab);
         // Note: For mongodb 2.6 does not have storageEngine string due to the fact that it uses MMAPV1 only.
         if (MongoDatabase::StorageEngineType::MMAPV1 == _storageEngine || "" == _storageEngine)
         {
             _usePowerOfTwoSizeCheckBox->setChecked(true);
         }
-        _noPaddingCheckBox = new QCheckBox(tr("No Padding"), optionsTab);
+        _noPaddingCheckBox = new Docutaz::ToggleSwitch(tr("No Padding"), optionsTab);
 
         VERIFY(connect(_cappedCheckBox, SIGNAL(stateChanged(int)),
             this, SLOT(onCappedCheckBoxChanged(int))));

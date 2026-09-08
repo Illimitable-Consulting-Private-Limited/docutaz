@@ -4,6 +4,7 @@
 #include <QTreeWidgetItem>
 #include <QRadioButton>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QLineEdit>
 #include <QPushButton>
 #include <QGroupBox>
@@ -53,8 +54,8 @@ namespace Docutaz
         _dirRadio = new QRadioButton("Directory dump (full backup)", fmtBox);
         _dirRadio->setChecked(true);
         _archiveRadio = new QRadioButton("Single gzip archive (full backup)", fmtBox);
-        _gzipCheck = new QCheckBox("Compress directory dump (gzip)", fmtBox);
-        _jsonCheck = new QCheckBox("Export as JSON (data only — single collection)", fmtBox);
+        _gzipCheck = new Docutaz::ToggleSwitch("Compress directory dump (gzip)", fmtBox);
+        _jsonCheck = new Docutaz::ToggleSwitch("Export as JSON (data only — single collection)", fmtBox);
         _jsonCheck->setEnabled(false);
         _jsonCheck->setToolTip(
             "Available when exactly one collection is selected. JSON is data-only:\n"
@@ -68,9 +69,9 @@ namespace Docutaz
         // JSON sub-options, shown only in JSON mode.
         _jsonOptions = new QGroupBox("JSON options", this);
         auto* jsonLayout = new QVBoxLayout(_jsonOptions);
-        _canonicalCheck = new QCheckBox("Canonical Extended JSON (lossless types)", _jsonOptions);
+        _canonicalCheck = new Docutaz::ToggleSwitch("Canonical Extended JSON (lossless types)", _jsonOptions);
         _canonicalCheck->setChecked(true);
-        _jsonArrayCheck = new QCheckBox("Single JSON array (else one document per line)", _jsonOptions);
+        _jsonArrayCheck = new Docutaz::ToggleSwitch("Single JSON array (else one document per line)", _jsonOptions);
         jsonLayout->addWidget(_canonicalCheck);
         jsonLayout->addWidget(_jsonArrayCheck);
         _jsonOptions->setVisible(false);

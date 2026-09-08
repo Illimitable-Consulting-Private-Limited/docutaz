@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QListWidget>
 #include <QStackedWidget>
 #include <QPushButton>
@@ -213,7 +214,7 @@ namespace Docutaz
         _collCombo = new QComboBox;
         _typeCombo = new QComboBox;
         _typeCombo->addItems({ tr("All types"), "find", "aggregate", "write", "script", "other" });
-        _pinnedOnly = new QCheckBox(tr("Pinned"));
+        _pinnedOnly = new Docutaz::ToggleSwitch(tr("Pinned"));
         auto *fl = new QHBoxLayout(fields);
         fl->setContentsMargins(0, 0, 0, 0);
         fl->addWidget(_search, 1);

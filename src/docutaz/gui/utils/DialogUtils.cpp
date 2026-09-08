@@ -1,6 +1,7 @@
 #include "docutaz/gui/utils/DialogUtils.h"
 
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QPushButton>
 
 #include "docutaz/gui/GlyphIcons.h"
@@ -83,7 +84,7 @@ namespace Docutaz
             box.setDefaultButton(cancel);   // safe default
             Theme::markDanger(proceed);
 
-            QCheckBox *dontAsk = new QCheckBox("Don't ask me again for any connection", &box);
+            QCheckBox *dontAsk = new Docutaz::ToggleSwitch("Don't ask me again for any connection", &box);
             dontAsk->setToolTip(
                 "Disable the destructive-operation confirmation for all guarded "
                 "connections. Re-enable it any time in Preferences.");

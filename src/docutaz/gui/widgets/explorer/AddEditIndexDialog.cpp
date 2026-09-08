@@ -11,6 +11,7 @@
 #include <QTextEdit>
 #include <QLabel>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QMessageBox>
 #include <Qsci/qsciscintilla.h>
 
@@ -121,7 +122,7 @@ namespace Docutaz
         _nameLineEdit = new QLineEdit(QtUtils::toQString(_info._name), basicTab);
         _nameLineEdit->setFocus();
         _jsonText = createFindFrame(basicTab, QtUtils::toQString(_info._keys));
-        _uniqueCheckBox = new QCheckBox(tr("Unique"));
+        _uniqueCheckBox = new Docutaz::ToggleSwitch(tr("Unique"));
         _uniqueCheckBox->setChecked(_info._unique);
 
         QLabel *nameHelpLabel = createHelpLabel(
@@ -164,9 +165,9 @@ namespace Docutaz
     {
         QWidget *advanced = new QWidget(this);
 
-        _sparceCheckBox = new QCheckBox(tr("Sparse"), advanced);
+        _sparceCheckBox = new Docutaz::ToggleSwitch(tr("Sparse"), advanced);
         _sparceCheckBox->setChecked(_info._sparse);
-        _backGroundCheckBox = new QCheckBox(tr("Create index in background"), advanced);
+        _backGroundCheckBox = new Docutaz::ToggleSwitch(tr("Create index in background"), advanced);
         _backGroundCheckBox->setChecked(_info._backGround);
 
         QHBoxLayout *expireLayout = new QHBoxLayout;
@@ -180,7 +181,7 @@ namespace Docutaz
         expireLayout->addWidget(secLabel);
         expireLayout->addStretch(1);
 
-        QCheckBox *expireCheckBox = new QCheckBox(tr("Expire after"));
+        QCheckBox *expireCheckBox = new Docutaz::ToggleSwitch(tr("Expire after"));
         expireCheckBox->setChecked(false);
         if (_info._ttl >= 0) {
             expireCheckBox->setChecked(true);

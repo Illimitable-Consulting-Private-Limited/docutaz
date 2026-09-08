@@ -8,6 +8,7 @@
 #include <QFontComboBox>
 #include <QPushButton>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QFileDialog>
@@ -88,13 +89,13 @@ namespace Docutaz
         uuidEncodingLayout->addWidget(_uuidEncodingComboBox);
         layout->addLayout(uuidEncodingLayout);        
 
-        _loadMongoRcJsCheckBox = new QCheckBox("Load .mongorc.js");
+        _loadMongoRcJsCheckBox = new Docutaz::ToggleSwitch("Load .mongorc.js");
         layout->addWidget(_loadMongoRcJsCheckBox);
 
-        _disabelConnectionShortcutsCheckBox = new QCheckBox("Disable connection shortcuts");
+        _disabelConnectionShortcutsCheckBox = new Docutaz::ToggleSwitch("Disable connection shortcuts");
         layout->addWidget(_disabelConnectionShortcutsCheckBox);
 
-        _shareShellPerConnectionCheckBox = new QCheckBox("Share one shell process across a connection's tabs");
+        _shareShellPerConnectionCheckBox = new Docutaz::ToggleSwitch("Share one shell process across a connection's tabs");
         _shareShellPerConnectionCheckBox->setToolTip(
             "Reuse a single mongosh process for all tabs of the same connection.\n"
             "Lower memory and instant tab opening, but queries serialize — a long\n"
@@ -107,7 +108,7 @@ namespace Docutaz
         QGroupBox *safetyBox = new QGroupBox("Destructive-operation safety", this);
         QVBoxLayout *safetyLayout = new QVBoxLayout(safetyBox);
         _confirmDestructiveOpsCheckBox =
-            new QCheckBox("Confirm before update/delete on protected connections");
+            new Docutaz::ToggleSwitch("Confirm before update/delete on protected connections");
         _confirmDestructiveOpsCheckBox->setToolTip(
             "Pop a confirmation before any update or delete (document edit/delete,\n"
             "remove-all, drop, or a shell script that looks like a write) runs on a\n"
@@ -117,7 +118,7 @@ namespace Docutaz
                        this, SLOT(updateGuardedEnvEnabled())));
 
         _warnOnSingleDocOpsCheckBox =
-            new QCheckBox("Also confirm single-document changes");
+            new Docutaz::ToggleSwitch("Also confirm single-document changes");
         _warnOnSingleDocOpsCheckBox->setToolTip(
             "By default only operations that can affect more than one document\n"
             "(or mass/structural ops like drop) prompt. Enable this to also\n"
@@ -132,7 +133,7 @@ namespace Docutaz
             const QString key = QString::fromLatin1(preset.key);
             if (key.isEmpty())
                 continue;
-            QCheckBox *check = new QCheckBox(QString::fromLatin1(preset.name));
+            QCheckBox *check = new Docutaz::ToggleSwitch(QString::fromLatin1(preset.name));
             safetyLayout->addWidget(check);
             _guardedEnvChecks.insert(key, check);
         }

@@ -9,6 +9,7 @@
 #include <QClipboard>
 #include <QApplication>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QToolTip>
 */
 
@@ -33,7 +34,7 @@ namespace Docutaz
         _uriString = new QLineEdit;
         _uriString->setReadOnly(true);
 
-        _includePasswordCheckBox = new QCheckBox("Include passwords");
+        _includePasswordCheckBox = new Docutaz::ToggleSwitch("Include passwords");
         VERIFY(connect(_includePasswordCheckBox, SIGNAL(toggled(bool)),
         this, SLOT(on_includePasswordsCheckBox_toggle(bool))));
 

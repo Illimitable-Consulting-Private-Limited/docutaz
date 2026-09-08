@@ -7,6 +7,7 @@
 #include <QRegularExpressionValidator>
 #include <QRegularExpression>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QPushButton>
 #include <QFileDialog>
 #include <QComboBox>
@@ -36,11 +37,11 @@ namespace Docutaz
         _settings(settings)
     {
         SshSettings *info = settings->sshSettings();
-        _useSsh = new QCheckBox("Use SSH tunnel");
+        _useSsh = new Docutaz::ToggleSwitch("Use SSH tunnel");
         _useSsh->setStyleSheet("margin-bottom: 7px");
         _useSsh->setChecked(info->enabled());
 
-        _askForPassword = new QCheckBox(askPasswordText);
+        _askForPassword = new Docutaz::ToggleSwitch(askPasswordText);
         _askForPassword->setChecked(info->askPassword());
         VERIFY(connect(_askForPassword, SIGNAL(stateChanged(int)), this, SLOT(askForPasswordStateChanged(int))));
 

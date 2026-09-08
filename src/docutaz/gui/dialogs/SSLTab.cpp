@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QGridLayout>
 #include <QCheckBox>
+#include "docutaz/gui/widgets/ToggleSwitch.h"
 #include <QPushButton>
 #include <QFileDialog>
 #include <QComboBox>
@@ -51,7 +52,7 @@ namespace Docutaz
         const SslSettings* const sslSettings = _connSettings->sslSettings();
 
         // Use TLS section
-        _useSslCheckBox = new QCheckBox("Use TLS protocol");
+        _useSslCheckBox = new Docutaz::ToggleSwitch("Use TLS protocol");
         _useSslCheckBox->setStyleSheet("margin-bottom: 7px");
         VERIFY(connect(_useSslCheckBox, SIGNAL(stateChanged(int)), this, SLOT(useSslCheckBoxStateChange(int))));
 
@@ -76,7 +77,7 @@ namespace Docutaz
         VERIFY(connect(_authMethodComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(on_authModeComboBox_change(int))));
 
         // PEM file section
-        _usePemFileCheckBox = new QCheckBox("Use PEM Cert./Key: ");
+        _usePemFileCheckBox = new Docutaz::ToggleSwitch("Use PEM Cert./Key: ");
         _usePemFileCheckBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
         _pemFileInfoStr = 
             new QLabel("Enable this option to connect to a MongoDB that requires CA-signed client certificates/key file.");
@@ -101,12 +102,12 @@ namespace Docutaz
         _pemPassShowButton->setMaximumWidth(_pemFileBrowseButton->width());
         VERIFY(connect(_pemPassShowButton, SIGNAL(clicked()), this, SLOT(togglePassphraseShowMode())));
         togglePassphraseShowMode();
-        _askPemPassCheckBox = new QCheckBox("Ask for passphrase each time");
+        _askPemPassCheckBox = new Docutaz::ToggleSwitch("Ask for passphrase each time");
         _askPemPassCheckBox->setChecked(sslSettings->askPassphrase());
         VERIFY(connect(_askPemPassCheckBox, SIGNAL(toggled(bool)), this, SLOT(on_askPemPassCheckBox_toggle(bool))));
 
         // Advanced options
-        _useAdvancedOptionsCheckBox = new QCheckBox("Advanced Options");
+        _useAdvancedOptionsCheckBox = new Docutaz::ToggleSwitch("Advanced Options");
         _useAdvancedOptionsCheckBox->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
         VERIFY(connect(_useAdvancedOptionsCheckBox, SIGNAL(toggled(bool)), this, SLOT(on_useAdvancedOptionsCheckBox_toggle(bool))));
         _crlFileLabel = new QLabel("CRL (Revocation List): ");
